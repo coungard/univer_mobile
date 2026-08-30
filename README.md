@@ -5,6 +5,19 @@
 Справочник REST API бэкенда — в [`API.md`](./API.md), план развития UI/UX — в
 [`ROADMAP.md`](./ROADMAP.md).
 
+## Авторизация (Keycloak)
+
+Вход реализован как Authorization Code + PKCE через системный браузер (`react-native-app-auth`),
+по спецификации `MOBILE.md` бэкенд-репозитория. Настройки — в [`src/config/env.ts`](./src/config/env.ts)
+(по умолчанию рассчитаны на локальный `docker-compose` бэкенда: Keycloak на `localhost:8082`,
+API — на `localhost:8023`).
+
+⚠️ На момент написания в Keycloak-конфиге бэкенда (`init-keycloak/realm-config.json` в
+`coungard/univer`) ещё нет публичного клиента `univer-mobile`, описанного в `MOBILE.md` — только
+служебный `univer-client`. Пока бэкенд-команда не добавит этот клиент, реальный вход через
+локальный бэкенд будет падать с ошибкой Keycloak «client not found» (см.
+[issue #1](https://github.com/coungard/univer_mobile/issues/1)); экраны и код при этом уже готовы.
+
 # Начало работы
 
 > **Примечание**: перед началом убедитесь, что вы выполнили инструкции из

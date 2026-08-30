@@ -84,6 +84,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        // Redirect scheme for the Keycloak Authorization Code + PKCE flow (react-native-app-auth).
+        // Must match `redirectUrl`/`logoutUrl` in src/config/env.ts (`univer://auth/...`).
+        manifestPlaceholders = [appAuthRedirectScheme: "univer"]
     }
     signingConfigs {
         debug {
