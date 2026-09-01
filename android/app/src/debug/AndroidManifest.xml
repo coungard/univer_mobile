@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug-only manifest fragment, merged into src/main/AndroidManifest.xml for debug builds only
+  (Android's manifest merger combines this with the main manifest by matching the <application>
+  tag). Adds the self-signed-cert trust anchor from network_security_config.xml — see the comment
+  there for why it's needed. Never present in a release build.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:networkSecurityConfig="@xml/network_security_config" />
+</manifest>
