@@ -6,9 +6,9 @@ export type AuthStackParamList = {
 };
 
 /**
- * Placeholder — the real tab/stack structure (Profile/Schedule/Courses/...) is built in
- * ROADMAP.md's Фаза 3+. For now this just proves the post-login state and hosts the Logout
- * button (Фаза 1, issue "Логаут").
+ * `Home` currently hosts the role-specific profile screen (`features/profile/ProfileScreen`,
+ * ROADMAP.md "Фаза 2"). The real tab/stack structure (Profile/Schedule/Courses/...) is built in
+ * Фаза 3+.
  */
 export type AppStackParamList = {
   Home: undefined;

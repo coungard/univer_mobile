@@ -10,3 +10,9 @@ export async function registerTeacher(request: RegisterTeacherRequest): Promise<
   const { data } = await apiClient.post<TeacherDto>('/teachers/register', request);
   return data;
 }
+
+/** `GET /teachers/{id}` — any authenticated role; used for a teacher to fetch their own profile. */
+export async function getTeacher(id: string): Promise<TeacherDto> {
+  const { data } = await apiClient.get<TeacherDto>(`/teachers/${id}`);
+  return data;
+}
