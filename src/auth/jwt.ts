@@ -53,7 +53,20 @@ export function decodeAccessToken(accessToken: string): AccessTokenClaims | null
   }
 }
 
+/**
+ * Keycloak's realm roles are actually named `ROLE_ADMIN`/`ROLE_TEACHER`/`ROLE_STUDENT` (verified
+ * directly against the realm's role list — there is no bare `STUDENT` etc.), because the backend's
+ * `@PreAuthorize("hasRole('STUDENT')")` checks rely on Spring Security's `hasRole()`, which itself
+ * prepends `ROLE_` to the name it's given before matching an authority. `API.md` documents the
+ * bare `STUDENT`/`TEACHER`/`ADMIN` names because that's the argument passed to `hasRole()` in the
+ * backend source, not the literal string carried in the token's `realm_access.roles` — so this
+ * must match on `ROLE_${role}`, not `role` itself, or every login falls through to the "no
+ * recognized role" fallback screen regardless of the user's actual role.
+ */
 export function primaryRole(claims: AccessTokenClaims | null): Role | null {
   const roles = claims?.realm_access?.roles ?? [];
-  return (['ADMIN', 'TEACHER', 'STUDENT'] as const).find(role => roles.includes(role)) ?? null;
+  return (
+    (['ADMIN', 'TEACHER', 'STUDENT'] as const).find(role => roles.includes(`ROLE_${role}`)) ??
+    null
+  );
 }
