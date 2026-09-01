@@ -2,24 +2,28 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { useAuth } from '../../auth/useAuth';
+import { StudentProfileScreen } from './StudentProfileScreen';
+import { TeacherProfileScreen } from './TeacherProfileScreen';
 
 /**
- * Stand-in for the real home screen (Profile + Weekly Schedule — ROADMAP.md "Фаза 3"). Its job
- * for now is just to prove the authenticated stack renders and to host the Logout button
- * (Фаза 1, issue "Логаут").
+ * Post-login entry point (`AppStack`'s `Home`). Renders role-specific content — the real per-role
+ * tab structure (Profile/Schedule/Courses/...) is ROADMAP.md "Фаза 3"+; for now each role gets a
+ * single screen here.
  */
-export function HomePlaceholderScreen() {
-  const { claims, role, logout } = useAuth();
+export function ProfileScreen() {
+  const { role, claims, logout } = useAuth();
 
+  if (role === 'STUDENT') return <StudentProfileScreen onLogout={logout} />;
+  if (role === 'TEACHER') return <TeacherProfileScreen onLogout={logout} />;
+
+  // ADMIN (or an unexpected/missing role) — no Student/Teacher entity on the backend to show;
+  // the admin module itself is ROADMAP.md "Фаза 7".
   return (
     <View style={styles.container}>
       <Text variant="headlineSmall">Вы вошли</Text>
       <Text variant="bodyMedium" style={styles.info}>
         {claims?.preferred_username ?? claims?.email ?? claims?.sub}
         {role ? ` · ${role}` : ''}
-      </Text>
-      <Text variant="bodySmall" style={styles.note}>
-        Экраны профиля и расписания появятся в Фазе 3 (см. ROADMAP.md).
       </Text>
       <Button mode="outlined" onPress={() => logout()} style={styles.button}>
         Выйти
@@ -38,11 +42,6 @@ const styles = StyleSheet.create({
   },
   info: {
     opacity: 0.8,
-  },
-  note: {
-    opacity: 0.6,
-    textAlign: 'center',
-    marginBottom: 16,
   },
   button: {
     marginTop: 16,

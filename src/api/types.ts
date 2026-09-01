@@ -46,3 +46,14 @@ export type RegisterStudentRequest = components['schemas']['RegisterStudentReque
 
 export type TeacherDto = WithRequiredId<components['schemas']['TeacherDto']>;
 export type RegisterTeacherRequest = components['schemas']['RegisterTeacherRequest'];
+
+/**
+ * Academic-path chain used to resolve a student's group → faculty/program for display (ROADMAP.md
+ * "Фаза 2"). `GroupDto` only carries `semesterId` — there is no direct link to program/faculty, so
+ * showing them means walking group → semester → study year → program → faculty one hop at a time
+ * (see `features/profile/hooks.ts`).
+ */
+export type GroupDto = WithRequiredId<components['schemas']['GroupDto']>;
+export type SemesterDto = WithRequiredId<components['schemas']['SemesterDto']>;
+export type StudyYearDto = WithRequiredId<components['schemas']['StudyYearDto']>;
+export type ProgramDto = WithRequiredId<components['schemas']['ProgramDto']>;

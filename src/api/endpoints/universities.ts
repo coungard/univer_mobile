@@ -8,3 +8,9 @@ export async function getUniversities(page = 0, size = 50): Promise<Page<Univers
   });
   return data;
 }
+
+/** `GET /universities/{id}` — used to show a student's/teacher's own university by name. */
+export async function getUniversity(id: string): Promise<UniversityDto> {
+  const { data } = await apiClient.get<UniversityDto>(`/universities/${id}`);
+  return data;
+}

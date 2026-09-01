@@ -10,3 +10,13 @@ export async function registerStudent(request: RegisterStudentRequest): Promise<
   const { data } = await apiClient.post<StudentDto>('/students/register', request);
   return data;
 }
+
+/**
+ * `GET /students/{id}` — requires the `STUDENT` role on the caller, but per API.md the endpoint
+ * doesn't check that `id` matches the caller's own `sub`. Used here only for a student to fetch
+ * their own profile (`id` = Keycloak `sub`, see ROADMAP.md "Фаза 2").
+ */
+export async function getStudent(id: string): Promise<StudentDto> {
+  const { data } = await apiClient.get<StudentDto>(`/students/${id}`);
+  return data;
+}
