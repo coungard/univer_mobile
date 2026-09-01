@@ -57,3 +57,11 @@ export type GroupDto = WithRequiredId<components['schemas']['GroupDto']>;
 export type SemesterDto = WithRequiredId<components['schemas']['SemesterDto']>;
 export type StudyYearDto = WithRequiredId<components['schemas']['StudyYearDto']>;
 export type ProgramDto = WithRequiredId<components['schemas']['ProgramDto']>;
+
+/**
+ * A concrete, dated occurrence of a class (as opposed to `PairDto`, its recurring template) —
+ * `GET /lectures/me` (ROADMAP.md "Фаза 3"). `scheduledTime` is a full date-time, not just a
+ * time-of-day, so a week's lectures are found by filtering on it client-side (the endpoint has no
+ * date-range params — see API.md).
+ */
+export type LectureDto = WithRequiredId<components['schemas']['LectureDto']>;

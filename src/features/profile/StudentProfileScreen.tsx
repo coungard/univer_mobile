@@ -1,21 +1,18 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
+import { useAuth } from '../../auth/useAuth';
 import { EmptyState } from '../../components/EmptyState';
 import { useGroupAcademicPathQuery, useOwnStudentQuery, useUniversityQuery } from './hooks';
 
-interface Props {
-  onLogout: () => void;
-}
-
 /**
- * Профиль студента (ROADMAP.md "Фаза 2"). Пока это единственный экран после логина для студента —
- * настоящие табы «Профиль»/«Расписание» появятся в Фазе 3. Обязательный кейс Фазы 2: студент без
- * назначенной группы (`groupId == null`) видит понятное пустое состояние вместо ошибок или
- * пустого расписания, и как только admin назначит группу — при следующем открытии этого экрана
- * (без доп. действий пользователя) вместо пустого состояния появятся факультет/программа/группа.
+ * Таб «Профиль» для студента (ROADMAP.md "Фаза 2"/"Фаза 3"). Обязательный кейс Фазы 2: студент без
+ * назначенной группы (`groupId == null`) видит понятное пустое состояние вместо ошибок, и как
+ * только admin назначит группу — при следующем открытии этого экрана (без доп. действий
+ * пользователя) вместо пустого состояния появятся факультет/программа/группа.
  */
-export function StudentProfileScreen({ onLogout }: Props) {
+export function StudentProfileScreen() {
+  const { logout } = useAuth();
   const student = useOwnStudentQuery();
   const university = useUniversityQuery(student.data?.universityId);
   const academicPath = useGroupAcademicPathQuery(student.data?.groupId);
@@ -58,6 +55,13 @@ export function StudentProfileScreen({ onLogout }: Props) {
         <Text variant="bodyLarge">{university.data?.name ?? '—'}</Text>
       </View>
 
+      <View style={styles.section}>
+        <Text variant="labelLarge" style={styles.label}>
+          Дата зачисления
+        </Text>
+        <Text variant="bodyLarge">{student.data.enrollmentDate}</Text>
+      </View>
+
       {hasGroup ? (
         <>
           <View style={styles.section}>
@@ -88,7 +92,7 @@ export function StudentProfileScreen({ onLogout }: Props) {
         </View>
       )}
 
-      <Button mode="outlined" onPress={onLogout} style={styles.logout}>
+      <Button mode="outlined" onPress={() => logout()} style={styles.logout}>
         Выйти
       </Button>
     </ScrollView>

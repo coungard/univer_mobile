@@ -1,19 +1,17 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
+import { useAuth } from '../../auth/useAuth';
 import { useFacultyQuery, useOwnTeacherQuery } from './hooks';
 
-interface Props {
-  onLogout: () => void;
-}
-
 /**
- * Профиль преподавателя. Не входит непосредственно в скоуп ROADMAP.md "Фаза 2" (она про студентов
- * без группы), но занимает то же место в навигации, что и `StudentProfileScreen` — поэтому
+ * Профиль преподавателя. Не входит непосредственно в скоуп ROADMAP.md "Фаза 2"/"Фаза 3" (обе про
+ * студентов), но занимает то же место в навигации, что и таб «Профиль» студента — поэтому
  * реализован сразу же, чтобы у преподавателя после логина был реальный экран, а не заглушка.
  * «Мои курсы»/«Мои лекции» — полноценный модуль преподавателя из ROADMAP.md "Фаза 6".
  */
-export function TeacherProfileScreen({ onLogout }: Props) {
+export function TeacherProfileScreen() {
+  const { logout } = useAuth();
   const teacher = useOwnTeacherQuery();
   const faculty = useFacultyQuery(teacher.data?.facultyId);
 
@@ -47,7 +45,7 @@ export function TeacherProfileScreen({ onLogout }: Props) {
         {faculty.data?.name ?? ''}
       </Text>
 
-      <Button mode="outlined" onPress={onLogout} style={styles.logout}>
+      <Button mode="outlined" onPress={() => logout()} style={styles.logout}>
         Выйти
       </Button>
     </ScrollView>
