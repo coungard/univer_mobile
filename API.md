@@ -15,6 +15,11 @@
   `Authorization: Bearer <access_token>` с валидным JWT от Keycloak (`univer-realm`). Эндпоинт без роли в
   колонке «Auth» всё равно требует валидный JWT (`anyRequest().authenticated()` в `SecurityConfig`) — просто
   без ограничения по конкретной роли.
+- **Публичные GET-справочники для регистрации:** все `GET`-эндпоинты `Universities`/`Faculties`/
+  `Departments` — `permitAll()` в `SecurityConfig`, специально ради экрана регистрации: он должен дать
+  выбрать университет/кафедру (`RegisterStudentRequest.universityId`/`RegisterTeacherRequest.departmentId`)
+  до того, как у пользователя появится токен — иначе курица и яйцо (нужен токен, чтобы получить список для
+  формы, которая этот токен и выдаёт).
 - **Роли:** `ADMIN`, `TEACHER`, `STUDENT` используются в проверках на эндпоинтах ниже (в Keycloak заведены
   также `APPLICANT`, `GUEST`, но текущий API их нигде не проверяет).
 - **Content-Type:** `application/json` и для тела запроса, и для ответа.
@@ -75,9 +80,12 @@
 
 ### FacultyDto
 `id`, `name`, `description`, `universityId`, `departments: DepartmentDto[]` (по умолчанию `[]`).
+(Сериализуется с `@JsonInclude(NON_NULL)` — как и `CourseDto` ниже, `null`-поля в ответе могут отсутствовать
+вовсе, а не быть `null`.)
 
 ### DepartmentDto
 `id`, `name`★, `description`, `facultyId`.
+(Тоже `@JsonInclude(NON_NULL)` — см. замечание у `FacultyDto`.)
 
 ### ProgramDto (ответ)
 `id`, `facultyId`, `code`, `name`, `profession`, `direction`, `educationLevel`,
@@ -161,8 +169,8 @@
 
 | Метод | Путь | Auth | Тело запроса | Тело ответа |
 |---|---|---|---|---|
-| GET | `/` | любая роль | — (`?page&size`) | `Page<UniversityDto>` |
-| GET | `/{id}` | любая роль | — | `UniversityDto` |
+| GET | `/` | **Public** (без токена) | — (`?page&size`) | `Page<UniversityDto>` |
+| GET | `/{id}` | **Public** (без токена) | — | `UniversityDto` |
 | POST | `/` | `ADMIN` | `UniversityDto` | `201` + `UniversityDto` |
 | PUT | `/{id}` | `ADMIN` | `UniversityDto` | `UniversityDto` |
 | DELETE | `/{id}` | `ADMIN` | — | `204` |
@@ -172,24 +180,27 @@
 | Метод | Путь | Auth | Тело запроса | Тело ответа |
 |---|---|---|---|---|
 | POST | `/` | любая роль | `FacultyDto` | `201` + `FacultyDto` |
-| GET | `/university/{universityId}` | любая роль | — (`?page&size`) | `Page<FacultyDto>` |
-| GET | `/{id}` | любая роль | — | `FacultyDto` |
+| GET | `/university/{universityId}` | **Public** (без токена) | — (`?page&size`) | `Page<FacultyDto>` |
+| GET | `/{id}` | **Public** (без токена) | — | `FacultyDto` |
 | PUT | `/{id}` | любая роль | `FacultyDto` | `FacultyDto` |
 | DELETE | `/{id}` | любая роль | — | `204` |
 
-> В отличие от большинства ресурсов, у `Faculties` (и `Departments` ниже) нет `@PreAuthorize` на
-> create/update/delete — эти операции доступны любому аутентифицированному пользователю, не только `ADMIN`.
-> При переносе в мобильное приложение стоит перепроверить это перед тем, как показывать соответствующий
-> функционал не-админам — похоже на недосмотр в текущей реализации, а не сознательное решение.
+> Все `GET` на `Universities`/`Faculties`/`Departments` теперь публичные (`permitAll()` в
+> `SecurityConfig`) — намеренная правка ради экрана регистрации мобильного приложения (см. врезку в
+> «Общие сведения» выше). А вот у `Faculties` (и `Departments` ниже) create/update/delete по-прежнему без
+> `@PreAuthorize` — эти операции доступны любому аутентифицированному пользователю, не только `ADMIN`. При
+> переносе в мобильное приложение стоит перепроверить это перед тем, как показывать соответствующий
+> функционал не-админам — похоже на недосмотр в текущей реализации, а не сознательное решение (в отличие
+> от публичности `GET`, которая задокументирована явно).
 
 ## Departments — `/api/v1/departments`
 
 | Метод | Путь | Auth | Тело запроса | Тело ответа |
 |---|---|---|---|---|
 | POST | `/` | любая роль | `DepartmentDto` | `201` + `DepartmentDto` |
-| GET | `/faculty/{facultyId}` | любая роль | — (`?page&size`) | `Page<DepartmentDto>` |
-| GET | `/university/{universityId}` | любая роль | — (`?page&size`) | `Page<DepartmentDto>` |
-| GET | `/{id}` | любая роль | — | `DepartmentDto` |
+| GET | `/faculty/{facultyId}` | **Public** (без токена) | — (`?page&size`) | `Page<DepartmentDto>` |
+| GET | `/university/{universityId}` | **Public** (без токена) | — (`?page&size`) | `Page<DepartmentDto>` |
+| GET | `/{id}` | **Public** (без токена) | — | `DepartmentDto` |
 | PUT | `/{id}` | любая роль | `DepartmentDto` | `DepartmentDto` |
 | DELETE | `/{id}` | любая роль | — | `204` |
 
@@ -392,10 +403,17 @@
 
 - `Faculties`/`Departments` create/update/delete не защищены ролью (см. врезку в разделе `Faculties`
   выше) — стоит уточнить у бэкенд-команды, до того как открывать соответствующие экраны не-`ADMIN`
-  пользователям.
+  пользователям. (Публичность `GET` на этих же ресурсах — не сюда, это уже сознательный фикс, см. врезку.)
 - `Programs`: часть эндпоинтов (`POST /`, `GET /{id}`, `GET /`) не имеет `@PreAuthorize` вовсе (закомментирован
   в коде), а `GET /faculty/{facultyId}` требует одну из трёх ролей — несогласованность между эндпоинтами
   одного ресурса, доступ де-факто одинаковый (любой аутентифицированный), но стоит иметь в виду при
   ревью бэкенда.
 - `Teachers`: `POST /` (без `/register`) не привязан к Keycloak и не имеет ограничения по роли — не
   использовать этот путь для функции «регистрация преподавателя» в приложении, только `POST /register`.
+- **Keycloak в dev-окружении редиректит на `localhost`, а не на хост фактического запроса** —
+  `docker-compose.yml` жёстко задаёт `KC_HOSTNAME: localhost` без `--hostname-strict=false`/эквивалента для
+  Keycloak 22. На Android-эмуляторе (`10.0.2.2` вместо `localhost`, см. `MOBILE.md`) это ломает
+  Authorization Code + PKCE флоу сразу после ввода пароля: браузер получает `302` на
+  `http://localhost:8082/...`, которое с эмулятора недостижимо (`ERR_CONNECTION_REFUSED`), и не долетает до
+  `univer://auth/callback`. Подтверждено вживую с реальными учётными данными. Мобильное приложение здесь
+  ничего не может исправить — нужна правка hostname-конфигурации Keycloak на стороне бэкенда.
