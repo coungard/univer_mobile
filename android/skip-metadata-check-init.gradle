@@ -1,0 +1,12 @@
+// Workaround for a Kotlin metadata-version mismatch between Gradle 9.4.1's own embedded
+// Kotlin runtime (2.3.0, pulled in via gradleApi()) and the Kotlin Gradle Plugin version
+// (2.1.20) that @react-native/gradle-plugin's settings-plugin/react-native-gradle-plugin
+// are compiled with. Not a project bug — applied via an init script so vendored
+// node_modules sources stay untouched. Safe to delete once RN bumps its bundled KGP.
+allprojects {
+    tasks.matching { it.name == "compileKotlin" || it.name == "compileTestKotlin" }.configureEach { t ->
+        if (t.hasProperty('kotlinOptions')) {
+            t.kotlinOptions.freeCompilerArgs += ['-Xskip-metadata-version-check']
+        }
+    }
+}
