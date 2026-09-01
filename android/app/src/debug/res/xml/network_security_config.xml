@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug-only (src/debug, never packaged into release): trusts the self-signed cert used by the
+  local docker-compose Keycloak (coungard/univer, see README "Локальный бэкенд и эмулятор" and
+  ANDROID_TROUBLESHOOTING.md). AppAuth's authorization-code -> token exchange is a direct HTTPS
+  request made by the app's own network stack (unlike the login page itself, which opens in the
+  system browser and lets a user click through a cert warning) — without an explicit trust
+  anchor here, that request fails TLS validation with a generic
+  "net.openid.appauth.AuthorizationException: Network error".
+-->
+<network-security-config>
+    <!-- Preserves the React Native Gradle Plugin's normal debug default (plain HTTP allowed
+         everywhere) for hosts outside the domain-config below — e.g. Metro's dev bundle server
+         (http://10.0.2.2:8081) and the REST API (http://10.0.2.2:8023). Defining any
+         domain-config without this makes Android default cleartextTrafficPermitted to false
+         (API 28+) for the *listed* domains, but per-domain-config, not inherited from the
+         manifest's usesCleartextTraffic — so 10.0.2.2 also needs it stated explicitly below. -->
+    <base-config cleartextTrafficPermitted="true" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <trust-anchors>
+            <certificates src="@raw/dev_backend_cert" />
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

@@ -209,6 +209,107 @@ robocopy "<источник>" "<назначение>" /E /MOVE /R:2 /W:1 /NFL /
 переиспользует уже собранный APK (`UP-TO-DATE` на всех задачах компиляции)
 и займёт секунды.
 
+### 9. Логин через Keycloak по HTTPS с self-signed сертификатом: «Cookie not found» и «Network error»
+
+Бэкенд-команда подняла локальный Keycloak по HTTPS (`localhost:8443`,
+self-signed сертификат) — исторически он также доступен по голому
+`http://localhost:8082`. Переход на HTTPS вскрыл сразу три отдельные
+проблемы, которые на первый взгляд выглядят как одна и та же ошибка
+логина.
+
+#### 9a. «Cookie not found. Please make sure cookies are enabled in your browser»
+
+**Симптом:** экран входа Keycloak открывается нормально, но либо сразу,
+либо после ввода УЗ и сабмита формы — белый экран Keycloak «We are
+sorry... Cookie not found».
+
+**Причина:** у контейнера Keycloak задан `KC_HOSTNAME=localhost`.
+Это значит, что **сам Keycloak** всегда генерирует свои
+self-referential URL (включая `action` формы логина) как
+`https://localhost:8443/...` — независимо от того, на какой хост
+пришёл исходный запрос. Если приложение открывает страницу логина
+через `10.0.2.2` (обычная подстановка для Android-эмулятора, см. выше),
+браузер получает cookie сессии (`AUTH_SESSION_ID`, `KC_RESTART`) на
+origin `10.0.2.2:8443`, а форма при сабмите уходит на `localhost:8443`
+— это **другой origin**, cookie туда не долетает, и Keycloak рапортует
+«Cookie not found». (Тот же самый баг раньше проявлялся и на голом
+`http://…:8082` как `ECONNREFUSED`/«Cookie not found» в зависимости от
+того, какой шаг флоу первым наступал на несовпадение хостов.)
+
+**Решение:** для `authServerUrl` в [`src/config/env.ts`](./src/config/env.ts)
+всегда использовать `https://localhost:8443` — **не** `10.0.2.2`, даже
+на Android — чтобы весь OAuth-флоу (GET страницы логина, POST формы,
+редирект обратно) шёл через один и тот же origin, совпадающий с тем,
+что сам Keycloak считает своим hostname. Это требует
+`adb reverse tcp:8443 tcp:8443` на эмуляторе (иначе `localhost:8443`
+внутри эмулятора будет означать сам эмулятор, а не хост — см. общее
+объяснение про `10.0.2.2`/`localhost` в начале файла).
+
+#### 9b. `net.openid.appauth.AuthorizationException: Network error` после успешного логина
+
+**Симптом:** форма логина Keycloak принимает УЗ и пароль без ошибок,
+браузер закрывается и возвращает управление в приложение — но вместо
+экрана с профилем всплывает красный тост с этой ошибкой.
+
+**Причина:** обмен authorization code на токен (`POST .../token`)
+`react-native-app-auth` делает **напрямую из процесса приложения**
+(через OkHttp), а не через системный браузер. В отличие от самой формы
+логина (которая открывается в Custom Tabs, где пользователь может
+вручную нажать «Всё равно перейти» на предупреждении о сертификате),
+этот прямой сетевой запрос идёт через собственный TLS-стек приложения,
+который self-signed сертификату Keycloak не доверяет — и просто рвёт
+соединение без внятной причины на JS-стороне.
+
+**Решение:** debug-only `network_security_config.xml`, доверяющий
+именно этому сертификату для доменов `localhost`/`10.0.2.2`:
+
+1. Вытащить текущий leaf-сертификат Keycloak:
+   ```sh
+   echo | openssl s_client -connect localhost:8443 -servername localhost 2>/dev/null \
+     | openssl x509 -outform PEM > android/app/src/debug/res/raw/dev_backend_cert.pem
+   ```
+2. `android/app/src/debug/res/xml/network_security_config.xml` — trust-anchor на этот файл
+   для `localhost`/`10.0.2.2`, **плюс явный `<base-config cleartextTrafficPermitted="true">`**
+   (см. 9c — без него ловите новую проблему вместо старой).
+3. `android/app/src/debug/AndroidManifest.xml` — фрагмент-манифест
+   (`<application android:networkSecurityConfig="@xml/network_security_config" />`),
+   который Android manifest merger подмешивает только в debug-сборку.
+
+Всё это лежит только в `src/debug/`, поэтому в release-сборку не
+попадает — там self-signed сертификат недопустим и не нужен.
+
+⚠️ **Сертификат приколот (pinned) к конкретному приватному ключу
+Keycloak.** Если бэкенд-команда пересоздаст контейнер/volume Keycloak
+с новым self-signed сертификатом, `dev_backend_cert.pem` устареет —
+логин снова начнёт падать с той же `Network error`, и шаг 1 нужно будет
+повторить.
+
+#### 9c. Своя регрессия: `network_security_config.xml` тихо ломает cleartext HTTP
+
+**Симптом:** сразу после добавления `network_security_config.xml` из
+9b — красный экран `Unable to load script`, хотя Metro запущен и
+`adb reverse tcp:8081 tcp:8081` на месте. В logcat:
+```
+java.net.UnknownServiceException: CLEARTEXT communication to 10.0.2.2 not permitted by network security policy
+```
+
+**Причина:** React Native Gradle Plugin сам выставляет
+`usesCleartextTraffic="true"` в манифесте для debug-сборок (см.
+README «Cleartext HTTP» выше) — но как только в проекте появляется
+**собственный** `networkSecurityConfig`, для доменов, явно
+перечисленных в нём через `<domain-config>`, атрибут манифеста
+перестаёт быть решающим: `cleartextTrafficPermitted` по умолчанию
+снова становится `false` (это дефолт с API 28+) для каждого
+`<domain-config>` независимо, если не задан явно. Тот же
+`10.0.2.2`, который используется и для Metro (`:8081`), и для REST API
+(`:8023`), внезапно перестаёт пускать обычный `http://`.
+
+**Решение:** в `network_security_config.xml` держать явный
+`<base-config cleartextTrafficPermitted="true">` (восстанавливает
+исходное поведение для всего, что не попало в `<domain-config>`) и
+`cleartextTrafficPermitted="true"` прямо на самом `<domain-config>`
+с `localhost`/`10.0.2.2` (см. итоговый файл в репозитории).
+
 ## Рецепт «с нуля» после перезагрузки/новой машины
 
 ```powershell
@@ -220,14 +321,19 @@ emulator -avd Pixel_10
 cd C:\dev\um\android
 .\gradlew.bat --init-script skip-metadata-check-init.gradle app:installDebug -PreactNativeDevServerPort=8081
 
-# 3. Поднять Metro отдельно и пробросить порт
+# 3. Поднять Metro отдельно и пробросить порты (Metro + Keycloak HTTPS, см. проблему 9)
 cd C:\dev\um
 npx react-native start
 adb reverse tcp:8081 tcp:8081
+adb reverse tcp:8443 tcp:8443
 
 # 4. Запустить приложение
 adb shell am start -n com.univer_mobile/.MainActivity
 ```
+
+`adb reverse` слетает при каждом перезапуске эмулятора (не только
+`gradlew --stop`/переустановке APK) — повторяйте шаг 3 каждый раз
+заново.
 
 ## Файлы, связанные с этими фиксами
 
@@ -236,3 +342,11 @@ adb shell am start -n com.univer_mobile/.MainActivity
 - `android/skip-metadata-check-init.gradle` — воркэраунд по Kotlin
   metadata (см. проблему 5). Безопасно удалить, когда апстрим починит
   версии.
+- `src/config/env.ts` — `authServerUrl` жёстко на `https://localhost:8443`,
+  а не подставляемый по платформе хост (см. проблему 9a).
+- `android/app/src/debug/res/xml/network_security_config.xml`,
+  `android/app/src/debug/res/raw/dev_backend_cert.pem`,
+  `android/app/src/debug/AndroidManifest.xml` — доверие к self-signed
+  сертификату Keycloak, только для debug-сборки (см. проблему 9b/9c).
+  Требует переизвлечения `dev_backend_cert.pem`, если бэкенд
+  пересоздаст сертификат Keycloak.

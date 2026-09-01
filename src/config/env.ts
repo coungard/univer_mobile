@@ -28,8 +28,21 @@ export const env = {
   /** Spring Boot REST API (`API.md`). */
   apiBaseUrl: `http://${backendHost}:8023/api/v1`,
 
-  /** Keycloak. */
-  authServerUrl: `http://${backendHost}:8082`,
+  /**
+   * Keycloak. Served over HTTPS (self-signed cert locally) — plain HTTP set a `Secure` session
+   * cookie that browsers silently refuse to store, breaking login with "Cookie not found". See
+   * ANDROID_TROUBLESHOOTING.md.
+   *
+   * Deliberately `localhost`, not `backendHost`: this backend's Keycloak has `KC_HOSTNAME=localhost`,
+   * so it always writes its login form's `action` (and every other self-referential URL) as
+   * `localhost:8443`, regardless of which host the browser's GET came in on. Opening the login page
+   * via `10.0.2.2` on Android would set the session cookie on the `10.0.2.2` origin, then the form
+   * POST to `localhost` wouldn't carry it — Keycloak replies "Cookie not found". Using `localhost`
+   * for both keeps the whole flow on one origin, matching Keycloak's own idea of its hostname.
+   * Requires `adb reverse tcp:8443 tcp:8443` on the Android emulator (see ANDROID_TROUBLESHOOTING.md)
+   * since `localhost` there normally means the emulator itself, not the host.
+   */
+  authServerUrl: `https://localhost:8443`,
   realm: 'univer-realm',
   clientId: 'univer-mobile',
 
