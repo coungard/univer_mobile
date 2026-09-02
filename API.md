@@ -106,14 +106,20 @@
 `SemesterType` (enum): `AUTUMN` | `SPRING`.
 
 ### WeekScheduleCycleDto
-`id`, `semesterId`★. Циклическое расписание семестра — контейнер для шаблонов `Pair`.
+`id`, `semesterId`★, `status: WeekScheduleCycleStatus` (только ответ — при создании форсируется
+`DRAFT` независимо от присланного значения; менять статус только через
+`PUT /week-schedule-cycles/{id}/status`). Циклическое расписание семестра — контейнер для шаблонов
+`Pair`. Один цикл на семестр: повторный `POST` с уже занятым `semesterId` — `422`.
+`WeekScheduleCycleStatus` (enum): `DRAFT` (черновик — `Pair` цикла может править `ADMIN` или
+`STUDENT` своей группы) | `AGREED` (согласовано — правки `Pair` доступны только `ADMIN`).
 
 ### BellScheduleEntryDto
 `id`, `universityId` (`null` = дефолт для университетов без своей записи на этот `pairNumber`),
 `pairNumber`★ (`≥ 1`), `startTime`★, `endTime`★.
 
 ### PairDto
-`id`, `weekScheduleCycleId`★, `dayOfWeek`★ (`MONDAY`…`SUNDAY`), `weekParity: WeekParity`★,
+`id`, `weekScheduleCycleId`★, `dayOfWeek`★ (тип допускает `MONDAY`…`SUNDAY`, но сервис отклоняет
+`SATURDAY`/`SUNDAY` как `422` — де-факто только `MONDAY`…`FRIDAY`), `weekParity: WeekParity`★,
 `pairNumber`★ (`≥ 1`), `startTime` (опционально — если не задано, подставляется из
 `BellScheduleEntry` по университету курса и `pairNumber`), `endTime`, `courseId`★, `teacherId`, `room`,
 `groupIds: UUID[]`★ (непусто). Шаблон повторяющегося занятия в циклическом расписании — из него
@@ -247,7 +253,15 @@
 | GET | `/semester/{semesterId}` | любая роль | — | `WeekScheduleCycleDto` |
 | GET | `/{id}` | любая роль | — | `WeekScheduleCycleDto` |
 | POST | `/` | `ADMIN` | `WeekScheduleCycleDto` | `201` + `WeekScheduleCycleDto` |
+| PUT | `/{id}/status` | `ADMIN` | `UpdateWeekScheduleCycleStatusRequest{status}` | `WeekScheduleCycleDto` |
 | DELETE | `/{id}` | `ADMIN` | — | `204` |
+
+- **`POST /`** — только `ADMIN`, как и раньше; создание всегда форсирует `status: DRAFT`. Один цикл
+  на семестр: если `WeekScheduleCycle` для этого `semesterId` уже существует — `422`.
+- **`PUT /{id}/status`** — переключает `DRAFT`⇄`AGREED` (в обе стороны), тоже только `ADMIN`. Пока
+  цикл в `DRAFT`, свои `Pair` внутри него может писать и `STUDENT` (см. `Pairs` ниже); после перевода
+  в `AGREED` — только `ADMIN`. Сама генерация `Lecture` (`POST /lectures/generate*`) статус цикла не
+  проверяет и разрешена в любом статусе.
 
 ## BellScheduleEntries — `/api/v1/bell-schedule-entries`
 
@@ -273,9 +287,25 @@
 | GET | `/week-schedule-cycle/{weekScheduleCycleId}` | любая роль | — (`?page&size`) | `Page<PairDto>` |
 | GET | `/group/{groupId}` | любая роль | — (`?page&size`) | `Page<PairDto>` — расписание группы |
 | GET | `/{id}` | любая роль | — | `PairDto` |
-| POST | `/` | `ADMIN` | `PairDto` | `201` + `PairDto` |
-| PUT | `/{id}` | `ADMIN` | `PairDto` | `PairDto` |
-| DELETE | `/{id}` | `ADMIN` | — | `204` |
+| POST | `/` | `ADMIN`/`STUDENT` | `PairDto` | `201` + `PairDto` |
+| PUT | `/{id}` | `ADMIN`/`STUDENT` | `PairDto` | `PairDto` |
+| DELETE | `/{id}` | `ADMIN`/`STUDENT` | — | `204` |
+
+- **`STUDENT`-доступ к `POST`/`PUT`/`DELETE`** (было `ADMIN`-only) — со скоупом, проверяемым на
+  бэкенде, а не только в UI:
+  - `groupIds` пары должен состоять **ровно из одной** группы, и это должна быть **своя** группа
+    вызывающего студента (`Student.groupId` из `sub` JWT) — иначе `422`. Студент не может ни писать
+    чужую группу, ни превратить пару в поток на несколько групп.
+  - Цикл (`weekScheduleCycleId`), к которому принадлежит пара, должен быть в статусе `DRAFT` —
+    иначе `422` («расписание уже согласовано»). Проверяется и для текущего цикла/группы пары (при
+    `PUT`/`DELETE`), и для нового (при `PUT`, если пару переносят в другой цикл/группу).
+  - `ADMIN` — без всех этих ограничений, как и раньше.
+- **Проверка конфликтов teacher/room** (`POST`/`PUT`, действует для **всех** ролей, включая
+  `ADMIN`) — новая: если создаваемая/обновляемая пара пересекается по дню недели, чётности недели
+  (`BOTH` пересекается с `ODD` и `EVEN`) и фактическому интервалу времени с уже существующей парой
+  **того же цикла**, и при этом совпадает `teacherId` или `room` (регистронезависимо) — `422` с
+  текстом, включающим ID и время конфликтующей пары. Защиты от гонки при двух параллельных
+  сохранениях нет (сознательно, низкий риск для MVP).
 
 ## Groups — `/api/v1/groups`
 
@@ -311,8 +341,8 @@
 | GET | `/me` | `STUDENT` | `?page&size` | — | `Page<LectureDto>`, отсортировано по `scheduledTime` ASC |
 | GET | `/{id}` | любая роль | — | — | `LectureDto` |
 | POST | `/` | `ADMIN`/`TEACHER` | — | `LectureDto` | `201` + `LectureDto` |
-| POST | `/generate` | `ADMIN`/`TEACHER` | — | `GenerateLectureRequest` | `201` + `LectureDto` |
-| POST | `/generate/semester/{weekScheduleCycleId}` | `ADMIN`/`TEACHER` | — | — | `200` + `LectureDto[]` |
+| POST | `/generate` | `ADMIN`/`TEACHER`/`STUDENT` | — | `GenerateLectureRequest` | `201` + `LectureDto` |
+| POST | `/generate/semester/{weekScheduleCycleId}` | `ADMIN`/`TEACHER`/`STUDENT` | — | — | `200` + `LectureDto[]` |
 | PUT | `/{id}` | `ADMIN`/`TEACHER` | — | `LectureDto` | `LectureDto` |
 | DELETE | `/{id}` | `ADMIN`/`TEACHER` | — | — | `204` |
 
@@ -322,9 +352,16 @@
   экрана «моё расписание» в мобильном приложении.
 - **`POST /generate`** — генерирует одну `Lecture` на конкретную `date` из шаблона `Pair` (курс,
   преподаватель, группы копируются из `Pair`); `date` должна соответствовать `dayOfWeek`/`weekParity` пары.
-- **`POST /generate/semester/{weekScheduleCycleId}`** — генерирует лекции на весь семестр разом для всех
-  `Pair` данного цикла, в границах `Semester.startDate`…`Semester.endDate`; уже сгенерированные пара+дата
-  пропускаются без ошибки — вызывать повторно безопасно (идемпотентно).
+  **`STUDENT`** может вызывать только для `Pair` своей группы (иначе `422`); `ADMIN`/`TEACHER` — без
+  ограничений. **Не идемпотентно**: если `Lecture` для этой пары+даты уже существует — `422`
+  («уже сгенерирована»), а не тихий пропуск (в отличие от `generate/semester` ниже) — повторный клик
+  в UI на этом пути нужно явно обрабатывать как ошибку, не как no-op.
+- **`POST /generate/semester/{weekScheduleCycleId}`** — генерирует лекции на весь семестр разом, в
+  границах `Semester.startDate`…`Semester.endDate`; уже сгенерированные пара+дата пропускаются без
+  ошибки — вызывать повторно безопасно (идемпотентно). Скоуп по ролям: `ADMIN`/`TEACHER` — по
+  **всем** `Pair` цикла, как раньше; **`STUDENT`** — только по `Pair` **своей группы**, остальные
+  `Pair` цикла молча пропускаются (не 403/422) — то есть студент, вызывая этот эндпоинт, генерирует
+  занятия только для себя/своей группы, даже если цикл общий на несколько групп.
 
 ## Students — `/api/v1/students`
 
