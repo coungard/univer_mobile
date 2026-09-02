@@ -317,23 +317,26 @@ README «Cleartext HTTP» выше) — но как только в проект
 emulator -avd Pixel_10
 # (дождаться, проверяя adb shell getprop sys.boot_completed == 1)
 
-# 2. Собрать и установить (из android/, с воркэраундом по Kotlin):
-cd C:\dev\um\android
-.\gradlew.bat --init-script skip-metadata-check-init.gradle app:installDebug -PreactNativeDevServerPort=8081
-
-# 3. Поднять Metro отдельно и пробросить порты (Metro + Keycloak HTTPS, см. проблему 9)
+# 2. Собрать, установить и запустить одной командой
 cd C:\dev\um
-npx react-native start
-adb reverse tcp:8081 tcp:8081
-adb reverse tcp:8443 tcp:8443
-
-# 4. Запустить приложение
-adb shell am start -n com.univer_mobile/.MainActivity
+npm run android:dev
 ```
 
+`npm run android:dev` (реализован в `android-dev.ps1`) прогоняет все
+шаги ручного рецепта: сборку/установку через `gradlew.bat` напрямую с
+`--init-script skip-metadata-check-init.gradle` (проблема 5), запуск
+Metro в отдельном окне PowerShell (если он ещё не поднят на 8081),
+`adb reverse` для 8081/8443 (проблема 9) и запуск `MainActivity`.
+Безопасно перезапускать сколько угодно раз — Metro не поднимается
+повторно, если уже слушает порт.
+
 `adb reverse` слетает при каждом перезапуске эмулятора (не только
-`gradlew --stop`/переустановке APK) — повторяйте шаг 3 каждый раз
-заново.
+`gradlew --stop`/переустановке APK) — `android-dev.ps1` делает его
+заново при каждом запуске, так что просто перезапускайте
+`npm run android:dev`.
+
+Если нужны отдельные шаги вручную (например, для отладки самого
+скрипта) — они расписаны в `android-dev.ps1` построчно с комментариями.
 
 ## Файлы, связанные с этими фиксами
 
@@ -350,3 +353,13 @@ adb shell am start -n com.univer_mobile/.MainActivity
   сертификату Keycloak, только для debug-сборки (см. проблему 9b/9c).
   Требует переизвлечения `dev_backend_cert.pem`, если бэкенд
   пересоздаст сертификат Keycloak.
+- `android-dev.ps1` — обёртка над рецептом «с нуля» выше, вызывается
+  через `npm run android:dev`. **Важно:** файл должен быть сохранён в
+  UTF-8 **с BOM** — Windows PowerShell 5.1 без BOM неверно определяет
+  кодировку `.ps1` с кириллицей и падает с обманчивой ошибкой парсера
+  (`Missing closing '}' in statement block`) в случайном месте файла,
+  никак не связанном с настоящей причиной. При редактировании скрипта
+  сохраняйте BOM (например, `Set-Content -Encoding utf8` в Windows
+  PowerShell добавляет его автоматически; `System.Text.Encoding]::UTF8`
+  из .NET — тоже, в отличие от многих текстовых редакторов и утилит,
+  которые по умолчанию пишут UTF-8 без BOM).
