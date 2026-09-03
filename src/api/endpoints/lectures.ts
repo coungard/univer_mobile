@@ -12,3 +12,9 @@ export async function getMyLectures(page = 0, size = 200): Promise<Page<LectureD
   });
   return data;
 }
+
+/** `GET /lectures/{id}` — any authenticated role; used by the lecture details screen (ROADMAP.md "Фаза 4"). */
+export async function getLecture(id: string): Promise<LectureDto> {
+  const { data } = await apiClient.get<LectureDto>(`/lectures/${id}`);
+  return data;
+}

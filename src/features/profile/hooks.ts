@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { getDepartment } from '../../api/endpoints/departments';
 import { getFaculty } from '../../api/endpoints/faculties';
 import { getGroup } from '../../api/endpoints/groups';
 import { getProgram } from '../../api/endpoints/programs';
@@ -23,12 +24,30 @@ export function useOwnStudentQuery() {
   });
 }
 
+/**
+ * Resolves an arbitrary teacher id to a `TeacherDto` — used for a lecture's/course's teacher name
+ * (`features/schedule/LectureDetailsScreen`, `features/courses/CourseDetailsScreen`, ROADMAP.md
+ * "Фаза 4"), not just the signed-in user's own profile.
+ */
+export function useTeacherQuery(teacherId: string | undefined) {
+  return useQuery({
+    queryKey: ['teachers', teacherId],
+    queryFn: () => getTeacher(teacherId as string),
+    enabled: teacherId !== undefined,
+  });
+}
+
 export function useOwnTeacherQuery() {
   const id = useOwnUserId();
+  return useTeacherQuery(id ?? undefined);
+}
+
+/** Resolves a course's `departmentId` to a `DepartmentDto` (ROADMAP.md "Фаза 4"). */
+export function useDepartmentQuery(departmentId: string | undefined) {
   return useQuery({
-    queryKey: ['teachers', id],
-    queryFn: () => getTeacher(id as string),
-    enabled: id !== null,
+    queryKey: ['departments', departmentId],
+    queryFn: () => getDepartment(departmentId as string),
+    enabled: departmentId !== undefined,
   });
 }
 

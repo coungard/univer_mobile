@@ -65,3 +65,6 @@ export type ProgramDto = WithRequiredId<components['schemas']['ProgramDto']>;
  * date-range params — see API.md).
  */
 export type LectureDto = WithRequiredId<components['schemas']['LectureDto']>;
+
+/** `GET /courses`/`GET /courses/{id}` — a course a lecture belongs to (ROADMAP.md "Фаза 4"). */
+export type CourseDto = WithRequiredId<components['schemas']['CourseDto']>;

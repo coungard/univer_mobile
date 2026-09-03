@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getMyLectures } from '../../api/endpoints/lectures';
+import { getLecture, getMyLectures } from '../../api/endpoints/lectures';
 
 /**
  * Fetches the student's full lecture list once (`GET /lectures/me`, ~a semester's worth — see
@@ -11,5 +11,13 @@ export function useMyLecturesQuery() {
     queryKey: ['lectures', 'me'],
     queryFn: () => getMyLectures(),
     select: (page) => page.content,
+  });
+}
+
+/** `GET /lectures/{id}` — powers `LectureDetailsScreen` (ROADMAP.md "Фаза 4"). */
+export function useLectureQuery(lectureId: string) {
+  return useQuery({
+    queryKey: ['lectures', lectureId],
+    queryFn: () => getLecture(lectureId),
   });
 }
