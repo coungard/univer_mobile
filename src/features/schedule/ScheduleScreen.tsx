@@ -5,9 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LectureDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
 import { StudentTabScreenProps } from '../../navigation/types';
-import { useOwnStudentQuery } from '../profile/hooks';
+import { useGroupAcademicPathQuery, useOwnStudentQuery } from '../profile/hooks';
 import { dayName, formatDayDate, formatTime, formatWeekRangeLabel, getWeek, isSameDay } from './dateUtils';
-import { useMyLecturesQuery } from './hooks';
+import { useGroupPairsQuery, useMyLecturesQuery, useWeekScheduleCycleQuery } from './hooks';
 
 const TODAY = new Date();
 
@@ -23,6 +23,14 @@ export function ScheduleScreen({ navigation }: Props) {
   const student = useOwnStudentQuery();
   const lectures = useMyLecturesQuery();
   const [weekOffset, setWeekOffset] = useState(0);
+
+  // Only actually used once the schedule turns out empty (see the empty-state branch below), but
+  // called unconditionally — same reasoning as `StudentProfileScreen`'s `useGroupAcademicPathQuery`
+  // call: each hook already no-ops via `enabled` when its id is undefined, so there's nothing wrong
+  // with paying for it even on the (far more common) non-empty path, and it keeps hook order stable.
+  const academicPath = useGroupAcademicPathQuery(student.data?.groupId);
+  const cycle = useWeekScheduleCycleQuery(academicPath.group?.semesterId);
+  const pairs = useGroupPairsQuery(student.data?.groupId);
 
   // This tab's `Tab.Navigator` renders with `headerShown: false`, so nothing else accounts for the
   // status bar — without this, the week-navigation buttons render partly underneath it, where taps
@@ -68,16 +76,71 @@ export function ScheduleScreen({ navigation }: Props) {
 
   if ((lectures.data ?? []).length === 0) {
     const hasGroup = student.data?.groupId != null;
+
+    // Фаза 2: без группы вообще нет смысла смотреть на цикл/пары — этот кейс не меняется
+    // «студенческой генерацией расписания» из UI_UX.md.
+    if (!hasGroup) {
+      return (
+        <View style={styles.center}>
+          <EmptyState
+            title="Расписание пока пусто"
+            description="Группа ещё не назначена — обратитесь к администратору. Расписание появится, как только вас включат в группу."
+          />
+        </View>
+      );
+    }
+
+    if (academicPath.isLoading || cycle.isLoading || pairs.isLoading) {
+      return (
+        <View style={styles.center}>
+          <Text>Загрузка расписания…</Text>
+        </View>
+      );
+    }
+
+    // `UI_UX.md` раздел 6, «Цикл на семестр не создан» — блокер вне контроля студента.
+    if (!cycle.data) {
+      return (
+        <View style={styles.center}>
+          <EmptyState
+            title="Расписание пока пусто"
+            description="Расписание семестра ещё не открыто администратором — загляните позже."
+          />
+        </View>
+      );
+    }
+
+    const hasOwnPairs = (pairs.data ?? []).length > 0;
+
+    // «Цикл в AGREED, Pair моей группы нет» — окно самостоятельного заполнения уже закрыто, CTA не
+    // показываем (UI_UX.md раздел 6).
+    if (!hasOwnPairs && cycle.data.status === 'AGREED') {
+      return (
+        <View style={styles.center}>
+          <EmptyState
+            title="Расписание пока пусто"
+            description="Расписание группы не заполнено и уже согласовано — обратитесь к администратору."
+          />
+        </View>
+      );
+    }
+
+    // Оставшиеся два случая раздела 6 — «Pair моей группы нет» (цикл в DRAFT) и «Pair заполнены,
+    // Lecture нет» — оба ведут на один и тот же экран «Расписание группы»: там же и форма
+    // заполнения, и кнопка «Сгенерировать занятия на семестр» (UI_UX.md раздел 4).
     return (
       <View style={styles.center}>
         <EmptyState
           title="Расписание пока пусто"
           description={
-            hasGroup
-              ? 'Для вашей группы ещё не сгенерированы занятия. Загляните позже.'
-              : 'Группа ещё не назначена — обратитесь к администратору. Расписание появится, как только вас включат в группу.'
+            hasOwnPairs
+              ? 'Занятия по вашему расписанию ещё не сгенерированы.'
+              : 'Заполните расписание своей группы, и по нему можно будет сгенерировать занятия.'
           }
         />
+        <Button mode="contained" onPress={() => navigation.navigate('GroupSchedule')}>
+          {hasOwnPairs ? 'Перейти к генерации занятий' : 'Заполнить расписание группы'}
+        </Button>
       </View>
     );
   }
@@ -93,6 +156,13 @@ export function ScheduleScreen({ navigation }: Props) {
           След. →
         </Button>
       </View>
+
+      {/* Постоянная, а не только «пока пусто», точка входа — расписание группы можно донабрать и
+          позже (например, добавить пару на вторую половину семестра), не только при первом заходе
+          с чистого листа (UI_UX.md раздел 4). */}
+      <Button compact style={styles.manageLink} onPress={() => navigation.navigate('GroupSchedule')}>
+        Расписание группы →
+      </Button>
 
       <ScrollView
         contentContainerStyle={styles.days}
@@ -149,6 +219,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingTop: 8,
+  },
+  manageLink: {
+    alignSelf: 'flex-end',
+    marginRight: 4,
   },
   days: {
     padding: 16,
