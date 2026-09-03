@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LectureDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
 import { StudentTabScreenProps } from '../../navigation/types';
@@ -22,6 +23,12 @@ export function ScheduleScreen({ navigation }: Props) {
   const student = useOwnStudentQuery();
   const lectures = useMyLecturesQuery();
   const [weekOffset, setWeekOffset] = useState(0);
+
+  // This tab's `Tab.Navigator` renders with `headerShown: false`, so nothing else accounts for the
+  // status bar — without this, the week-navigation buttons render partly underneath it, where taps
+  // land on the system status bar instead of the app (confirmed on-device, not just a visual
+  // overlap; same root cause as `features/courses/CoursesScreen`'s department filter).
+  const insets = useSafeAreaInsets();
 
   const week = useMemo(() => getWeek(weekOffset, TODAY), [weekOffset]);
 
@@ -76,7 +83,7 @@ export function ScheduleScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.weekHeader}>
         <Button compact onPress={() => setWeekOffset((o) => o - 1)}>
           ← Пред.

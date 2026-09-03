@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { Button, Card, Chip, Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CourseDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
 import { StudentTabScreenProps } from '../../navigation/types';
@@ -25,9 +26,15 @@ export function CoursesScreen({ navigation }: Props) {
 
   const courseList = useMemo(() => courses.data ?? [], [courses.data]);
 
+  // This tab's `Tab.Navigator` renders with `headerShown: false`, so nothing else accounts for the
+  // status bar — without this, the department filter row (the topmost, and only tappable-at-the-very-
+  // top, content on this screen) renders partly underneath it, where taps land on the system status
+  // bar instead of the app (confirmed on-device, not just a visual overlap).
+  const insets = useSafeAreaInsets();
+
   if (courses.isLoading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { paddingTop: insets.top }]}>
         <Text>Загрузка курсов…</Text>
       </View>
     );
@@ -35,7 +42,7 @@ export function CoursesScreen({ navigation }: Props) {
 
   if (courses.isError) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { paddingTop: insets.top }]}>
         <EmptyState title="Не удалось загрузить курсы" description="Проверьте подключение к сети." />
         <Button mode="outlined" onPress={() => courses.refetch()}>
           Повторить
@@ -45,12 +52,13 @@ export function CoursesScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {departments.length > 0 ? (
         <FlatList
           horizontal
           data={departments}
           keyExtractor={(d) => d.id as string}
+          extraData={selectedDepartmentId}
           contentContainerStyle={styles.filterRow}
           showsHorizontalScrollIndicator={false}
           renderItem={({ item }) => {
