@@ -1,21 +1,24 @@
 import React, { useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { LectureDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
+import { StudentTabScreenProps } from '../../navigation/types';
 import { useOwnStudentQuery } from '../profile/hooks';
 import { dayName, formatDayDate, formatTime, formatWeekRangeLabel, getWeek, isSameDay } from './dateUtils';
 import { useMyLecturesQuery } from './hooks';
 
 const TODAY = new Date();
 
+type Props = StudentTabScreenProps<'Schedule'>;
+
 /**
  * Таб «Расписание» (ROADMAP.md "Фаза 3"). Недельная сетка день × лекции на основе
  * `GET /lectures/me`: переключение недель вперёд/назад, выделение текущего дня, pull-to-refresh,
  * и пустое состояние — как для случая «нет группы» (Фаза 2), так и для «группа есть, но лекций
- * ещё не сгенерировали».
+ * ещё не сгенерировали». Тап по занятию открывает `LectureDetailsScreen` (Фаза 4).
  */
-export function ScheduleScreen() {
+export function ScheduleScreen({ navigation }: Props) {
   const student = useOwnStudentQuery();
   const lectures = useMyLecturesQuery();
   const [weekOffset, setWeekOffset] = useState(0);
@@ -101,13 +104,17 @@ export function ScheduleScreen() {
                 <Text style={styles.emptyDay}>Нет занятий</Text>
               ) : (
                 dayLectures.map((lecture) => (
-                  <View key={lecture.id} style={styles.lectureRow}>
+                  <Pressable
+                    key={lecture.id}
+                    style={styles.lectureRow}
+                    onPress={() => navigation.navigate('LectureDetails', { lectureId: lecture.id })}
+                  >
                     <Text style={styles.lectureTime}>{formatTime(new Date(lecture.scheduledTime))}</Text>
                     <View style={styles.lectureInfo}>
                       <Text variant="bodyMedium">{lecture.title}</Text>
                       {lecture.room ? <Text style={styles.lectureRoom}>ауд. {lecture.room}</Text> : null}
                     </View>
-                  </View>
+                  </Pressable>
                 ))
               )}
             </View>
