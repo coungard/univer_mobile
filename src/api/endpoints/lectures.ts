@@ -18,3 +18,15 @@ export async function getLecture(id: string): Promise<LectureDto> {
   const { data } = await apiClient.get<LectureDto>(`/lectures/${id}`);
   return data;
 }
+
+/**
+ * `POST /lectures/generate/semester/{weekScheduleCycleId}` — generates every still-missing `Lecture`
+ * for the cycle's `Pair`s across the semester's date range; idempotent (already-generated pair+date
+ * combinations are silently skipped, see API.md). A `STUDENT` caller is scoped server-side to `Pair`s
+ * of their own group — other groups' `Pair`s in the same cycle are silently skipped, not an error
+ * (`UI_UX.md` раздел 0).
+ */
+export async function generateSemesterLectures(weekScheduleCycleId: string): Promise<LectureDto[]> {
+  const { data } = await apiClient.post<LectureDto[]>(`/lectures/generate/semester/${weekScheduleCycleId}`);
+  return data;
+}

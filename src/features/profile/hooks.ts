@@ -42,6 +42,19 @@ export function useOwnTeacherQuery() {
   return useTeacherQuery(id ?? undefined);
 }
 
+/**
+ * Resolves an arbitrary `semesterId` to a `SemesterDto` — used for the semester's date range when
+ * previewing/generating lectures from a group's schedule (`features/schedule/GroupScheduleScreen`,
+ * `UI_UX.md` раздел 4), not just as an internal step of `useGroupAcademicPathQuery` below.
+ */
+export function useSemesterQuery(semesterId: string | undefined) {
+  return useQuery({
+    queryKey: ['semesters', semesterId],
+    queryFn: () => getSemester(semesterId as string),
+    enabled: semesterId !== undefined,
+  });
+}
+
 /** Resolves a course's `departmentId` to a `DepartmentDto` (ROADMAP.md "Фаза 4"). */
 export function useDepartmentQuery(departmentId: string | undefined) {
   return useQuery({

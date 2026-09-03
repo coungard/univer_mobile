@@ -68,3 +68,34 @@ export type LectureDto = WithRequiredId<components['schemas']['LectureDto']>;
 
 /** `GET /courses`/`GET /courses/{id}` — a course a lecture belongs to (ROADMAP.md "Фаза 4"). */
 export type CourseDto = WithRequiredId<components['schemas']['CourseDto']>;
+
+/**
+ * Recurring class template inside a semester's `WeekScheduleCycle` — `Lecture` (above) is generated
+ * from these (`POST /lectures/generate*`). See `UI_UX.md` "генерация расписания/лекций «на ходу»":
+ * a `STUDENT` can create/edit/delete `Pair`s for their own group while the cycle is `DRAFT`.
+ */
+export type PairDto = WithRequiredId<components['schemas']['PairDto']>;
+/** `POST`/`PUT /pairs` body — `id` is server-assigned, never sent by the client. */
+export type PairInput = Omit<components['schemas']['PairDto'], 'id'>;
+/** `PairDto.dayOfWeek` de-facto only accepts `MONDAY`…`FRIDAY` — `SATURDAY`/`SUNDAY` is rejected as `422` (API.md). */
+export type Weekday = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY';
+export type WeekParity = components['schemas']['PairDto']['weekParity'];
+
+/** Container for a semester's `Pair` templates — `status` gates who may still edit them. */
+export type WeekScheduleCycleDto = WithRequiredId<components['schemas']['WeekScheduleCycleDto']>;
+export type WeekScheduleCycleStatus = NonNullable<components['schemas']['WeekScheduleCycleDto']['status']>;
+
+/**
+ * `GET /bell-schedule-entries/...` — "pair number -> start/end time" reference, per university.
+ *
+ * `startTime`/`endTime` are narrowed from the generated `{ hour, minute, second, nano }` object
+ * shape to `string`: springdoc describes `java.time.LocalTime` as that decomposed object, but the
+ * backend actually serializes it as `"09:00:00"` (API.md "Даты/время") — the generated schema is
+ * wrong here, not the wire format, so trust API.md over `schema.ts` for this one field shape.
+ */
+export type BellScheduleEntryDto = WithRequiredId<
+  Omit<components['schemas']['BellScheduleEntryDto'], 'startTime' | 'endTime'> & {
+    startTime: string;
+    endTime: string;
+  }
+>;

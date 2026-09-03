@@ -33,6 +33,10 @@ export type StudentStackParamList = {
   Tabs: undefined;
   LectureDetails: { lectureId: string };
   CourseDetails: { courseId: string };
+  /** «Расписание группы» — заполнение `Pair` и генерация `Lecture` (`UI_UX.md` раздел 4). */
+  GroupSchedule: undefined;
+  /** Add-`Pair` when `pairId` is omitted, edit that `Pair` otherwise. */
+  PairForm: { pairId?: string } | undefined;
 };
 
 /** Screen props for a tab screen that also needs to navigate into the parent `StudentStack`. */

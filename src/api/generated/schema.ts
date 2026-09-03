@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/api/v1/week-schedule-cycles/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Изменить статус согласования цикла (DRAFT/AGREED)
+         * @description Пока цикл в DRAFT, Pair цикла может править ADMIN или STUDENT своей группы; в AGREED — только ADMIN. Переход разрешён в обе стороны.
+         */
+        put: operations["updateStatus"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/universities/{id}": {
         parameters: {
             query?: never;
@@ -125,10 +145,16 @@ export interface paths {
         };
         /** Получить пару по ID */
         get: operations["getPairById"];
-        /** Обновить пару */
+        /**
+         * Обновить пару
+         * @description ADMIN — без ограничений. STUDENT — только для своей группы и только пока цикл расписания в статусе DRAFT (проверяется и для текущего, и для нового цикла/группы).
+         */
         put: operations["updatePair"];
         post?: never;
-        /** Удалить пару */
+        /**
+         * Удалить пару
+         * @description ADMIN — без ограничений. STUDENT — только для своей группы и только пока цикл расписания в статусе DRAFT.
+         */
         delete: operations["deletePair"];
         options?: never;
         head?: never;
@@ -202,7 +228,7 @@ export interface paths {
         /** Получить зачисление по ID студента и ID курса */
         get: operations["getEnrollment"];
         /** Изменить статус зачисления (COMPLETED/DROPPED/ACTIVE) */
-        put: operations["updateStatus"];
+        put: operations["updateStatus_1"];
         post?: never;
         /** Отчислить студента с курса */
         delete: operations["unenroll"];
@@ -423,7 +449,10 @@ export interface paths {
         /** Получить пары с пагинацией */
         get: operations["getPairs"];
         put?: never;
-        /** Создать пару */
+        /**
+         * Создать пару
+         * @description ADMIN — без ограничений. STUDENT — только для своей группы и только пока цикл расписания в статусе DRAFT (см. WeekScheduleCycles).
+         */
         post: operations["createPair"];
         delete?: never;
         options?: never;
@@ -460,7 +489,7 @@ export interface paths {
         put?: never;
         /**
          * Сгенерировать лекцию из шаблона Pair
-         * @description Курс, преподаватель и группы копируются из шаблона циклического расписания; дата должна соответствовать дню недели и чётности недели пары
+         * @description Курс, преподаватель и группы копируются из шаблона циклического расписания; дата должна соответствовать дню недели и чётности недели пары. ADMIN/TEACHER — без ограничений; STUDENT — только если Pair принадлежит его группе.
          */
         post: operations["generateFromPair"];
         delete?: never;
@@ -479,8 +508,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Сгенерировать лекции на весь семестр из всех пар цикла расписания
-         * @description Для каждой Pair цикла перебираются все подходящие по дню недели и чётности недели даты в границах [Semester.startDate, Semester.endDate]; уже сгенерированные пара+дата пропускаются без ошибки — операцию безопасно вызывать повторно.
+         * Сгенерировать лекции на весь семестр из пар цикла расписания
+         * @description Для каждой подходящей Pair цикла перебираются все подходящие по дню недели и чётности недели даты в границах [Semester.startDate, Semester.endDate]; уже сгенерированные пара+дата пропускаются без ошибки — операцию безопасно вызывать повторно. ADMIN/TEACHER — по всем Pair цикла, как раньше; STUDENT — только по Pair своей группы, остальные Pair цикла пропускаются молча.
          */
         post: operations["generateSemesterLectures"];
         delete?: never;
@@ -1033,6 +1062,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        UpdateWeekScheduleCycleStatusRequest: {
+            /** @enum {string} */
+            status: "DRAFT" | "AGREED";
+        };
+        WeekScheduleCycleDto: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            semesterId: string;
+            /** @enum {string} */
+            status?: "DRAFT" | "AGREED";
+        };
         /** @description Ввод адреса: либо ID существующего, либо данные для создания */
         AddressDto: {
             /**
@@ -1108,6 +1149,23 @@ export interface components {
             id?: string;
             name?: string;
             description?: string;
+            /**
+             * @description ФИО ректора
+             * @example Месхи Бесарион Чохоевич
+             */
+            rector?: string;
+            /**
+             * Format: int32
+             * @description Год основания
+             * @example 1930
+             */
+            foundingYear?: number;
+            /**
+             * Format: int32
+             * @description Число студентов
+             * @example 20000
+             */
+            studentCount?: number;
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
@@ -1293,12 +1351,6 @@ export interface components {
             startTime: components["schemas"]["LocalTime"];
             endTime: components["schemas"]["LocalTime"];
         };
-        WeekScheduleCycleDto: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            semesterId: string;
-        };
         RegisterTeacherRequest: {
             username: string;
             firstname: string;
@@ -1346,11 +1398,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageableObject: {
@@ -1361,8 +1413,8 @@ export interface components {
             pageSize?: number;
             /** Format: int32 */
             pageNumber?: number;
-            unpaged?: boolean;
             paged?: boolean;
+            unpaged?: boolean;
         };
         SortObject: {
             direction?: string;
@@ -1382,11 +1434,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         ContentDisposition: {
@@ -1415,15 +1467,50 @@ export interface components {
              */
             readDate?: string;
             inline?: boolean;
-            attachment?: boolean;
             formData?: boolean;
+            attachment?: boolean;
         };
         ErrorResponse: {
             headers?: {
+                /** Format: int64 */
+                ifModifiedSince?: number;
+                contentType?: components["schemas"]["MediaType"];
+                /** Format: int64 */
+                contentLength?: number;
+                connection?: string[];
+                acceptLanguageAsLocales?: {
+                    language?: string;
+                    displayName?: string;
+                    country?: string;
+                    variant?: string;
+                    script?: string;
+                    unicodeLocaleAttributes?: string[];
+                    unicodeLocaleKeys?: string[];
+                    displayLanguage?: string;
+                    displayScript?: string;
+                    displayCountry?: string;
+                    displayVariant?: string;
+                    extensionKeys?: string[];
+                    iso3Language?: string;
+                    iso3Country?: string;
+                }[];
+                accessControlAllowOrigin?: string;
+                accessControlExposeHeaders?: string[];
+                /** Format: int64 */
+                accessControlMaxAge?: number;
+                accessControlRequestHeaders?: string[];
+                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
+                accessControlAllowCredentials?: boolean;
+                contentDisposition?: components["schemas"]["ContentDisposition"];
+                accessControlAllowHeaders?: string[];
+                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
+                /** Format: int64 */
+                ifUnmodifiedSince?: number;
                 empty?: boolean;
                 /** Format: uri */
                 location?: string;
                 host?: {
+                    hostString?: string;
                     address?: {
                         hostAddress?: string;
                         /** Format: byte */
@@ -1445,7 +1532,6 @@ export interface components {
                     port?: number;
                     unresolved?: boolean;
                     hostName?: string;
-                    hostString?: string;
                 };
                 all?: {
                     [key: string]: string;
@@ -1454,16 +1540,7 @@ export interface components {
                 lastModified?: number;
                 /** Format: int64 */
                 date?: number;
-                /** Format: int64 */
-                contentLength?: number;
-                accept?: components["schemas"]["MediaType"][];
-                /** Format: int64 */
-                ifModifiedSince?: number;
-                contentType?: components["schemas"]["MediaType"];
-                connection?: string[];
                 range?: components["schemas"]["HttpRange"][];
-                allow?: components["schemas"]["HttpMethod"][];
-                contentDisposition?: components["schemas"]["ContentDisposition"];
                 acceptCharset?: string[];
                 contentLanguage?: {
                     language?: string;
@@ -1481,8 +1558,10 @@ export interface components {
                     iso3Language?: string;
                     iso3Country?: string;
                 };
+                allow?: components["schemas"]["HttpMethod"][];
                 cacheControl?: string;
                 etag?: string;
+                accept?: components["schemas"]["MediaType"][];
                 acceptPatch?: components["schemas"]["MediaType"][];
                 acceptLanguage?: {
                     range?: string;
@@ -1490,61 +1569,34 @@ export interface components {
                     weight?: number;
                 }[];
                 basicAuth?: string;
-                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
-                accessControlAllowOrigin?: string;
-                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
-                accessControlAllowHeaders?: string[];
-                accessControlRequestHeaders?: string[];
-                /** Format: int64 */
-                accessControlMaxAge?: number;
-                accessControlAllowCredentials?: boolean;
-                accessControlExposeHeaders?: string[];
-                acceptLanguageAsLocales?: {
-                    language?: string;
-                    displayName?: string;
-                    country?: string;
-                    variant?: string;
-                    script?: string;
-                    unicodeLocaleAttributes?: string[];
-                    unicodeLocaleKeys?: string[];
-                    displayLanguage?: string;
-                    displayScript?: string;
-                    displayCountry?: string;
-                    displayVariant?: string;
-                    extensionKeys?: string[];
-                    iso3Language?: string;
-                    iso3Country?: string;
-                }[];
-                /** Format: int64 */
-                ifUnmodifiedSince?: number;
-                pragma?: string;
+                bearerAuth?: string;
                 ifNoneMatch?: string[];
+                vary?: string[];
+                ifMatch?: string[];
+                pragma?: string;
+                origin?: string;
                 /** Format: int64 */
                 expires?: number;
-                bearerAuth?: string;
-                ifMatch?: string[];
-                origin?: string;
-                vary?: string[];
                 upgrade?: string;
             } & {
                 [key: string]: string[];
             };
-            statusCode?: components["schemas"]["HttpStatusCode"];
             body?: components["schemas"]["ProblemDetail"];
-            titleMessageCode?: string;
-            detailMessageArguments?: Record<string, never>[];
+            statusCode?: components["schemas"]["HttpStatusCode"];
             detailMessageCode?: string;
+            detailMessageArguments?: Record<string, never>[];
+            titleMessageCode?: string;
             typeMessageCode?: string;
         };
         HttpMethod: Record<string, never>;
         HttpRange: Record<string, never>;
         HttpStatusCode: {
             error?: boolean;
-            is5xxServerError?: boolean;
             is4xxClientError?: boolean;
-            is1xxInformational?: boolean;
+            is5xxServerError?: boolean;
             is3xxRedirection?: boolean;
             is2xxSuccessful?: boolean;
+            is1xxInformational?: boolean;
         };
         MediaType: {
             type?: string;
@@ -1584,11 +1636,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageStudyYearDto: {
@@ -1602,11 +1654,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageStudentDto: {
@@ -1620,11 +1672,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageSemesterDto: {
@@ -1638,11 +1690,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageProgramDto: {
@@ -1656,11 +1708,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PagePairDto: {
@@ -1674,11 +1726,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageLectureDto: {
@@ -1692,11 +1744,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageGroupDto: {
@@ -1710,11 +1762,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageFacultyDto: {
@@ -1728,11 +1780,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageEnrollmentDto: {
@@ -1746,11 +1798,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageDepartmentDto: {
@@ -1764,11 +1816,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageCourseDto: {
@@ -1782,11 +1834,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageBellScheduleEntryDto: {
@@ -1800,11 +1852,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageLectureAttendanceDto: {
@@ -1818,11 +1870,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         AttendanceStatsDto: {
@@ -1842,6 +1894,32 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    updateStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWeekScheduleCycleStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["WeekScheduleCycleDto"];
+                };
+            };
+        };
+    };
     getUniversityById: {
         parameters: {
             query?: never;
@@ -2558,7 +2636,7 @@ export interface operations {
             };
         };
     };
-    updateStatus: {
+    updateStatus_1: {
         parameters: {
             query?: never;
             header?: never;
