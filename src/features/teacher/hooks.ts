@@ -13,7 +13,8 @@ import {
   getLecturesByCourse,
 } from '../../api/endpoints/lectures';
 import { getPairs } from '../../api/endpoints/pairs';
-import { GenerateLectureRequest, GroupDto, LectureDto, LectureInput, Page } from '../../api/types';
+import { fetchAllPages } from '../../api/pagination';
+import { GenerateLectureRequest, GroupDto, LectureInput } from '../../api/types';
 import { useOwnUserId } from '../profile/hooks';
 
 /**
@@ -35,8 +36,7 @@ export function useTeacherLecturesQuery(courseIds: string[]) {
   const results = useQueries({
     queries: courseIds.map((courseId) => ({
       queryKey: ['lectures', 'course', courseId],
-      queryFn: () => getLecturesByCourse(courseId),
-      select: (page: Page<LectureDto>) => page.content,
+      queryFn: () => fetchAllPages((page) => getLecturesByCourse(courseId, page)),
     })),
   });
 
@@ -65,8 +65,7 @@ export function useOwnPairsQuery() {
   const teacherId = useOwnUserId();
   const pairs = useQuery({
     queryKey: ['pairs', 'all'],
-    queryFn: () => getPairs(),
-    select: (page) => page.content,
+    queryFn: () => fetchAllPages((page) => getPairs(page)),
   });
   return {
     ...pairs,
@@ -138,14 +137,13 @@ export interface RosterEntry {
 export function useLectureRosterQuery(lectureId: string, courseId: string | undefined) {
   const enrollments = useQuery({
     queryKey: ['enrollments', 'course', courseId],
-    queryFn: () => getCourseEnrollments(courseId as string),
-    select: (page) => page.content.filter((enrollment) => enrollment.status === 'ACTIVE'),
+    queryFn: () => fetchAllPages((page) => getCourseEnrollments(courseId as string, page)),
+    select: (list) => list.filter((enrollment) => enrollment.status === 'ACTIVE'),
     enabled: courseId !== undefined,
   });
   const attendance = useQuery({
     queryKey: ['attendance', 'lecture', lectureId],
-    queryFn: () => getLectureAttendance(lectureId),
-    select: (page) => page.content,
+    queryFn: () => fetchAllPages((page) => getLectureAttendance(lectureId, page)),
   });
 
   const attendedByStudent = new Map((attendance.data ?? []).map((mark) => [mark.studentId, mark.attended ?? false]));

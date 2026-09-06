@@ -6,7 +6,7 @@ import { PairDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentStackScreenProps } from '../../navigation/types';
-import { useCoursesQuery } from '../courses/hooks';
+import { useAllCoursesQuery } from '../courses/hooks';
 import { useGroupAcademicPathQuery, useOwnStudentQuery, useSemesterQuery } from '../profile/hooks';
 import { DAY_OPTIONS, PARITY_OPTIONS } from './PairFormScreen';
 import {
@@ -36,7 +36,7 @@ export function GroupScheduleScreen({ navigation }: Props) {
   const semester = useSemesterQuery(academicPath.group?.semesterId);
   const cycle = useWeekScheduleCycleQuery(academicPath.group?.semesterId);
   const pairs = useGroupPairsQuery(student.data?.groupId);
-  const courses = useCoursesQuery(null);
+  const courses = useAllCoursesQuery();
   const bellSchedule = useBellScheduleEntriesQuery(student.data?.universityId);
 
   const deletePair = useDeletePairMutation(student.data?.groupId);

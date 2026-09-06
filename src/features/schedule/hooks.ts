@@ -3,18 +3,20 @@ import { getBellScheduleEntriesByUniversity } from '../../api/endpoints/bellSche
 import { generateSemesterLectures, getLecture, getMyLectures } from '../../api/endpoints/lectures';
 import { createPair, deletePair, getPair, getPairsByGroup, updatePair } from '../../api/endpoints/pairs';
 import { getWeekScheduleCycleBySemester } from '../../api/endpoints/weekScheduleCycles';
+import { fetchAllPages } from '../../api/pagination';
 import { PairInput } from '../../api/types';
 
 /**
- * Fetches the student's full lecture list once (`GET /lectures/me`, ~a semester's worth — see
- * `api/endpoints/lectures.ts`); week-by-week filtering happens client-side in `ScheduleScreen`
- * against this single cached result, so switching weeks doesn't refetch.
+ * Fetches the student's *complete* lecture list (`GET /lectures/me`, every page — a single page
+ * capped at a couple hundred would silently drop the most recent lectures for a student who has
+ * accumulated more than that across their studies, since the backend returns them ascending by
+ * `scheduledTime`; see `api/pagination.ts`). Week-by-week filtering happens client-side in
+ * `ScheduleScreen` against this single cached result, so switching weeks doesn't refetch.
  */
 export function useMyLecturesQuery() {
   return useQuery({
     queryKey: ['lectures', 'me'],
-    queryFn: () => getMyLectures(),
-    select: (page) => page.content,
+    queryFn: () => fetchAllPages((page) => getMyLectures(page)),
   });
 }
 
@@ -44,8 +46,7 @@ export function useWeekScheduleCycleQuery(semesterId: string | undefined) {
 export function useGroupPairsQuery(groupId: string | undefined) {
   return useQuery({
     queryKey: ['pairs', 'group', groupId],
-    queryFn: () => getPairsByGroup(groupId as string),
-    select: (page) => page.content,
+    queryFn: () => fetchAllPages((page) => getPairsByGroup(groupId as string, page)),
     enabled: groupId !== undefined,
   });
 }

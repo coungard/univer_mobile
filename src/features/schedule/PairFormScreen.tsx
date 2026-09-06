@@ -8,7 +8,7 @@ import { PairInput, Weekday, WeekParity } from '../../api/types';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { SelectField } from '../../components/SelectField';
 import { StudentStackScreenProps } from '../../navigation/types';
-import { useCoursesQuery } from '../courses/hooks';
+import { useAllCoursesQuery } from '../courses/hooks';
 import { useGroupAcademicPathQuery, useOwnStudentQuery } from '../profile/hooks';
 import {
   useBellScheduleEntriesQuery,
@@ -52,7 +52,7 @@ export function PairFormScreen({ route, navigation }: Props) {
   const academicPath = useGroupAcademicPathQuery(student.data?.groupId);
   const cycle = useWeekScheduleCycleQuery(academicPath.group?.semesterId);
   const existingPair = usePairQuery(pairId);
-  const courses = useCoursesQuery(null);
+  const courses = useAllCoursesQuery();
   const bellSchedule = useBellScheduleEntriesQuery(student.data?.universityId);
 
   const createPair = useCreatePairMutation(student.data?.groupId);

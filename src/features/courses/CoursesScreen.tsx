@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
-import { Card, Chip, Text } from 'react-native-paper';
+import { ActivityIndicator, Card, Chip, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CourseDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
@@ -85,6 +85,14 @@ export function CoursesScreen({ navigation }: Props) {
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={courses.isRefetching} onRefresh={() => courses.refetch()} />}
         ListEmptyComponent={<EmptyState title="Курсов пока нет" description="Список пуст для выбранного фильтра." />}
+        // Infinite scroll (ROADMAP.md "Фаза 8"): `useCoursesQuery` is a real paginated query now, so
+        // reaching the end just asks it for the next page instead of the catalogue being silently
+        // capped at whatever fit in one request.
+        onEndReachedThreshold={0.5}
+        onEndReached={() => {
+          if (courses.hasNextPage && !courses.isFetchingNextPage) courses.fetchNextPage();
+        }}
+        ListFooterComponent={courses.isFetchingNextPage ? <ActivityIndicator style={styles.footerLoader} /> : null}
         renderItem={({ item }: { item: CourseDto }) => (
           <Card style={styles.card} onPress={() => navigation.navigate('CourseDetails', { courseId: item.id })}>
             <Card.Content>
@@ -132,5 +140,8 @@ const styles = StyleSheet.create({
   description: {
     marginTop: 4,
     opacity: 0.7,
+  },
+  footerLoader: {
+    marginVertical: 16,
   },
 });
