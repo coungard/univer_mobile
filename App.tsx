@@ -11,7 +11,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
-import { paperTheme } from './src/theme/paperTheme';
+import { paperDarkTheme, paperLightTheme } from './src/theme/paperTheme';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,12 +24,13 @@ const queryClient = new QueryClient({
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
+  const theme = isDarkMode ? paperDarkTheme : paperLightTheme;
 
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <PaperProvider theme={paperTheme}>
+          <PaperProvider theme={theme}>
             <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
             <RootNavigator />
           </PaperProvider>
