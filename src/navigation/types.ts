@@ -49,3 +49,30 @@ export type StudentStackScreenProps<T extends keyof StudentStackParamList> = Nat
   StudentStackParamList,
   T
 >;
+
+/** Bottom tabs for the teacher experience (ROADMAP.md "Фаза 6"). */
+export type TeacherTabParamList = {
+  Profile: undefined;
+  Courses: undefined;
+  Lectures: undefined;
+};
+
+/** Native stack wrapping `TeacherTabParamList`, same reasoning as `StudentStackParamList` above. */
+export type TeacherStackParamList = {
+  Tabs: undefined;
+  LectureDetails: { lectureId: string };
+  /** Manual `POST /lectures` (no source `Pair`). */
+  LectureForm: undefined;
+  /** `POST /lectures/generate` for one `Pair` template — pick a date. */
+  GenerateLecture: { pairId: string };
+};
+
+export type TeacherTabScreenProps<T extends keyof TeacherTabParamList> = CompositeScreenProps<
+  BottomTabScreenProps<TeacherTabParamList, T>,
+  NativeStackScreenProps<TeacherStackParamList>
+>;
+
+export type TeacherStackScreenProps<T extends keyof TeacherStackParamList> = NativeStackScreenProps<
+  TeacherStackParamList,
+  T
+>;

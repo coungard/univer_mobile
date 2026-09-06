@@ -3,19 +3,19 @@ import { StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { useAuth } from '../../auth/useAuth';
 import { StudentStack } from '../../navigation/StudentStack';
-import { TeacherProfileScreen } from './TeacherProfileScreen';
+import { TeacherStack } from '../../navigation/TeacherStack';
 
 /**
- * Post-login entry point (`AppStack`'s `Home`). Renders role-specific content — the student gets
- * the real tab+stack structure (`StudentStack`, ROADMAP.md "Фаза 3": Профиль/Расписание, "Фаза 4":
- * детали лекции/курса поверх табов); Teacher/Admin still get a single screen each until Фаза 6/7
- * build out their own modules.
+ * Post-login entry point (`AppStack`'s `Home`). Renders role-specific content — the student and
+ * teacher each get their own tab+stack structure (`StudentStack`/`TeacherStack`, ROADMAP.md "Фаза 3":
+ * Профиль/Расписание, "Фаза 4": детали лекции/курса, "Фаза 6": модуль преподавателя); Admin still
+ * gets a placeholder screen until Фаза 7 builds out that module.
  */
 export function ProfileScreen() {
   const { role, claims, logout } = useAuth();
 
   if (role === 'STUDENT') return <StudentStack />;
-  if (role === 'TEACHER') return <TeacherProfileScreen />;
+  if (role === 'TEACHER') return <TeacherStack />;
 
   // ADMIN (or an unexpected/missing role) — no Student/Teacher entity on the backend to show;
   // the admin module itself is ROADMAP.md "Фаза 7".

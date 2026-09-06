@@ -99,3 +99,31 @@ export type BellScheduleEntryDto = WithRequiredId<
     endTime: string;
   }
 >;
+
+/**
+ * A single `POST /attendance` mark — `GET /attendance/student/{id}` (ROADMAP.md "Фаза 5"). Not a
+ * `WithRequiredId` alias: `Attendance` is identified by the (`studentId`, `lectureId`) pair, same as
+ * `EnrollmentDto`, and has no `id` field at all.
+ */
+export type LectureAttendanceDto = components['schemas']['LectureAttendanceDto'];
+
+/**
+ * `GET /attendance/student/{id}/course/{courseId}/stats` and `GET /attendance/lecture/{id}/stats`
+ * (response-only, never sent by the client). `attendanceRate` is `0..1`, not a percentage — multiply
+ * by 100 for display (ROADMAP.md "Фаза 5").
+ */
+export type AttendanceStatsDto = components['schemas']['AttendanceStatsDto'];
+
+/** `POST /lectures` body (ROADMAP.md "Фаза 6") — `id`/`sourcePairId` are server/generation-assigned, never sent for a manual lecture. */
+export type LectureInput = Omit<components['schemas']['LectureDto'], 'id' | 'sourcePairId'>;
+
+/** `POST /lectures/generate` body — one `Lecture` from a `Pair` template on a specific date (ROADMAP.md "Фаза 6"). */
+export type GenerateLectureRequest = components['schemas']['GenerateLectureRequest'];
+
+/**
+ * `GET /enrollments/course/{courseId}` — used to build a lecture's attendance roster (ROADMAP.md
+ * "Фаза 6": only `ACTIVE` enrollments are eligible for `POST /attendance`, see API.md). No own `id`
+ * field, same as `LectureAttendanceDto` — identified by the (`studentId`, `courseId`) pair.
+ */
+export type EnrollmentDto = components['schemas']['EnrollmentDto'];
+export type EnrollmentStatus = NonNullable<components['schemas']['EnrollmentDto']['status']>;

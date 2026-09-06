@@ -5,10 +5,8 @@ import { useAuth } from '../../auth/useAuth';
 import { useFacultyQuery, useOwnTeacherQuery } from './hooks';
 
 /**
- * Профиль преподавателя. Не входит непосредственно в скоуп ROADMAP.md "Фаза 2"/"Фаза 3" (обе про
- * студентов), но занимает то же место в навигации, что и таб «Профиль» студента — поэтому
- * реализован сразу же, чтобы у преподавателя после логина был реальный экран, а не заглушка.
- * «Мои курсы»/«Мои лекции» — полноценный модуль преподавателя из ROADMAP.md "Фаза 6".
+ * Профиль преподавателя — таб «Профиль» в `TeacherTabs` (ROADMAP.md "Фаза 6"), рядом с «Курсы» и
+ * «Лекции» (`TeacherCoursesScreen`/`TeacherLecturesScreen`).
  */
 export function TeacherProfileScreen() {
   const { logout } = useAuth();
