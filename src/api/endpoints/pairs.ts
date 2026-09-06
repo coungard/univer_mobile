@@ -1,6 +1,17 @@
 import { apiClient } from '../client';
 import { Page, PairDto, PairInput } from '../types';
 
+/**
+ * `GET /pairs` — the full, unfiltered `Pair` list; no "pairs by teacher" endpoint exists, so a
+ * teacher's own templates (ROADMAP.md "Фаза 6") are found by filtering this client-side on
+ * `PairDto.teacherId` (see `features/teacher/hooks.ts`) — the same "fetch a large-enough page, filter
+ * in JS" approach as `getMyLectures`/`getCourses`.
+ */
+export async function getPairs(page = 0, size = 200): Promise<Page<PairDto>> {
+  const { data } = await apiClient.get<Page<PairDto>>('/pairs', { params: { page, size } });
+  return data;
+}
+
 /** `GET /pairs/group/{groupId}` — a group's recurring class templates (its "Расписание группы"). */
 export async function getPairsByGroup(groupId: string, page = 0, size = 50): Promise<Page<PairDto>> {
   const { data } = await apiClient.get<Page<PairDto>>(`/pairs/group/${groupId}`, { params: { page, size } });

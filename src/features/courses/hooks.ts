@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getCourse, getCourses, getCoursesByDepartment } from '../../api/endpoints/courses';
+import { useOwnUserId } from '../profile/hooks';
 
 /**
  * Course list (ROADMAP.md "Фаза 4"): `departmentId === null` fetches the full catalogue
@@ -20,4 +21,18 @@ export function useCourseQuery(courseId: string) {
     queryKey: ['courses', courseId],
     queryFn: () => getCourse(courseId),
   });
+}
+
+/**
+ * A teacher's own courses (ROADMAP.md "Фаза 6" — «Мои курсы»). No `GET /courses?teacherId=` filter
+ * exists on the backend, so this reuses `useCoursesQuery(null)`'s full-catalogue fetch/cache (shared
+ * with the student «Курсы» tab) and filters client-side on `CourseDto.teacherId`.
+ */
+export function useOwnCoursesQuery() {
+  const teacherId = useOwnUserId();
+  const courses = useCoursesQuery(null);
+  return {
+    ...courses,
+    data: (courses.data ?? []).filter((course) => course.teacherId === teacherId),
+  };
 }

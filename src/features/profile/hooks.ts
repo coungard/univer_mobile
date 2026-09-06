@@ -10,8 +10,12 @@ import { getTeacher } from '../../api/endpoints/teachers';
 import { getUniversity } from '../../api/endpoints/universities';
 import { useAuthStore } from '../../auth/authStore';
 
-/** The signed-in user's backend entity id — equals `Student.id`/`Teacher.id` (see API.md). */
-function useOwnUserId(): string | null {
+/**
+ * The signed-in user's backend entity id — equals `Student.id`/`Teacher.id` (see API.md). Exported
+ * for `features/attendance/hooks.ts` (ROADMAP.md "Фаза 5"), which needs it for the
+ * `/attendance/student/{studentId}...` endpoints the same way this file needs it for `/students/{id}`.
+ */
+export function useOwnUserId(): string | null {
   return useAuthStore((state) => state.claims?.sub) ?? null;
 }
 

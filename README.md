@@ -37,12 +37,15 @@ API — на `localhost:8023`).
 локальный бэкенд будет падать с ошибкой Keycloak «client not found» (см.
 [issue #1](https://github.com/coungard/univer_mobile/issues/1)); экраны и код при этом уже готовы.
 
-### Тестовый аккаунт
+### Тестовые аккаунты
 
-Для входа на локальном `docker-compose`-бэкенде (реалм `univer-realm`) заведён тестовый студент:
+Для входа на локальном `docker-compose`-бэкенде (реалм `univer-realm`) заведены тестовые студент и
+преподаватель:
 
-- **Логин:** `student1`
-- **Пароль:** `student123`
+| Роль | Логин | Пароль |
+|---|---|---|
+| Студент | `student1` | `student123` |
+| Преподаватель | `gamid_teacher_dgtu` | `teacher123` |
 
 Если вход всё равно падает с `AuthorizationException: Invalid ID Token` — это не пароль, а часы
 эмулятора; см. ANDROID_TROUBLESHOOTING.md, пункт 10.
