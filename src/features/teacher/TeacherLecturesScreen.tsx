@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Text } from 'react-native-paper';
+import { Button, Text, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PairDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
@@ -29,6 +29,7 @@ const PARITY_LABELS = Object.fromEntries(PARITY_OPTIONS.map((o) => [o.value, o.l
  */
 export function TeacherLecturesScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
   const courses = useOwnCoursesQuery();
   const pairs = useOwnPairsQuery();
   // Union with `useOwnPairsQuery()`'s course ids, not just `useOwnCoursesQuery()`'s — confirmed live
@@ -134,7 +135,7 @@ export function TeacherLecturesScreen({ navigation }: Props) {
           return (
             <Pressable
               key={lecture.id}
-              style={styles.lectureRow}
+              style={[styles.lectureRow, { borderBottomColor: theme.colors.outlineVariant }]}
               onPress={() => navigation.navigate('LectureDetails', { lectureId: lecture.id })}
             >
               <View style={styles.lectureInfo}>
@@ -162,7 +163,7 @@ export function TeacherLecturesScreen({ navigation }: Props) {
         Array.from(pairsByCycle.entries()).map(([cycleId, cyclePairs]) => (
           <View key={cycleId} style={styles.cycleSection}>
             {cyclePairs.map((pair) => (
-              <View key={pair.id} style={styles.pairRow}>
+              <View key={pair.id} style={[styles.pairRow, { borderBottomColor: theme.colors.outlineVariant }]}>
                 <View style={styles.lectureInfo}>
                   <Text variant="bodyMedium">{courseTitleById.get(pair.courseId) ?? 'Курс'}</Text>
                   <Text style={styles.muted}>
@@ -220,7 +221,8 @@ const styles = StyleSheet.create({
   lectureRow: {
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#0002',
+    // borderBottomColor set inline from `theme.colors.outlineVariant` — a fixed hex here wouldn't
+    // adapt to dark mode (ROADMAP.md "Фаза 8").
   },
   lectureInfo: {
     flex: 1,
@@ -236,7 +238,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#0002',
+    // borderBottomColor set inline — see `lectureRow` above.
   },
   generateButton: {
     marginTop: 8,

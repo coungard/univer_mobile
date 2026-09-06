@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Alert, FlatList, StyleSheet, View } from 'react-native';
-import { Button, Chip, Text } from 'react-native-paper';
+import { Button, Chip, Text, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PairDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
@@ -31,6 +31,7 @@ const DAY_ORDER = DAY_OPTIONS.map((o) => o.value);
  */
 export function GroupScheduleScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
   const student = useOwnStudentQuery();
   const academicPath = useGroupAcademicPathQuery(student.data?.groupId);
   const semester = useSemesterQuery(academicPath.group?.semesterId);
@@ -178,7 +179,7 @@ export function GroupScheduleScreen({ navigation }: Props) {
               <Text style={styles.emptyDay}>Нет занятий</Text>
             ) : (
               section.items.map((pair) => (
-                <View key={pair.id} style={styles.pairRow}>
+                <View key={pair.id} style={[styles.pairRow, { borderBottomColor: theme.colors.outlineVariant }]}>
                   <View style={styles.pairInfo}>
                     <Text variant="bodyMedium">
                       Пара {pair.pairNumber} · {PARITY_LABELS[pair.weekParity]}
@@ -194,7 +195,7 @@ export function GroupScheduleScreen({ navigation }: Props) {
                       <Button compact onPress={() => navigation.navigate('PairForm', { pairId: pair.id })}>
                         Изменить
                       </Button>
-                      <Button compact textColor="#B3261E" onPress={() => handleDelete(pair)}>
+                      <Button compact textColor={theme.colors.error} onPress={() => handleDelete(pair)}>
                         Удалить
                       </Button>
                     </View>
@@ -259,7 +260,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#0002',
+    // borderBottomColor set inline from `theme.colors.outlineVariant` — a fixed hex here wouldn't
+    // adapt to dark mode (ROADMAP.md "Фаза 8").
   },
   pairInfo: {
     flex: 1,
