@@ -6,7 +6,7 @@ import { PairDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { TeacherTabScreenProps } from '../../navigation/types';
-import { useCoursesQuery, useOwnCoursesQuery } from '../courses/hooks';
+import { useAllCoursesQuery, useOwnCoursesQuery } from '../courses/hooks';
 import { DAY_OPTIONS, PARITY_OPTIONS } from '../schedule/PairFormScreen';
 import { formatDayDate, formatTime } from '../schedule/dateUtils';
 import {
@@ -41,7 +41,7 @@ export function TeacherLecturesScreen({ navigation }: Props) {
     return Array.from(ids);
   }, [courses.data, pairs.data]);
   const lectures = useTeacherLecturesQuery(courseIds);
-  const allCourses = useCoursesQuery(null);
+  const allCourses = useAllCoursesQuery();
   const generateSemester = useTeacherGenerateSemesterLecturesMutation();
 
   // Resolves titles from the full catalogue, not just `useOwnCoursesQuery()` — same reason as

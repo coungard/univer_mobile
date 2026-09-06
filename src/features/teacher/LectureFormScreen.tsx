@@ -8,7 +8,7 @@ import { LectureInput } from '../../api/types';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { SelectField } from '../../components/SelectField';
 import { TeacherStackScreenProps } from '../../navigation/types';
-import { useCoursesQuery, useOwnCoursesQuery } from '../courses/hooks';
+import { useAllCoursesQuery, useOwnCoursesQuery } from '../courses/hooks';
 import { useOwnUserId } from '../profile/hooks';
 import { useCreateLectureMutation, useGroupsByIds, useOwnPairsQuery } from './hooks';
 import { LectureForm, lectureFormSchema } from './lectureFormSchema';
@@ -24,7 +24,7 @@ export function LectureFormScreen({ navigation }: Props) {
   const teacherId = useOwnUserId();
   const courses = useOwnCoursesQuery();
   const pairs = useOwnPairsQuery();
-  const allCourses = useCoursesQuery(null);
+  const allCourses = useAllCoursesQuery();
   const createLecture = useCreateLectureMutation();
 
   const [submitError, setSubmitError] = useState<string | null>(null);

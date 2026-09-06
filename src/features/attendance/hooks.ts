@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getStudentAttendanceHistory, getStudentCourseAttendanceStats } from '../../api/endpoints/attendance';
+import { fetchAllPages } from '../../api/pagination';
 import { LectureDto } from '../../api/types';
 import { useOwnUserId } from '../profile/hooks';
 import { useMyLecturesQuery } from '../schedule/hooks';
@@ -26,15 +27,17 @@ export interface AttendanceHistoryEntry {
  * list by `lectureId` -> `LectureDto.courseId`, the same pattern `useGroupAcademicPathQuery`
  * (`features/profile/hooks.ts`) uses for its group -> semester -> ... chain. A lecture without a
  * matching attendance record hasn't been marked yet, so it's simply absent from the result — not an
- * error and not shown as "not attended".
+ * error and not shown as "not attended". That absence has to be reliable, which is why this fetches
+ * *every* page (`fetchAllPages`, `api/pagination.ts`) rather than one capped page: a truncated fetch
+ * would misrepresent a real, older attended lecture that just didn't fit on the first page as
+ * "not marked" instead of leaving it out as "not loaded yet".
  */
 export function useOwnCourseAttendanceHistoryQuery(courseId: string) {
   const studentId = useOwnUserId();
   const lectures = useMyLecturesQuery();
   const history = useQuery({
     queryKey: ['attendance', 'history', studentId],
-    queryFn: () => getStudentAttendanceHistory(studentId as string),
-    select: (page) => page.content,
+    queryFn: () => fetchAllPages((page) => getStudentAttendanceHistory(studentId as string, page)),
     enabled: studentId !== null,
   });
 
