@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { useAuth } from '../../auth/useAuth';
 import { EmptyState } from '../../components/EmptyState';
+import { QueryErrorState } from '../../components/QueryErrorState';
 import { useGroupAcademicPathQuery, useOwnStudentQuery, useUniversityQuery } from './hooks';
 
 /**
@@ -28,13 +29,7 @@ export function StudentProfileScreen() {
   if (student.isError || !student.data) {
     return (
       <View style={styles.center}>
-        <EmptyState
-          title="Не удалось загрузить профиль"
-          description="Проверьте подключение к сети и попробуйте ещё раз."
-        />
-        <Button mode="outlined" onPress={() => student.refetch()}>
-          Повторить
-        </Button>
+        <QueryErrorState error={student.error} onRetry={() => student.refetch()} />
       </View>
     );
   }

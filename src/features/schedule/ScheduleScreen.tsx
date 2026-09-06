@@ -4,6 +4,7 @@ import { Button, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LectureDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
+import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentTabScreenProps } from '../../navigation/types';
 import { useGroupAcademicPathQuery, useOwnStudentQuery } from '../profile/hooks';
 import { dayName, formatDayDate, formatTime, formatWeekRangeLabel, getWeek, isSameDay } from './dateUtils';
@@ -66,10 +67,7 @@ export function ScheduleScreen({ navigation }: Props) {
   if (lectures.isError) {
     return (
       <View style={styles.center}>
-        <EmptyState title="Не удалось загрузить расписание" description="Проверьте подключение к сети." />
-        <Button mode="outlined" onPress={() => lectures.refetch()}>
-          Повторить
-        </Button>
+        <QueryErrorState error={lectures.error} onRetry={() => lectures.refetch()} />
       </View>
     );
   }

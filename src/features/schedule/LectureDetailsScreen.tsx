@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
-import { EmptyState } from '../../components/EmptyState';
+import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentStackScreenProps } from '../../navigation/types';
 import { useTeacherQuery } from '../profile/hooks';
 import { formatDayDate, formatTime } from './dateUtils';
@@ -30,10 +30,7 @@ export function LectureDetailsScreen({ route, navigation }: Props) {
   if (lecture.isError || !lecture.data) {
     return (
       <View style={styles.center}>
-        <EmptyState title="Не удалось загрузить занятие" description="Проверьте подключение к сети." />
-        <Button mode="outlined" onPress={() => lecture.refetch()}>
-          Повторить
-        </Button>
+        <QueryErrorState error={lecture.error} onRetry={() => lecture.refetch()} />
       </View>
     );
   }

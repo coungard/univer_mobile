@@ -1,7 +1,9 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, ProgressBar, Text, useTheme } from 'react-native-paper';
+import { ProgressBar, Text, useTheme } from 'react-native-paper';
+import { describeError } from '../../api/errors';
 import { EmptyState } from '../../components/EmptyState';
+import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentStackScreenProps } from '../../navigation/types';
 import { useOwnCourseAttendanceHistoryQuery, useOwnCourseAttendanceStatsQuery } from '../attendance/hooks';
 import { useDepartmentQuery, useTeacherQuery } from '../profile/hooks';
@@ -36,10 +38,7 @@ export function CourseDetailsScreen({ route, navigation }: Props) {
   if (course.isError || !course.data) {
     return (
       <View style={styles.center}>
-        <EmptyState title="Не удалось загрузить курс" description="Проверьте подключение к сети." />
-        <Button mode="outlined" onPress={() => course.refetch()}>
-          Повторить
-        </Button>
+        <QueryErrorState error={course.error} onRetry={() => course.refetch()} />
       </View>
     );
   }
@@ -82,7 +81,7 @@ export function CourseDetailsScreen({ route, navigation }: Props) {
           <Text variant="bodyMedium">Загрузка…</Text>
         ) : stats.isError || !stats.data ? (
           <Text variant="bodyMedium" style={styles.description}>
-            Не удалось загрузить статистику посещаемости.
+            {describeError(stats.error).message}
           </Text>
         ) : (stats.data.totalMarked ?? 0) === 0 ? (
           <Text variant="bodyMedium" style={styles.description}>
@@ -111,7 +110,7 @@ export function CourseDetailsScreen({ route, navigation }: Props) {
           <Text variant="bodyMedium">Загрузка…</Text>
         ) : history.isError ? (
           <Text variant="bodyMedium" style={styles.description}>
-            Не удалось загрузить историю посещений.
+            {describeError(history.error).message}
           </Text>
         ) : history.entries.length === 0 ? (
           <EmptyState title="Отметок пока нет" description="Здесь появятся занятия по мере их проведения." />

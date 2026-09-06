@@ -2,6 +2,7 @@ import React from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { describeError } from '../../api/errors';
 import { CourseDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
 import { TeacherTabScreenProps } from '../../navigation/types';
@@ -17,6 +18,7 @@ type Props = TeacherTabScreenProps<'Courses'>;
 export function TeacherCoursesScreen({}: Props) {
   const courses = useOwnCoursesQuery();
   const insets = useSafeAreaInsets();
+  const error = courses.isError ? describeError(courses.error) : null;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -28,8 +30,8 @@ export function TeacherCoursesScreen({}: Props) {
         ListEmptyComponent={
           courses.isLoading ? (
             <Text style={styles.center}>Загрузка курсов…</Text>
-          ) : courses.isError ? (
-            <EmptyState title="Не удалось загрузить курсы" description="Проверьте подключение к сети." />
+          ) : error ? (
+            <EmptyState title={error.title} description={error.message} />
           ) : (
             <EmptyState
               title="Курсов пока нет"

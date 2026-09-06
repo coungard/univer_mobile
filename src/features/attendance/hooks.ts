@@ -52,6 +52,7 @@ export function useOwnCourseAttendanceHistoryQuery(courseId: string) {
     entries,
     isLoading: history.isLoading || lectures.isLoading,
     isError: history.isError || lectures.isError,
+    error: history.error ?? lectures.error,
     refetch: () => {
       history.refetch();
       lectures.refetch();

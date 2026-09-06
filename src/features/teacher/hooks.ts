@@ -49,6 +49,7 @@ export function useTeacherLecturesQuery(courseIds: string[]) {
     data: lectures,
     isLoading: results.some((result) => result.isLoading),
     isError: results.some((result) => result.isError),
+    error: results.find((result) => result.isError)?.error,
     refetch: () => results.forEach((result) => result.refetch()),
   };
 }
@@ -157,6 +158,7 @@ export function useLectureRosterQuery(lectureId: string, courseId: string | unde
     roster,
     isLoading: enrollments.isLoading || attendance.isLoading,
     isError: enrollments.isError || attendance.isError,
+    error: enrollments.error ?? attendance.error,
     refetch: () => {
       enrollments.refetch();
       attendance.refetch();

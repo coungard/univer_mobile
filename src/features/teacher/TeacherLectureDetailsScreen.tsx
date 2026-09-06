@@ -1,8 +1,9 @@
 import React from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { Checkbox, ProgressBar, Text, useTheme } from 'react-native-paper';
-import { ApiError } from '../../api/errors';
+import { ApiError, describeError } from '../../api/errors';
 import { EmptyState } from '../../components/EmptyState';
+import { QueryErrorState } from '../../components/QueryErrorState';
 import { TeacherStackScreenProps } from '../../navigation/types';
 import { formatDayDate, formatTime } from '../schedule/dateUtils';
 import { useLectureQuery } from '../schedule/hooks';
@@ -36,7 +37,7 @@ export function TeacherLectureDetailsScreen({ route }: Props) {
   if (lecture.isError || !lecture.data) {
     return (
       <View style={styles.center}>
-        <EmptyState title="Не удалось загрузить занятие" description="Проверьте подключение к сети." />
+        <QueryErrorState error={lecture.error} onRetry={() => lecture.refetch()} />
       </View>
     );
   }
@@ -71,7 +72,7 @@ export function TeacherLectureDetailsScreen({ route }: Props) {
           <Text variant="bodyMedium">Загрузка…</Text>
         ) : stats.isError || !stats.data ? (
           <Text variant="bodyMedium" style={styles.muted}>
-            Не удалось загрузить статистику.
+            {describeError(stats.error).message}
           </Text>
         ) : (
           <>
@@ -101,7 +102,7 @@ export function TeacherLectureDetailsScreen({ route }: Props) {
           <Text variant="bodyMedium">Загрузка…</Text>
         ) : roster.isError ? (
           <Text variant="bodyMedium" style={styles.muted}>
-            Не удалось загрузить список студентов.
+            {describeError(roster.error).message}
           </Text>
         ) : roster.roster.length === 0 ? (
           <EmptyState
