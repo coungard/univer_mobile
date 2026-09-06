@@ -4,6 +4,7 @@ import { Button, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PairDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
+import { QueryErrorState } from '../../components/QueryErrorState';
 import { TeacherTabScreenProps } from '../../navigation/types';
 import { useCoursesQuery, useOwnCoursesQuery } from '../courses/hooks';
 import { DAY_OPTIONS, PARITY_OPTIONS } from '../schedule/PairFormScreen';
@@ -83,6 +84,25 @@ export function TeacherLecturesScreen({ navigation }: Props) {
   };
 
   const isLoading = courses.isLoading || lectures.isLoading || pairs.isLoading;
+  // `courses`/`pairs` failing silently would otherwise just leave `courseIds` short of the affected
+  // course, so both list sections below would render "пусто" instead of a failure — surface it up
+  // front instead (ROADMAP.md "Фаза 8" — единая обработка ошибок).
+  const queryError = courses.isError ? courses.error : pairs.isError ? pairs.error : lectures.isError ? lectures.error : null;
+
+  if (!isLoading && queryError) {
+    return (
+      <View style={[styles.center, { paddingTop: insets.top }]}>
+        <QueryErrorState
+          error={queryError}
+          onRetry={() => {
+            courses.refetch();
+            pairs.refetch();
+            lectures.refetch();
+          }}
+        />
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -176,6 +196,13 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 4,
     flexGrow: 1,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 24,
   },
   header: {
     flexDirection: 'row',

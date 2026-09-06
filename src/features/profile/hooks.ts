@@ -124,5 +124,6 @@ export function useGroupAcademicPathQuery(groupId: string | null | undefined) {
     faculty: faculty.data,
     isLoading: !!groupId && (group.isLoading || semester.isLoading || studyYear.isLoading || program.isLoading || faculty.isLoading),
     isError: group.isError || semester.isError || studyYear.isError || program.isError || faculty.isError,
+    error: group.error ?? semester.error ?? studyYear.error ?? program.error ?? faculty.error,
   };
 }

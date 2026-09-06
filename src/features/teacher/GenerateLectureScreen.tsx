@@ -6,6 +6,7 @@ import { Button, HelperText, Text, TextInput } from 'react-native-paper';
 import { z } from 'zod';
 import { ApiError } from '../../api/errors';
 import { ErrorBanner } from '../../components/ErrorBanner';
+import { QueryErrorState } from '../../components/QueryErrorState';
 import { TeacherStackScreenProps } from '../../navigation/types';
 import { useCourseQuery } from '../courses/hooks';
 import { usePairQuery } from '../schedule/hooks';
@@ -68,10 +69,7 @@ export function GenerateLectureScreen({ route, navigation }: Props) {
   if (pair.isError || !pair.data) {
     return (
       <View style={styles.center}>
-        <Text>Не удалось загрузить шаблон занятия.</Text>
-        <Button mode="outlined" onPress={() => pair.refetch()}>
-          Повторить
-        </Button>
+        <QueryErrorState error={pair.error} onRetry={() => pair.refetch()} />
       </View>
     );
   }

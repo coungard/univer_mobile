@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
-import { Button, Card, Chip, Text } from 'react-native-paper';
+import { Card, Chip, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CourseDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
+import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentTabScreenProps } from '../../navigation/types';
 import { useGroupAcademicPathQuery, useOwnStudentQuery } from '../profile/hooks';
 import { useCoursesQuery } from './hooks';
@@ -43,10 +44,7 @@ export function CoursesScreen({ navigation }: Props) {
   if (courses.isError) {
     return (
       <View style={[styles.center, { paddingTop: insets.top }]}>
-        <EmptyState title="Не удалось загрузить курсы" description="Проверьте подключение к сети." />
-        <Button mode="outlined" onPress={() => courses.refetch()}>
-          Повторить
-        </Button>
+        <QueryErrorState error={courses.error} onRetry={() => courses.refetch()} />
       </View>
     );
   }

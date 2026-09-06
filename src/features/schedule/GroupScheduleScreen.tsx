@@ -4,6 +4,7 @@ import { Button, Chip, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PairDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
+import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentStackScreenProps } from '../../navigation/types';
 import { useCoursesQuery } from '../courses/hooks';
 import { useGroupAcademicPathQuery, useOwnStudentQuery, useSemesterQuery } from '../profile/hooks';
@@ -53,11 +54,35 @@ export function GroupScheduleScreen({ navigation }: Props) {
   };
 
   const isLoading = student.isLoading || academicPath.isLoading || cycle.isLoading || pairs.isLoading;
+  const queryError = student.isError
+    ? student.error
+    : academicPath.isError
+      ? academicPath.error
+      : cycle.isError
+        ? cycle.error
+        : pairs.isError
+          ? pairs.error
+          : null;
 
   if (isLoading) {
     return (
       <View style={[styles.center, { paddingTop: insets.top }]}>
         <Text>Загрузка расписания группы…</Text>
+      </View>
+    );
+  }
+
+  if (queryError) {
+    return (
+      <View style={[styles.center, { paddingTop: insets.top }]}>
+        <QueryErrorState
+          error={queryError}
+          onRetry={() => {
+            student.refetch();
+            cycle.refetch();
+            pairs.refetch();
+          }}
+        />
       </View>
     );
   }

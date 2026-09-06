@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { useAuth } from '../../auth/useAuth';
+import { QueryErrorState } from '../../components/QueryErrorState';
 import { useFacultyQuery, useOwnTeacherQuery } from './hooks';
 
 /**
@@ -24,10 +25,7 @@ export function TeacherProfileScreen() {
   if (teacher.isError || !teacher.data) {
     return (
       <View style={styles.center}>
-        <Text>Не удалось загрузить профиль.</Text>
-        <Button mode="outlined" onPress={() => teacher.refetch()}>
-          Повторить
-        </Button>
+        <QueryErrorState error={teacher.error} onRetry={() => teacher.refetch()} />
       </View>
     );
   }

@@ -58,3 +58,30 @@ export class NetworkError extends Error {
     this.name = 'NetworkError';
   }
 }
+
+/**
+ * Turns a failed query/mutation's `error` into a title + message to actually show the user, instead
+ * of every screen guessing its own generic text (ROADMAP.md "Фаза 8" — единая обработка ошибок).
+ * `ApiError`/`NetworkError` already carry the real, specific message (see above) — this just picks a
+ * title to go with it; anything else (a thrown non-`Error` value, in principle) falls back to a
+ * generic pair.
+ */
+export function describeError(error: unknown): { title: string; message: string } {
+  if (error instanceof ApiError) {
+    switch (error.status) {
+      case 401:
+        return { title: 'Сессия истекла', message: error.message };
+      case 403:
+        return { title: 'Нет доступа', message: error.message };
+      default:
+        return { title: 'Не удалось загрузить данные', message: error.message };
+    }
+  }
+  if (error instanceof NetworkError) {
+    return { title: 'Нет соединения', message: error.message };
+  }
+  return {
+    title: 'Не удалось загрузить данные',
+    message: error instanceof Error ? error.message : 'Попробуйте ещё раз.',
+  };
+}
