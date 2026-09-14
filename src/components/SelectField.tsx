@@ -4,6 +4,8 @@ import { Menu, TextInput } from 'react-native-paper';
 export interface SelectOption {
   label: string;
   value: string;
+  /** Secondary text shown under the label (e.g. a university's city) — used by `SearchableSelectField`. */
+  sublabel?: string;
 }
 
 interface Props {
@@ -19,8 +21,9 @@ interface Props {
 
 /**
  * Minimal read-only "select" built on Paper's `Menu` + `TextInput` — Paper has no dedicated
- * select component. Good enough for the short, single-page lists in Фаза 1 (universities,
- * departments); a searchable/paginated version can replace it once those lists grow.
+ * select component. Good enough for the short, single-page lists in Фаза 1 (departments, scoped to
+ * one university) — for a list large enough to need searching (universities), see
+ * `SearchableSelectField` instead.
  */
 export function SelectField({
   label,

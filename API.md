@@ -11,15 +11,10 @@
 
 - **Base URL (dev):** `http://localhost:8023/api/v1` (порт из `application.yml`, `server.port`; в проде —
   своя конфигурация, аналогично `auth-server-url` в `MOBILE.md`).
-- **Авторизация:** для всех эндпоинтов, кроме явно помеченных «Public» ниже, обязателен заголовок
+- **Авторизация:** для всех эндпоинтов, кроме явно помеченных «публично» ниже, обязателен заголовок
   `Authorization: Bearer <access_token>` с валидным JWT от Keycloak (`univer-realm`). Эндпоинт без роли в
   колонке «Auth» всё равно требует валидный JWT (`anyRequest().authenticated()` в `SecurityConfig`) — просто
   без ограничения по конкретной роли.
-- **Публичные GET-справочники для регистрации:** все `GET`-эндпоинты `Universities`/`Faculties`/
-  `Departments` — `permitAll()` в `SecurityConfig`, специально ради экрана регистрации: он должен дать
-  выбрать университет/кафедру (`RegisterStudentRequest.universityId`/`RegisterTeacherRequest.departmentId`)
-  до того, как у пользователя появится токен — иначе курица и яйцо (нужен токен, чтобы получить список для
-  формы, которая этот токен и выдаёт).
 - **Роли:** `ADMIN`, `TEACHER`, `STUDENT` используются в проверках на эндпоинтах ниже (в Keycloak заведены
   также `APPLICANT`, `GUEST`, но текущий API их нигде не проверяет).
 - **Content-Type:** `application/json` и для тела запроса, и для ответа.
@@ -75,13 +70,15 @@
 `id` — если передан, используется существующий адрес; если нет — создаётся новый по остальным полям.
 
 ### UniversityDto
-`id`, `name`, `description`, `createdAt`, `updatedAt` (только в ответе), `address: AddressDto`,
-`faculties: FacultyDto[]` (в ответе; при создании/обновлении можно не передавать — по умолчанию `[]`).
+`id`, `name`, `description`, `rector`, `foundingYear`, `studentCount`, `createdAt`, `updatedAt` (только
+в ответе), `address: AddressDto`, `faculties: FacultyDto[]` (в ответе; при создании/обновлении можно не
+передавать — по умолчанию `[]`). `rector`/`foundingYear`/`studentCount` необязательны (`foundingYear`,
+если передан, — не меньше 1000; `studentCount`, если передан, — не отрицательный).
 
 ### FacultyDto
 `id`, `name`, `description`, `universityId`, `departments: DepartmentDto[]` (по умолчанию `[]`).
-(Сериализуется с `@JsonInclude(NON_NULL)` — как и `CourseDto` ниже, `null`-поля в ответе могут отсутствовать
-вовсе, а не быть `null`.)
+(Сериализуется с `@JsonInclude(NON_NULL)` — как и `DepartmentDto`/`CourseDto` ниже, `null`-поля в ответе
+могут отсутствовать вовсе, а не быть `null`.)
 
 ### DepartmentDto
 `id`, `name`★, `description`, `facultyId`.
@@ -106,12 +103,15 @@
 `SemesterType` (enum): `AUTUMN` | `SPRING`.
 
 ### WeekScheduleCycleDto
-`id`, `semesterId`★, `status: WeekScheduleCycleStatus` (только ответ — при создании форсируется
-`DRAFT` независимо от присланного значения; менять статус только через
-`PUT /week-schedule-cycles/{id}/status`). Циклическое расписание семестра — контейнер для шаблонов
-`Pair`. Один цикл на семестр: повторный `POST` с уже занятым `semesterId` — `422`.
-`WeekScheduleCycleStatus` (enum): `DRAFT` (черновик — `Pair` цикла может править `ADMIN` или
-`STUDENT` своей группы) | `AGREED` (согласовано — правки `Pair` доступны только `ADMIN`).
+`id`, `semesterId`★, `status: WeekScheduleCycleStatus` (только в ответе — при создании форсируется
+`DRAFT` независимо от присланного значения, менять — только через `PUT /{id}/status`). Циклическое
+расписание семестра — контейнер для шаблонов `Pair`. Один цикл на семестр: повторный `POST` с уже
+занятым `semesterId` — `422`.
+`WeekScheduleCycleStatus` (enum): `DRAFT` (черновик, доступен для правок `ADMIN` и `STUDENT` своей
+группы) | `AGREED` (согласовано, правки только `ADMIN`).
+
+### UpdateWeekScheduleCycleStatusRequest (только запрос, `PUT /week-schedule-cycles/{id}/status`)
+`status: WeekScheduleCycleStatus`★.
 
 ### BellScheduleEntryDto
 `id`, `universityId` (`null` = дефолт для университетов без своей записи на этот `pairNumber`),
@@ -175,40 +175,52 @@
 
 | Метод | Путь | Auth | Тело запроса | Тело ответа |
 |---|---|---|---|---|
-| GET | `/` | **Public** (без токена) | — (`?page&size`) | `Page<UniversityDto>` |
-| GET | `/{id}` | **Public** (без токена) | — | `UniversityDto` |
+| GET | `/` | публично | — (`?search&page&size`) | `Page<UniversityDto>` |
+| GET | `/{id}` | публично | — | `UniversityDto` |
 | POST | `/` | `ADMIN` | `UniversityDto` | `201` + `UniversityDto` |
 | PUT | `/{id}` | `ADMIN` | `UniversityDto` | `UniversityDto` |
 | DELETE | `/{id}` | `ADMIN` | — | `204` |
+
+> `GET`-эндпоинты сделаны публичными намеренно: экран регистрации студента ещё не имеет токена,
+> но должен дать выбрать университет (`RegisterStudentRequest.universityId`) до входа в систему.
+>
+> `search` — необязательный, регистронезависимый поиск по подстроке в `name`; без него — все
+> университеты постранично, как раньше. Мобильный клиент использует его в пикере «Университет» на
+> экране регистрации (`SearchableSelectField`, `useUniversitiesQuery` — `src/features/onboarding/`),
+> чтобы искать среди большого числа ВУЗов вместо прокрутки/загрузки всего списка целиком.
 
 ## Faculties — `/api/v1/faculties`
 
 | Метод | Путь | Auth | Тело запроса | Тело ответа |
 |---|---|---|---|---|
 | POST | `/` | любая роль | `FacultyDto` | `201` + `FacultyDto` |
-| GET | `/university/{universityId}` | **Public** (без токена) | — (`?page&size`) | `Page<FacultyDto>` |
-| GET | `/{id}` | **Public** (без токена) | — | `FacultyDto` |
+| GET | `/university/{universityId}` | публично | — (`?page&size`) | `Page<FacultyDto>` |
+| GET | `/{id}` | публично | — | `FacultyDto` |
 | PUT | `/{id}` | любая роль | `FacultyDto` | `FacultyDto` |
 | DELETE | `/{id}` | любая роль | — | `204` |
 
-> Все `GET` на `Universities`/`Faculties`/`Departments` теперь публичные (`permitAll()` в
-> `SecurityConfig`) — намеренная правка ради экрана регистрации мобильного приложения (см. врезку в
-> «Общие сведения» выше). А вот у `Faculties` (и `Departments` ниже) create/update/delete по-прежнему без
-> `@PreAuthorize` — эти операции доступны любому аутентифицированному пользователю, не только `ADMIN`. При
-> переносе в мобильное приложение стоит перепроверить это перед тем, как показывать соответствующий
-> функционал не-админам — похоже на недосмотр в текущей реализации, а не сознательное решение (в отличие
-> от публичности `GET`, которая задокументирована явно).
+> `GET`-эндпоинты сделаны публичными по той же причине, что и у `Universities` выше: экран
+> регистрации преподавателя должен дать выбрать кафедру (`RegisterTeacherRequest.departmentId`)
+> до входа в систему, а кафедра ссылается на факультет.
+>
+> В отличие от большинства ресурсов, у `Faculties` (и `Departments` ниже) нет `@PreAuthorize` на
+> create/update/delete — эти операции доступны любому аутентифицированному пользователю, не только `ADMIN`.
+> При переносе в мобильное приложение стоит перепроверить это перед тем, как показывать соответствующий
+> функционал не-админам — похоже на недосмотр в текущей реализации, а не сознательное решение.
 
 ## Departments — `/api/v1/departments`
 
 | Метод | Путь | Auth | Тело запроса | Тело ответа |
 |---|---|---|---|---|
 | POST | `/` | любая роль | `DepartmentDto` | `201` + `DepartmentDto` |
-| GET | `/faculty/{facultyId}` | **Public** (без токена) | — (`?page&size`) | `Page<DepartmentDto>` |
-| GET | `/university/{universityId}` | **Public** (без токена) | — (`?page&size`) | `Page<DepartmentDto>` |
-| GET | `/{id}` | **Public** (без токена) | — | `DepartmentDto` |
+| GET | `/faculty/{facultyId}` | публично | — (`?page&size`) | `Page<DepartmentDto>` |
+| GET | `/university/{universityId}` | публично | — (`?page&size`) | `Page<DepartmentDto>` |
+| GET | `/{id}` | публично | — | `DepartmentDto` |
 | PUT | `/{id}` | любая роль | `DepartmentDto` | `DepartmentDto` |
 | DELETE | `/{id}` | любая роль | — | `204` |
+
+> `GET`-эндпоинты публичны по той же причине, что и у `Faculties`/`Universities` — нужны для выбора
+> кафедры на экране регистрации преподавателя.
 
 ## Programs — `/api/v1/programs`
 
@@ -253,15 +265,15 @@
 | GET | `/semester/{semesterId}` | любая роль | — | `WeekScheduleCycleDto` |
 | GET | `/{id}` | любая роль | — | `WeekScheduleCycleDto` |
 | POST | `/` | `ADMIN` | `WeekScheduleCycleDto` | `201` + `WeekScheduleCycleDto` |
-| PUT | `/{id}/status` | `ADMIN` | `UpdateWeekScheduleCycleStatusRequest{status}` | `WeekScheduleCycleDto` |
+| PUT | `/{id}/status` | `ADMIN` | `UpdateWeekScheduleCycleStatusRequest` | `WeekScheduleCycleDto` |
 | DELETE | `/{id}` | `ADMIN` | — | `204` |
 
-- **`POST /`** — только `ADMIN`, как и раньше; создание всегда форсирует `status: DRAFT`. Один цикл
-  на семестр: если `WeekScheduleCycle` для этого `semesterId` уже существует — `422`.
+- **`POST /`** — только `ADMIN`; создание всегда форсирует `status: DRAFT` (значение `status` в теле
+  запроса игнорируется). Один цикл на семестр: если `WeekScheduleCycle` для этого `semesterId` уже
+  существует — `422`.
 - **`PUT /{id}/status`** — переключает `DRAFT`⇄`AGREED` (в обе стороны), тоже только `ADMIN`. Пока
-  цикл в `DRAFT`, свои `Pair` внутри него может писать и `STUDENT` (см. `Pairs` ниже); после перевода
-  в `AGREED` — только `ADMIN`. Сама генерация `Lecture` (`POST /lectures/generate*`) статус цикла не
-  проверяет и разрешена в любом статусе.
+  цикл в `DRAFT`, свои `Pair` внутри него может писать `ADMIN` без ограничений либо `STUDENT` своей
+  группы; после перевода в `AGREED` — только `ADMIN` (см. раздел `Pairs`).
 
 ## BellScheduleEntries — `/api/v1/bell-schedule-entries`
 
@@ -287,25 +299,20 @@
 | GET | `/week-schedule-cycle/{weekScheduleCycleId}` | любая роль | — (`?page&size`) | `Page<PairDto>` |
 | GET | `/group/{groupId}` | любая роль | — (`?page&size`) | `Page<PairDto>` — расписание группы |
 | GET | `/{id}` | любая роль | — | `PairDto` |
-| POST | `/` | `ADMIN`/`STUDENT` | `PairDto` | `201` + `PairDto` |
-| PUT | `/{id}` | `ADMIN`/`STUDENT` | `PairDto` | `PairDto` |
-| DELETE | `/{id}` | `ADMIN`/`STUDENT` | — | `204` |
+| POST | `/` | `ADMIN`/`STUDENT`¹ | `PairDto` | `201` + `PairDto` |
+| PUT | `/{id}` | `ADMIN`/`STUDENT`¹ | `PairDto` | `PairDto` |
+| DELETE | `/{id}` | `ADMIN`/`STUDENT`¹ | — | `204` |
 
-- **`STUDENT`-доступ к `POST`/`PUT`/`DELETE`** (было `ADMIN`-only) — со скоупом, проверяемым на
-  бэкенде, а не только в UI:
-  - `groupIds` пары должен состоять **ровно из одной** группы, и это должна быть **своя** группа
-    вызывающего студента (`Student.groupId` из `sub` JWT) — иначе `422`. Студент не может ни писать
-    чужую группу, ни превратить пару в поток на несколько групп.
-  - Цикл (`weekScheduleCycleId`), к которому принадлежит пара, должен быть в статусе `DRAFT` —
-    иначе `422` («расписание уже согласовано»). Проверяется и для текущего цикла/группы пары (при
-    `PUT`/`DELETE`), и для нового (при `PUT`, если пару переносят в другой цикл/группу).
-  - `ADMIN` — без всех этих ограничений, как и раньше.
-- **Проверка конфликтов teacher/room** (`POST`/`PUT`, действует для **всех** ролей, включая
-  `ADMIN`) — новая: если создаваемая/обновляемая пара пересекается по дню недели, чётности недели
-  (`BOTH` пересекается с `ODD` и `EVEN`) и фактическому интервалу времени с уже существующей парой
-  **того же цикла**, и при этом совпадает `teacherId` или `room` (регистронезависимо) — `422` с
-  текстом, включающим ID и время конфликтующей пары. Защиты от гонки при двух параллельных
-  сохранениях нет (сознательно, низкий риск для MVP).
+¹ `STUDENT` может писать `Pair` только своей группы (`groupIds` должен состоять ровно из его группы,
+без потока на другие группы) и только пока `WeekScheduleCycle.status == DRAFT` (см. раздел
+`WeekScheduleCycles`) — как для текущего, так и для нового состояния пары при `PUT`. Нарушение любого
+из двух условий — `422` с соответствующим сообщением. `ADMIN` не ограничен ни группой, ни статусом.
+
+`POST`/`PUT /pairs` также проверяют конфликты преподаватель/аудитория — для **всех** ролей, включая
+`ADMIN`: в пределах одного `weekScheduleCycleId` два `Pair` не могут одновременно иметь совпадающий
+`dayOfWeek`, пересекающуюся `weekParity` (с учётом `BOTH`) и пересекающиеся `[startTime, endTime)`,
+если при этом у них совпадает `teacherId` или `room`. Нарушение — `422`. Защиты от гонки при
+параллельных сохранениях нет (осознанно, для MVP).
 
 ## Groups — `/api/v1/groups`
 
@@ -341,8 +348,8 @@
 | GET | `/me` | `STUDENT` | `?page&size` | — | `Page<LectureDto>`, отсортировано по `scheduledTime` ASC |
 | GET | `/{id}` | любая роль | — | — | `LectureDto` |
 | POST | `/` | `ADMIN`/`TEACHER` | — | `LectureDto` | `201` + `LectureDto` |
-| POST | `/generate` | `ADMIN`/`TEACHER`/`STUDENT` | — | `GenerateLectureRequest` | `201` + `LectureDto` |
-| POST | `/generate/semester/{weekScheduleCycleId}` | `ADMIN`/`TEACHER`/`STUDENT` | — | — | `200` + `LectureDto[]` |
+| POST | `/generate` | `ADMIN`/`TEACHER`/`STUDENT`² | — | `GenerateLectureRequest` | `201` + `LectureDto` |
+| POST | `/generate/semester/{weekScheduleCycleId}` | `ADMIN`/`TEACHER`/`STUDENT`² | — | — | `200` + `LectureDto[]` |
 | PUT | `/{id}` | `ADMIN`/`TEACHER` | — | `LectureDto` | `LectureDto` |
 | DELETE | `/{id}` | `ADMIN`/`TEACHER` | — | — | `204` |
 
@@ -350,18 +357,18 @@
   «Флоу регистрации» в `CLAUDE.md`), а не из path/query. Возвращает лекции группы, к которой привязан
   студент; если студент ещё не привязан к группе — пустая страница, а не ошибка. Это основной эндпоинт для
   экрана «моё расписание» в мобильном приложении.
+- ² `STUDENT` может генерировать лекции только для своей группы: `POST /generate` — целевой `Pair`
+  должен принадлежать его группе; `POST /generate/semester/{id}` — генерирует только по `Pair` своей
+  группы, остальные `Pair` цикла пропускаются молча (не ошибка). Статус цикла (`DRAFT`/`AGREED`, см.
+  `WeekScheduleCycles`) на генерацию не влияет. `ADMIN`/`TEACHER` не ограничены.
 - **`POST /generate`** — генерирует одну `Lecture` на конкретную `date` из шаблона `Pair` (курс,
   преподаватель, группы копируются из `Pair`); `date` должна соответствовать `dayOfWeek`/`weekParity` пары.
-  **`STUDENT`** может вызывать только для `Pair` своей группы (иначе `422`); `ADMIN`/`TEACHER` — без
-  ограничений. **Не идемпотентно**: если `Lecture` для этой пары+даты уже существует — `422`
-  («уже сгенерирована»), а не тихий пропуск (в отличие от `generate/semester` ниже) — повторный клик
-  в UI на этом пути нужно явно обрабатывать как ошибку, не как no-op.
-- **`POST /generate/semester/{weekScheduleCycleId}`** — генерирует лекции на весь семестр разом, в
-  границах `Semester.startDate`…`Semester.endDate`; уже сгенерированные пара+дата пропускаются без
-  ошибки — вызывать повторно безопасно (идемпотентно). Скоуп по ролям: `ADMIN`/`TEACHER` — по
-  **всем** `Pair` цикла, как раньше; **`STUDENT`** — только по `Pair` **своей группы**, остальные
-  `Pair` цикла молча пропускаются (не 403/422) — то есть студент, вызывая этот эндпоинт, генерирует
-  занятия только для себя/своей группы, даже если цикл общий на несколько групп.
+  **Не идемпотентно**: если `Lecture` для этой пары+даты уже существует — `422` («уже сгенерирована»), а
+  не тихий пропуск (в отличие от `generate/semester` ниже) — повторный клик в UI на этом пути нужно явно
+  обрабатывать как ошибку, не как no-op.
+- **`POST /generate/semester/{weekScheduleCycleId}`** — генерирует лекции на весь семестр разом для всех
+  `Pair` данного цикла, в границах `Semester.startDate`…`Semester.endDate`; уже сгенерированные пара+дата
+  пропускаются без ошибки — вызывать повторно безопасно (идемпотентно).
 
 ## Students — `/api/v1/students`
 
@@ -440,7 +447,7 @@
 
 - `Faculties`/`Departments` create/update/delete не защищены ролью (см. врезку в разделе `Faculties`
   выше) — стоит уточнить у бэкенд-команды, до того как открывать соответствующие экраны не-`ADMIN`
-  пользователям. (Публичность `GET` на этих же ресурсах — не сюда, это уже сознательный фикс, см. врезку.)
+  пользователям.
 - `Programs`: часть эндпоинтов (`POST /`, `GET /{id}`, `GET /`) не имеет `@PreAuthorize` вовсе (закомментирован
   в коде), а `GET /faculty/{facultyId}` требует одну из трёх ролей — несогласованность между эндпоинтами
   одного ресурса, доступ де-факто одинаковый (любой аутентифицированный), но стоит иметь в виду при
@@ -453,4 +460,7 @@
   Authorization Code + PKCE флоу сразу после ввода пароля: браузер получает `302` на
   `http://localhost:8082/...`, которое с эмулятора недостижимо (`ERR_CONNECTION_REFUSED`), и не долетает до
   `univer://auth/callback`. Подтверждено вживую с реальными учётными данными. Мобильное приложение здесь
-  ничего не может исправить — нужна правка hostname-конфигурации Keycloak на стороне бэкенда.
+  ничего не может исправить — нужна правка hostname-конфигурации Keycloak на стороне бэкенда. Не
+  подтверждено, что это ещё актуально в текущей версии upstream `API.md` (та больше не содержит этот
+  пункт) — возможно, перенесено в `MOBILE.md` бэкенд-репозитория или уже исправлено; перепроверить, если
+  Authorization Code + PKCE снова начнёт падать на эмуляторе.

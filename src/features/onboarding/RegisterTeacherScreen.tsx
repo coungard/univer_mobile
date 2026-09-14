@@ -6,6 +6,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
 import { ErrorBanner } from '../../components/ErrorBanner';
+import { SearchableSelectField } from '../../components/SearchableSelectField';
 import { SelectField } from '../../components/SelectField';
 import { AuthStackParamList } from '../../navigation/types';
 import { useDepartmentsQuery, useRegisterTeacherMutation, useUniversitiesQuery } from './hooks';
@@ -14,7 +15,8 @@ import { TeacherRegistrationForm, teacherRegistrationSchema } from './schemas';
 type Props = NativeStackScreenProps<AuthStackParamList, 'RegisterTeacher'>;
 
 export function RegisterTeacherScreen({ navigation }: Props) {
-  const universities = useUniversitiesQuery();
+  const [universitySearch, setUniversitySearch] = useState('');
+  const universities = useUniversitiesQuery(universitySearch);
   const register = useRegisterTeacherMutation();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -189,14 +191,18 @@ export function RegisterTeacherScreen({ navigation }: Props) {
         name="universityId"
         render={({ field }) => (
           <View style={styles.field}>
-            <SelectField
+            <SearchableSelectField
               label="Университет"
               value={field.value || null}
               options={universities.data ?? []}
+              searchText={universitySearch}
+              onSearchTextChange={setUniversitySearch}
               onChange={field.onChange}
               error={!!errors.universityId}
-              disabled={universities.isLoading}
-              emptyLabel={universities.isLoading ? 'Загрузка…' : 'Нет доступных университетов'}
+              loading={universities.isLoading}
+              loadingMore={universities.isFetchingNextPage}
+              hasMore={universities.hasNextPage}
+              onEndReached={universities.fetchNextPage}
             />
             <HelperText type="error" visible={!!errors.universityId}>
               {errors.universityId?.message}
