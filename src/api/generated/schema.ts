@@ -319,7 +319,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Получить университеты с пагинацией */
+        /** Получить университеты с пагинацией и опциональным поиском по названию */
         get: operations["getUniversities"];
         put?: never;
         /** Создать университет */
@@ -1388,10 +1388,10 @@ export interface components {
             attended?: boolean;
         };
         PageWeekScheduleCycleDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["WeekScheduleCycleDto"][];
@@ -1410,9 +1410,9 @@ export interface components {
             offset?: number;
             sort?: components["schemas"]["SortObject"][];
             /** Format: int32 */
-            pageSize?: number;
-            /** Format: int32 */
             pageNumber?: number;
+            /** Format: int32 */
+            pageSize?: number;
             paged?: boolean;
             unpaged?: boolean;
         };
@@ -1424,10 +1424,10 @@ export interface components {
             ignoreCase?: boolean;
         };
         PageUniversityDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UniversityDto"][];
@@ -1467,8 +1467,8 @@ export interface components {
              */
             readDate?: string;
             inline?: boolean;
-            formData?: boolean;
             attachment?: boolean;
+            formData?: boolean;
         };
         ErrorResponse: {
             headers?: {
@@ -1478,34 +1478,6 @@ export interface components {
                 /** Format: int64 */
                 contentLength?: number;
                 connection?: string[];
-                acceptLanguageAsLocales?: {
-                    language?: string;
-                    displayName?: string;
-                    country?: string;
-                    variant?: string;
-                    script?: string;
-                    unicodeLocaleAttributes?: string[];
-                    unicodeLocaleKeys?: string[];
-                    displayLanguage?: string;
-                    displayScript?: string;
-                    displayCountry?: string;
-                    displayVariant?: string;
-                    extensionKeys?: string[];
-                    iso3Language?: string;
-                    iso3Country?: string;
-                }[];
-                accessControlAllowOrigin?: string;
-                accessControlExposeHeaders?: string[];
-                /** Format: int64 */
-                accessControlMaxAge?: number;
-                accessControlRequestHeaders?: string[];
-                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
-                accessControlAllowCredentials?: boolean;
-                contentDisposition?: components["schemas"]["ContentDisposition"];
-                accessControlAllowHeaders?: string[];
-                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
-                /** Format: int64 */
-                ifUnmodifiedSince?: number;
                 empty?: boolean;
                 /** Format: uri */
                 location?: string;
@@ -1541,6 +1513,7 @@ export interface components {
                 /** Format: int64 */
                 date?: number;
                 range?: components["schemas"]["HttpRange"][];
+                contentDisposition?: components["schemas"]["ContentDisposition"];
                 acceptCharset?: string[];
                 contentLanguage?: {
                     language?: string;
@@ -1562,6 +1535,33 @@ export interface components {
                 cacheControl?: string;
                 etag?: string;
                 accept?: components["schemas"]["MediaType"][];
+                accessControlExposeHeaders?: string[];
+                accessControlRequestHeaders?: string[];
+                accessControlAllowOrigin?: string;
+                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
+                /** Format: int64 */
+                accessControlMaxAge?: number;
+                accessControlAllowHeaders?: string[];
+                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
+                accessControlAllowCredentials?: boolean;
+                acceptLanguageAsLocales?: {
+                    language?: string;
+                    displayName?: string;
+                    country?: string;
+                    variant?: string;
+                    script?: string;
+                    unicodeLocaleAttributes?: string[];
+                    unicodeLocaleKeys?: string[];
+                    displayLanguage?: string;
+                    displayScript?: string;
+                    displayCountry?: string;
+                    displayVariant?: string;
+                    extensionKeys?: string[];
+                    iso3Language?: string;
+                    iso3Country?: string;
+                }[];
+                /** Format: int64 */
+                ifUnmodifiedSince?: number;
                 acceptPatch?: components["schemas"]["MediaType"][];
                 acceptLanguage?: {
                     range?: string;
@@ -1569,22 +1569,22 @@ export interface components {
                     weight?: number;
                 }[];
                 basicAuth?: string;
-                bearerAuth?: string;
-                ifNoneMatch?: string[];
-                vary?: string[];
                 ifMatch?: string[];
                 pragma?: string;
+                bearerAuth?: string;
+                upgrade?: string;
                 origin?: string;
                 /** Format: int64 */
                 expires?: number;
-                upgrade?: string;
+                ifNoneMatch?: string[];
+                vary?: string[];
             } & {
                 [key: string]: string[];
             };
             body?: components["schemas"]["ProblemDetail"];
             statusCode?: components["schemas"]["HttpStatusCode"];
-            detailMessageCode?: string;
             detailMessageArguments?: Record<string, never>[];
+            detailMessageCode?: string;
             titleMessageCode?: string;
             typeMessageCode?: string;
         };
@@ -1592,11 +1592,11 @@ export interface components {
         HttpRange: Record<string, never>;
         HttpStatusCode: {
             error?: boolean;
-            is4xxClientError?: boolean;
             is5xxServerError?: boolean;
-            is3xxRedirection?: boolean;
+            is4xxClientError?: boolean;
             is2xxSuccessful?: boolean;
             is1xxInformational?: boolean;
+            is3xxRedirection?: boolean;
         };
         MediaType: {
             type?: string;
@@ -1608,8 +1608,8 @@ export interface components {
             qualityValue?: number;
             charset?: string;
             concrete?: boolean;
-            wildcardType?: boolean;
             wildcardSubtype?: boolean;
+            wildcardType?: boolean;
             subtypeSuffix?: string;
         };
         ProblemDetail: {
@@ -1626,10 +1626,10 @@ export interface components {
             };
         };
         PageTeacherDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["TeacherDto"][];
@@ -1644,10 +1644,10 @@ export interface components {
             empty?: boolean;
         };
         PageStudyYearDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StudyYearDto"][];
@@ -1662,10 +1662,10 @@ export interface components {
             empty?: boolean;
         };
         PageStudentDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StudentDto"][];
@@ -1680,10 +1680,10 @@ export interface components {
             empty?: boolean;
         };
         PageSemesterDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["SemesterDto"][];
@@ -1698,10 +1698,10 @@ export interface components {
             empty?: boolean;
         };
         PageProgramDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["ProgramDto"][];
@@ -1716,10 +1716,10 @@ export interface components {
             empty?: boolean;
         };
         PagePairDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PairDto"][];
@@ -1734,10 +1734,10 @@ export interface components {
             empty?: boolean;
         };
         PageLectureDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LectureDto"][];
@@ -1752,10 +1752,10 @@ export interface components {
             empty?: boolean;
         };
         PageGroupDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["GroupDto"][];
@@ -1770,10 +1770,10 @@ export interface components {
             empty?: boolean;
         };
         PageFacultyDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["FacultyDto"][];
@@ -1788,10 +1788,10 @@ export interface components {
             empty?: boolean;
         };
         PageEnrollmentDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["EnrollmentDto"][];
@@ -1806,10 +1806,10 @@ export interface components {
             empty?: boolean;
         };
         PageDepartmentDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["DepartmentDto"][];
@@ -1824,10 +1824,10 @@ export interface components {
             empty?: boolean;
         };
         PageCourseDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CourseDto"][];
@@ -1842,10 +1842,10 @@ export interface components {
             empty?: boolean;
         };
         PageBellScheduleEntryDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["BellScheduleEntryDto"][];
@@ -1860,10 +1860,10 @@ export interface components {
             empty?: boolean;
         };
         PageLectureAttendanceDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LectureAttendanceDto"][];
@@ -2938,6 +2938,8 @@ export interface operations {
     getUniversities: {
         parameters: {
             query?: {
+                /** @description Регистронезависимая подстрока для поиска по названию университета */
+                search?: string;
                 page?: number;
                 size?: number;
             };

@@ -1,10 +1,13 @@
 import { apiClient } from '../client';
 import { Page, UniversityDto } from '../types';
 
-/** `GET /universities` — used by the "select university" step of student registration. */
-export async function getUniversities(page = 0, size = 50): Promise<Page<UniversityDto>> {
+/**
+ * `GET /universities` — used by the searchable "select university" step of registration.
+ * `search` is a case-insensitive substring match on name, applied server-side.
+ */
+export async function getUniversities(search?: string, page = 0, size = 20): Promise<Page<UniversityDto>> {
   const { data } = await apiClient.get<Page<UniversityDto>>('/universities', {
-    params: { page, size },
+    params: { search: search || undefined, page, size },
   });
   return data;
 }
