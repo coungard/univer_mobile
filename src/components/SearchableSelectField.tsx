@@ -3,6 +3,8 @@ import { FlatList, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Divider, IconButton, List, Modal, Portal, Searchbar, Text, TextInput, useTheme } from 'react-native-paper';
 import { SelectOption } from './SelectField';
 
+type PaperThemeProp = React.ComponentProps<typeof TextInput>['theme'];
+
 interface Props {
   label: string;
   value: string | null;
@@ -21,6 +23,18 @@ interface Props {
   error?: boolean;
   disabled?: boolean;
   emptyLabel?: string;
+  /**
+   * Per-instance color/font override for the closed field and the search bar, e.g. a screen with
+   * its own brand palette (`RegisterStudentScreen`'s "Library" identity). Leave unset to keep the
+   * app's ambient theme — other callers (`RegisterTeacherScreen`) are unaffected either way.
+   */
+  inputTheme?: PaperThemeProp;
+  /**
+   * Renders the closed field as a plain outlined box with no floating label, for screens that
+   * draw their own label above the field instead. `label` is still used for the modal's header
+   * title regardless.
+   */
+  hideInlineLabel?: boolean;
 }
 
 /**
@@ -43,6 +57,8 @@ export function SearchableSelectField({
   error,
   disabled,
   emptyLabel = 'Ничего не найдено',
+  inputTheme,
+  hideInlineLabel,
 }: Props) {
   const theme = useTheme();
   const [visible, setVisible] = useState(false);
@@ -66,11 +82,12 @@ export function SearchableSelectField({
   return (
     <>
       <TextInput
-        label={label}
+        label={hideInlineLabel ? undefined : label}
         value={selectedText}
         editable={false}
         error={error}
         disabled={disabled}
+        theme={inputTheme}
         right={<TextInput.Icon icon="magnify" onPress={open} />}
         onPressIn={open}
       />
@@ -93,6 +110,7 @@ export function SearchableSelectField({
             onChangeText={onSearchTextChange}
             autoFocus
             style={styles.searchbar}
+            theme={inputTheme}
           />
           <FlatList
             data={options}
