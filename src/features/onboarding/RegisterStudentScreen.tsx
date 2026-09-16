@@ -1,17 +1,55 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { SearchableSelectField } from '../../components/SearchableSelectField';
 import { AuthStackParamList } from '../../navigation/types';
+import { libraryColors, libraryFonts } from '../../theme/library';
 import { useRegisterStudentMutation, useUniversitiesQuery } from './hooks';
 import { StudentRegistrationForm, studentRegistrationSchema } from './schemas';
+import { StudentIdCard } from './StudentIdCard';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'RegisterStudent'>;
+
+type PaperThemeProp = React.ComponentProps<typeof TextInput>['theme'];
+
+/** Per-field color override so the boxed "Library" look doesn't need touching Paper's global theme. */
+const fieldTheme: PaperThemeProp = {
+  colors: {
+    primary: libraryColors.terracottaButton,
+    outline: libraryColors.border,
+    background: libraryColors.surface,
+    onSurfaceVariant: libraryColors.inkMuted,
+    onSurface: libraryColors.ink,
+  },
+};
+
+interface FieldBoxProps {
+  label: string;
+  error?: boolean;
+  helperText?: string;
+  /** Fields with no validation (e.g. the optional full name) skip the reserved helper-text row entirely. */
+  validated?: boolean;
+  children: React.ReactNode;
+}
+
+function FieldBox({ label, error, helperText, validated = true, children }: FieldBoxProps) {
+  return (
+    <View style={styles.fieldBox}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      {children}
+      {validated && (
+        <HelperText type="error" visible={!!error} style={styles.helperText}>
+          {helperText}
+        </HelperText>
+      )}
+    </View>
+  );
+}
 
 export function RegisterStudentScreen({ navigation }: Props) {
   const [universitySearch, setUniversitySearch] = useState('');
@@ -38,6 +76,8 @@ export function RegisterStudentScreen({ navigation }: Props) {
       universityId: '',
     },
   });
+
+  const [firstname, lastname, username] = useWatch({ control, name: ['firstname', 'lastname', 'username'] });
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
@@ -75,65 +115,90 @@ export function RegisterStudentScreen({ navigation }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
       <ErrorBanner message={submitError} onDismiss={() => setSubmitError(null)} />
 
-      <Text variant="headlineSmall" style={styles.title}>
-        Регистрация студента
-      </Text>
+      <StudentIdCard firstname={firstname} lastname={lastname} username={username} />
+
+      <View style={styles.heading}>
+        <Text style={styles.title}>Заполните профиль</Text>
+        <Text style={styles.subtitle}>Билет выше обновится, как только вы допишете данные</Text>
+      </View>
 
       <Controller
         control={control}
         name="username"
         render={({ field }) => (
-          <View style={styles.field}>
+          <FieldBox label="Логин" error={!!errors.username} helperText={errors.username?.message}>
             <TextInput
-              label="Логин"
               value={field.value}
               onChangeText={field.onChange}
               autoCapitalize="none"
+              mode="outlined"
+              theme={fieldTheme}
+              outlineStyle={styles.fieldOutline}
+              style={styles.fieldInput}
               error={!!errors.username}
             />
-            <HelperText type="error" visible={!!errors.username}>
-              {errors.username?.message}
-            </HelperText>
-          </View>
+          </FieldBox>
         )}
       />
 
-      <Controller
-        control={control}
-        name="firstname"
-        render={({ field }) => (
-          <View style={styles.field}>
-            <TextInput label="Имя" value={field.value} onChangeText={field.onChange} error={!!errors.firstname} />
-            <HelperText type="error" visible={!!errors.firstname}>
-              {errors.firstname?.message}
-            </HelperText>
-          </View>
-        )}
-      />
-
-      <Controller
-        control={control}
-        name="lastname"
-        render={({ field }) => (
-          <View style={styles.field}>
-            <TextInput label="Фамилия" value={field.value} onChangeText={field.onChange} error={!!errors.lastname} />
-            <HelperText type="error" visible={!!errors.lastname}>
-              {errors.lastname?.message}
-            </HelperText>
-          </View>
-        )}
-      />
+      <View style={styles.row}>
+        <Controller
+          control={control}
+          name="firstname"
+          render={({ field }) => (
+            <View style={styles.rowItem}>
+              <FieldBox label="Имя" error={!!errors.firstname} helperText={errors.firstname?.message}>
+                <TextInput
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  mode="outlined"
+                  theme={fieldTheme}
+                  outlineStyle={styles.fieldOutline}
+                  style={styles.fieldInput}
+                  error={!!errors.firstname}
+                />
+              </FieldBox>
+            </View>
+          )}
+        />
+        <Controller
+          control={control}
+          name="lastname"
+          render={({ field }) => (
+            <View style={styles.rowItem}>
+              <FieldBox label="Фамилия" error={!!errors.lastname} helperText={errors.lastname?.message}>
+                <TextInput
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  mode="outlined"
+                  theme={fieldTheme}
+                  outlineStyle={styles.fieldOutline}
+                  style={styles.fieldInput}
+                  error={!!errors.lastname}
+                />
+              </FieldBox>
+            </View>
+          )}
+        />
+      </View>
 
       <Controller
         control={control}
         name="fullname"
         render={({ field }) => (
-          <View style={styles.field}>
-            <TextInput label="Полное имя (необязательно)" value={field.value} onChangeText={field.onChange} />
-          </View>
+          <FieldBox label="Полное имя (необязательно)" validated={false}>
+            <TextInput
+              value={field.value}
+              onChangeText={field.onChange}
+              mode="outlined"
+              theme={fieldTheme}
+              outlineStyle={styles.fieldOutline}
+              style={styles.fieldInput}
+            />
+          </FieldBox>
         )}
       />
 
@@ -141,19 +206,19 @@ export function RegisterStudentScreen({ navigation }: Props) {
         control={control}
         name="email"
         render={({ field }) => (
-          <View style={styles.field}>
+          <FieldBox label="Email" error={!!errors.email} helperText={errors.email?.message}>
             <TextInput
-              label="Email"
               value={field.value}
               onChangeText={field.onChange}
               autoCapitalize="none"
               keyboardType="email-address"
+              mode="outlined"
+              theme={fieldTheme}
+              outlineStyle={styles.fieldOutline}
+              style={styles.fieldInput}
               error={!!errors.email}
             />
-            <HelperText type="error" visible={!!errors.email}>
-              {errors.email?.message}
-            </HelperText>
-          </View>
+          </FieldBox>
         )}
       />
 
@@ -161,18 +226,18 @@ export function RegisterStudentScreen({ navigation }: Props) {
         control={control}
         name="password"
         render={({ field }) => (
-          <View style={styles.field}>
+          <FieldBox label="Пароль" error={!!errors.password} helperText={errors.password?.message}>
             <TextInput
-              label="Пароль"
               value={field.value}
               onChangeText={field.onChange}
               secureTextEntry
+              mode="outlined"
+              theme={fieldTheme}
+              outlineStyle={styles.fieldOutline}
+              style={styles.fieldInput}
               error={!!errors.password}
             />
-            <HelperText type="error" visible={!!errors.password}>
-              {errors.password?.message}
-            </HelperText>
-          </View>
+          </FieldBox>
         )}
       />
 
@@ -180,18 +245,22 @@ export function RegisterStudentScreen({ navigation }: Props) {
         control={control}
         name="enrollmentDate"
         render={({ field }) => (
-          <View style={styles.field}>
+          <FieldBox
+            label="Дата зачисления (ГГГГ-ММ-ДД)"
+            error={!!errors.enrollmentDate}
+            helperText={errors.enrollmentDate?.message}
+          >
             <TextInput
-              label="Дата зачисления (ГГГГ-ММ-ДД)"
               value={field.value}
               onChangeText={field.onChange}
               placeholder="2026-09-01"
+              mode="outlined"
+              theme={fieldTheme}
+              outlineStyle={styles.fieldOutline}
+              style={styles.fieldInput}
               error={!!errors.enrollmentDate}
             />
-            <HelperText type="error" visible={!!errors.enrollmentDate}>
-              {errors.enrollmentDate?.message}
-            </HelperText>
-          </View>
+          </FieldBox>
         )}
       />
 
@@ -199,7 +268,11 @@ export function RegisterStudentScreen({ navigation }: Props) {
         control={control}
         name="universityId"
         render={({ field }) => (
-          <View style={styles.field}>
+          <FieldBox
+            label="Университет"
+            error={!!errors.universityId}
+            helperText={errors.universityId?.message}
+          >
             <SearchableSelectField
               label="Университет"
               value={field.value || null}
@@ -212,34 +285,103 @@ export function RegisterStudentScreen({ navigation }: Props) {
               loadingMore={universities.isFetchingNextPage}
               hasMore={universities.hasNextPage}
               onEndReached={universities.fetchNextPage}
+              inputTheme={fieldTheme}
+              hideInlineLabel
             />
-            <HelperText type="error" visible={!!errors.universityId}>
-              {errors.universityId?.message}
-            </HelperText>
-          </View>
+          </FieldBox>
         )}
       />
 
-      <Button mode="contained" onPress={onSubmit} loading={isSubmitting} disabled={isSubmitting} style={styles.submit}>
+      <Button
+        mode="contained"
+        onPress={onSubmit}
+        loading={isSubmitting}
+        disabled={isSubmitting}
+        buttonColor={libraryColors.terracottaButton}
+        textColor={libraryColors.cream}
+        style={styles.submitButton}
+        contentStyle={styles.submitButtonContent}
+        labelStyle={styles.submitButtonLabel}
+      >
         Зарегистрироваться
+      </Button>
+
+      <Button
+        mode="text"
+        onPress={() => navigation.navigate('Login')}
+        disabled={isSubmitting}
+        textColor={libraryColors.terracottaButton}
+        labelStyle={styles.footerLinkLabel}
+      >
+        Уже есть аккаунт? Войти
       </Button>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    backgroundColor: libraryColors.background,
+  },
   container: {
-    padding: 24,
+    padding: 20,
+    gap: 12,
+  },
+  heading: {
     gap: 4,
+    marginTop: 4,
   },
   title: {
-    marginBottom: 16,
+    fontFamily: libraryFonts.headingBold,
+    fontSize: 22,
+    color: libraryColors.ink,
   },
-  field: {
-    marginBottom: 4,
+  subtitle: {
+    fontFamily: libraryFonts.bodyRegular,
+    fontSize: 12.5,
+    color: libraryColors.inkMuted,
   },
-  submit: {
-    marginTop: 16,
+  row: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  rowItem: {
+    flex: 1,
+  },
+  fieldBox: {
+    gap: 4,
+  },
+  fieldLabel: {
+    fontFamily: libraryFonts.bodyBold,
+    fontSize: 9.5,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    color: libraryColors.inkMuted,
+  },
+  fieldOutline: {
+    borderRadius: 10,
+  },
+  fieldInput: {
+    backgroundColor: libraryColors.surface,
+    fontFamily: libraryFonts.bodyRegular,
+  },
+  helperText: {
+    marginTop: -6,
+  },
+  submitButton: {
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  submitButtonContent: {
+    height: 52,
+  },
+  submitButtonLabel: {
+    fontFamily: libraryFonts.bodyBold,
+    fontSize: 15,
+  },
+  footerLinkLabel: {
+    fontFamily: libraryFonts.bodyBold,
+    fontSize: 13,
   },
   doneContainer: {
     flex: 1,
