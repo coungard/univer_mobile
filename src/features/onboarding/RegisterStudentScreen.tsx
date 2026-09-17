@@ -296,6 +296,7 @@ export function RegisterStudentScreen({ navigation }: Props) {
               onEndReached={universities.fetchNextPage}
               inputTheme={fieldTheme}
               hideInlineLabel
+              libraryStyle
             />
           </FieldBox>
         )}

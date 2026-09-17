@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Divider, IconButton, List, Modal, Portal, Searchbar, Text, TextInput, useTheme } from 'react-native-paper';
+import { libraryColors, libraryFonts } from '../theme/library';
 import { SelectOption } from './SelectField';
 
 type PaperThemeProp = React.ComponentProps<typeof TextInput>['theme'];
@@ -35,6 +36,11 @@ interface Props {
    * title regardless.
    */
   hideInlineLabel?: boolean;
+  /**
+   * Draws the modal (header, search bar, list) in the "Library" visual identity (issue #44) to
+   * match the rest of `RegisterStudentScreen`, instead of the app's default Paper look.
+   */
+  libraryStyle?: boolean;
 }
 
 /**
@@ -59,6 +65,7 @@ export function SearchableSelectField({
   emptyLabel = 'Ничего не найдено',
   inputTheme,
   hideInlineLabel,
+  libraryStyle,
 }: Props) {
   const theme = useTheme();
   const [visible, setVisible] = useState(false);
@@ -87,8 +94,17 @@ export function SearchableSelectField({
         editable={false}
         error={error}
         disabled={disabled}
+        mode={libraryStyle ? 'outlined' : undefined}
         theme={inputTheme}
-        right={<TextInput.Icon icon="magnify" onPress={open} />}
+        outlineStyle={libraryStyle && styles.fieldOutlineLibrary}
+        style={libraryStyle && styles.fieldInputLibrary}
+        right={
+          <TextInput.Icon
+            icon="magnify"
+            color={libraryStyle ? libraryColors.terracotta : undefined}
+            onPress={open}
+          />
+        }
         onPressIn={open}
       />
 
@@ -96,40 +112,72 @@ export function SearchableSelectField({
         <Modal
           visible={visible}
           onDismiss={() => setVisible(false)}
-          contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.background }]}
+          contentContainerStyle={[
+            styles.modal,
+            { backgroundColor: libraryStyle ? libraryColors.background : theme.colors.background },
+            libraryStyle && styles.modalLibrary,
+          ]}
         >
-          <View style={styles.header}>
-            <Text variant="titleMedium" style={styles.headerTitle}>
+          <View style={[styles.header, libraryStyle && styles.headerLibrary]}>
+            <Text
+              variant="titleMedium"
+              style={[styles.headerTitle, libraryStyle && styles.headerTitleLibrary]}
+            >
               {label}
             </Text>
-            <IconButton icon="close" onPress={() => setVisible(false)} />
+            <IconButton
+              icon="close"
+              iconColor={libraryStyle ? libraryColors.terracotta : undefined}
+              onPress={() => setVisible(false)}
+            />
           </View>
           <Searchbar
             placeholder="Поиск…"
             value={searchText}
             onChangeText={onSearchTextChange}
             autoFocus
-            style={styles.searchbar}
+            style={[styles.searchbar, libraryStyle && styles.searchbarLibrary]}
+            inputStyle={libraryStyle && styles.searchbarInputLibrary}
+            iconColor={libraryStyle ? libraryColors.terracotta : undefined}
+            placeholderTextColor={libraryStyle ? libraryColors.inkFaint : undefined}
             theme={inputTheme}
           />
           <FlatList
             data={options}
             keyExtractor={(option) => option.value}
-            ItemSeparatorComponent={Divider}
+            ItemSeparatorComponent={() => (
+              <Divider style={libraryStyle && styles.dividerLibrary} />
+            )}
             onEndReachedThreshold={0.5}
             onEndReached={() => {
               if (hasMore && !loadingMore) onEndReached?.();
             }}
             ListEmptyComponent={
               loading ? (
-                <ActivityIndicator style={styles.stateIndicator} />
+                <ActivityIndicator
+                  style={styles.stateIndicator}
+                  color={libraryStyle ? libraryColors.terracotta : undefined}
+                />
               ) : (
-                <Text style={styles.emptyText}>{emptyLabel}</Text>
+                <Text style={[styles.emptyText, libraryStyle && styles.emptyTextLibrary]}>{emptyLabel}</Text>
               )
             }
-            ListFooterComponent={loadingMore ? <ActivityIndicator style={styles.stateIndicator} /> : null}
+            ListFooterComponent={
+              loadingMore ? (
+                <ActivityIndicator
+                  style={styles.stateIndicator}
+                  color={libraryStyle ? libraryColors.terracotta : undefined}
+                />
+              ) : null
+            }
             renderItem={({ item }) => (
-              <List.Item title={item.label} description={item.sublabel} onPress={() => select(item)} />
+              <List.Item
+                title={item.label}
+                description={item.sublabel}
+                onPress={() => select(item)}
+                titleStyle={libraryStyle && styles.itemTitleLibrary}
+                descriptionStyle={libraryStyle && styles.itemDescriptionLibrary}
+              />
             )}
           />
         </Modal>
@@ -139,10 +187,21 @@ export function SearchableSelectField({
 }
 
 const styles = StyleSheet.create({
+  fieldOutlineLibrary: {
+    borderRadius: 10,
+  },
+  fieldInputLibrary: {
+    backgroundColor: libraryColors.surface,
+    fontFamily: libraryFonts.bodyRegular,
+  },
   modal: {
     flex: 1,
     marginTop: 48,
     marginHorizontal: 0,
+  },
+  modalLibrary: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   header: {
     flexDirection: 'row',
@@ -150,12 +209,35 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
   },
+  headerLibrary: {
+    paddingTop: 12,
+  },
   headerTitle: {
     flex: 1,
+  },
+  headerTitleLibrary: {
+    fontFamily: libraryFonts.headingBold,
+    fontSize: 18,
+    color: libraryColors.ink,
   },
   searchbar: {
     marginHorizontal: 16,
     marginBottom: 8,
+  },
+  searchbarLibrary: {
+    backgroundColor: libraryColors.surface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: libraryColors.border,
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  searchbarInputLibrary: {
+    fontFamily: libraryFonts.bodyRegular,
+    color: libraryColors.ink,
+  },
+  dividerLibrary: {
+    backgroundColor: libraryColors.border,
   },
   stateIndicator: {
     marginVertical: 24,
@@ -164,5 +246,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 24,
     opacity: 0.7,
+  },
+  emptyTextLibrary: {
+    fontFamily: libraryFonts.bodyRegular,
+    color: libraryColors.inkMuted,
+    opacity: 1,
+  },
+  itemTitleLibrary: {
+    fontFamily: libraryFonts.bodyBold,
+    color: libraryColors.ink,
+  },
+  itemDescriptionLibrary: {
+    fontFamily: libraryFonts.bodyRegular,
+    color: libraryColors.inkMuted,
   },
 });
