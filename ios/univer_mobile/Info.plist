@@ -47,6 +47,10 @@
 		<string>Lato-Bold.ttf</string>
 		<string>LibreBaskerville-Regular.ttf</string>
 		<string>LibreBaskerville-Bold.ttf</string>
+		<!-- react-native-paper's icons (e.g. the password show/hide eye) render via
+		     react-native-vector-icons' MaterialCommunityIcons font — without it a missing
+		     glyph box is shown instead of the icon. -->
+		<string>MaterialCommunityIcons.ttf</string>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>

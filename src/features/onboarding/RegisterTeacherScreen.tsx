@@ -20,6 +20,7 @@ export function RegisterTeacherScreen({ navigation }: Props) {
   const register = useRegisterTeacherMutation();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     control,
@@ -176,8 +177,15 @@ export function RegisterTeacherScreen({ navigation }: Props) {
               label="Пароль"
               value={field.value}
               onChangeText={field.onChange}
-              secureTextEntry
+              secureTextEntry={!showPassword}
               error={!!errors.password}
+              right={
+                <TextInput.Icon
+                  icon={showPassword ? 'eye-off' : 'eye'}
+                  onPress={() => setShowPassword((value) => !value)}
+                  forceTextInputFocus={false}
+                />
+              }
             />
             <HelperText type="error" visible={!!errors.password}>
               {errors.password?.message}

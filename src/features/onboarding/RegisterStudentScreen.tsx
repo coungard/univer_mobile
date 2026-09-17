@@ -57,6 +57,7 @@ export function RegisterStudentScreen({ navigation }: Props) {
   const register = useRegisterStudentMutation();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     control,
@@ -230,12 +231,20 @@ export function RegisterStudentScreen({ navigation }: Props) {
             <TextInput
               value={field.value}
               onChangeText={field.onChange}
-              secureTextEntry
+              secureTextEntry={!showPassword}
               mode="outlined"
               theme={fieldTheme}
               outlineStyle={styles.fieldOutline}
               style={styles.fieldInput}
               error={!!errors.password}
+              right={
+                <TextInput.Icon
+                  icon={showPassword ? 'eye-off' : 'eye'}
+                  color={libraryColors.inkMuted}
+                  onPress={() => setShowPassword((value) => !value)}
+                  forceTextInputFocus={false}
+                />
+              }
             />
           </FieldBox>
         )}
