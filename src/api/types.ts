@@ -42,7 +42,16 @@ export type StudentDto = WithRequiredId<components['schemas']['StudentDto']> & {
   groupId?: string | null;
 };
 
-export type RegisterStudentRequest = components['schemas']['RegisterStudentRequest'];
+/**
+ * The generated shape still has `enrollmentDate: string` (required) and no `birthday` — the backend
+ * hasn't shipped `coungard/univer#79` yet (`enrollment_date` nullable + `Person.birthday`). This
+ * override anticipates that contract so the registration form (`coungard/univer_mobile#46`) can be
+ * built now; drop it and re-run `npm run sync-api` once the backend ships the field.
+ */
+export type RegisterStudentRequest = Omit<components['schemas']['RegisterStudentRequest'], 'enrollmentDate'> & {
+  /** Format: date (`ГГГГ-ММ-ДД`) */
+  birthday: string;
+};
 
 export type TeacherDto = WithRequiredId<components['schemas']['TeacherDto']>;
 export type RegisterTeacherRequest = components['schemas']['RegisterTeacherRequest'];

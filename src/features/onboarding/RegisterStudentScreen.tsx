@@ -73,7 +73,7 @@ export function RegisterStudentScreen({ navigation }: Props) {
       fullname: '',
       email: '',
       password: '',
-      enrollmentDate: '',
+      birthday: '',
       universityId: '',
     },
   });
@@ -252,22 +252,22 @@ export function RegisterStudentScreen({ navigation }: Props) {
 
       <Controller
         control={control}
-        name="enrollmentDate"
+        name="birthday"
         render={({ field }) => (
           <FieldBox
-            label="Дата зачисления (ГГГГ-ММ-ДД)"
-            error={!!errors.enrollmentDate}
-            helperText={errors.enrollmentDate?.message}
+            label="Дата рождения (ГГГГ-ММ-ДД)"
+            error={!!errors.birthday}
+            helperText={errors.birthday?.message}
           >
             <TextInput
               value={field.value}
               onChangeText={field.onChange}
-              placeholder="2026-09-01"
+              placeholder="2005-09-01"
               mode="outlined"
               theme={fieldTheme}
               outlineStyle={styles.fieldOutline}
               style={styles.fieldInput}
-              error={!!errors.enrollmentDate}
+              error={!!errors.birthday}
             />
           </FieldBox>
         )}

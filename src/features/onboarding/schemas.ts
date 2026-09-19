@@ -12,7 +12,7 @@ export const studentRegistrationSchema = z.object({
   fullname: z.string().optional(),
   email: z.string().email('Некорректный email'),
   password: z.string().min(8, 'Минимум 8 символов'),
-  enrollmentDate: z
+  birthday: z
     .string()
     .regex(DATE_RE, 'Формат: ГГГГ-ММ-ДД')
     .refine((value) => value <= today(), 'Дата не может быть в будущем'),
