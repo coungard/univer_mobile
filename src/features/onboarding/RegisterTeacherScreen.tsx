@@ -1,16 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
 import { ErrorBanner } from '../../components/ErrorBanner';
-import { SearchableSelectField } from '../../components/SearchableSelectField';
-import { SelectField } from '../../components/SelectField';
 import { AuthStackParamList } from '../../navigation/types';
 import { libraryColors, libraryFonts } from '../../theme/library';
-import { useDepartmentsQuery, useRegisterTeacherMutation, useUniversitiesQuery } from './hooks';
+import { useRegisterTeacherMutation } from './hooks';
 import { TeacherRegistrationForm, teacherRegistrationSchema } from './schemas';
 import { TeacherIdCard } from './TeacherIdCard';
 
@@ -53,8 +51,6 @@ function FieldBox({ label, error, helperText, validated = true, children }: Fiel
 }
 
 export function RegisterTeacherScreen({ navigation }: Props) {
-  const [universitySearch, setUniversitySearch] = useState('');
-  const universities = useUniversitiesQuery(universitySearch);
   const register = useRegisterTeacherMutation();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -64,7 +60,6 @@ export function RegisterTeacherScreen({ navigation }: Props) {
     control,
     handleSubmit,
     setError,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<TeacherRegistrationForm>({
     resolver: zodResolver(teacherRegistrationSchema),
@@ -75,26 +70,17 @@ export function RegisterTeacherScreen({ navigation }: Props) {
       fullname: '',
       password: '',
       email: '',
-      universityId: '',
-      departmentId: '',
+      birthday: '',
       position: '',
     },
   });
 
-  const universityId = useWatch({ control, name: 'universityId' });
-  const departments = useDepartmentsQuery(universityId || null);
-  const [firstname, lastname, username, departmentId, position] = useWatch({
+  const [firstname, lastname, username, position] = useWatch({
     control,
-    name: ['firstname', 'lastname', 'username', 'departmentId', 'position'],
+    name: ['firstname', 'lastname', 'username', 'position'],
   });
-  const departmentLabel = departments.data?.find((department) => department.value === departmentId)?.label ?? null;
 
-  // Department list depends on the chosen university — drop a stale selection when it changes.
-  useEffect(() => {
-    setValue('departmentId', '');
-  }, [universityId, setValue]);
-
-  const onSubmit = handleSubmit(async ({ universityId: _universityId, ...request }) => {
+  const onSubmit = handleSubmit(async (request) => {
     setSubmitError(null);
     try {
       await register.mutateAsync(request);
@@ -137,7 +123,6 @@ export function RegisterTeacherScreen({ navigation }: Props) {
         lastname={lastname}
         username={username}
         position={position}
-        departmentLabel={departmentLabel}
       />
 
       <View style={styles.heading}>
@@ -271,59 +256,22 @@ export function RegisterTeacherScreen({ navigation }: Props) {
 
       <Controller
         control={control}
-        name="universityId"
+        name="birthday"
         render={({ field }) => (
           <FieldBox
-            label="Университет"
-            error={!!errors.universityId}
-            helperText={errors.universityId?.message}
+            label="Дата рождения (ГГГГ-ММ-ДД)"
+            error={!!errors.birthday}
+            helperText={errors.birthday?.message}
           >
-            <SearchableSelectField
-              label="Университет"
-              value={field.value || null}
-              options={universities.data ?? []}
-              searchText={universitySearch}
-              onSearchTextChange={setUniversitySearch}
-              onChange={field.onChange}
-              error={!!errors.universityId}
-              loading={universities.isLoading}
-              loadingMore={universities.isFetchingNextPage}
-              hasMore={universities.hasNextPage}
-              onEndReached={universities.fetchNextPage}
-              inputTheme={fieldTheme}
-              hideInlineLabel
-              libraryStyle
-            />
-          </FieldBox>
-        )}
-      />
-
-      <Controller
-        control={control}
-        name="departmentId"
-        render={({ field }) => (
-          <FieldBox
-            label="Кафедра"
-            error={!!errors.departmentId}
-            helperText={errors.departmentId?.message}
-          >
-            <SelectField
-              label="Кафедра"
-              value={field.value || null}
-              options={departments.data ?? []}
-              onChange={field.onChange}
-              error={!!errors.departmentId}
-              disabled={!universityId || departments.isLoading}
-              emptyLabel={
-                !universityId
-                  ? 'Сначала выберите университет'
-                  : departments.isLoading
-                    ? 'Загрузка…'
-                    : 'Нет доступных кафедр'
-              }
-              inputTheme={fieldTheme}
-              hideInlineLabel
-              libraryStyle
+            <TextInput
+              value={field.value}
+              onChangeText={field.onChange}
+              placeholder="1985-09-01"
+              mode="outlined"
+              theme={fieldTheme}
+              outlineStyle={styles.fieldOutline}
+              style={styles.fieldInput}
+              error={!!errors.birthday}
             />
           </FieldBox>
         )}

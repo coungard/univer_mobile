@@ -54,7 +54,19 @@ export type RegisterStudentRequest = Omit<components['schemas']['RegisterStudent
 };
 
 export type TeacherDto = WithRequiredId<components['schemas']['TeacherDto']>;
-export type RegisterTeacherRequest = components['schemas']['RegisterTeacherRequest'];
+
+/**
+ * The generated shape still has `departmentId: string` (required) and no `birthday` — the backend
+ * hasn't shipped `coungard/univer#79` yet (`department_id` nullable + `Person.birthday`). This
+ * override anticipates that contract so the registration form (`coungard/univer_mobile#47`) can be
+ * built now, sending no `departmentId` at all (assigned later, not at registration); drop it and
+ * re-run `npm run sync-api` once the backend ships the field.
+ */
+export type RegisterTeacherRequest = Omit<components['schemas']['RegisterTeacherRequest'], 'departmentId'> & {
+  departmentId?: string;
+  /** Format: date (`ГГГГ-ММ-ДД`) */
+  birthday: string;
+};
 
 /**
  * Academic-path chain used to resolve a student's group → faculty/program for display (ROADMAP.md

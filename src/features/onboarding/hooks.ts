@@ -1,7 +1,5 @@
-import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { getDepartmentsByUniversity } from '../../api/endpoints/departments';
-import { fetchAllPages } from '../../api/pagination';
 import { registerStudent } from '../../api/endpoints/students';
 import { registerTeacher } from '../../api/endpoints/teachers';
 import { getUniversities } from '../../api/endpoints/universities';
@@ -37,15 +35,6 @@ export function useUniversitiesQuery(search: string) {
       sublabel: u.address?.city,
     })),
   };
-}
-
-export function useDepartmentsQuery(universityId: string | null) {
-  return useQuery({
-    queryKey: ['departments', universityId],
-    queryFn: () => fetchAllPages((page) => getDepartmentsByUniversity(universityId as string, page)),
-    select: (list) => list.map((d) => ({ label: d.name ?? 'Без названия', value: d.id })),
-    enabled: universityId !== null,
-  });
 }
 
 export function useRegisterStudentMutation() {

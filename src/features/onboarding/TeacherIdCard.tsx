@@ -7,18 +7,17 @@ interface Props {
   lastname: string;
   username: string;
   position: string;
-  departmentLabel: string | null;
 }
 
 /**
  * Live "teacher card" preview pinned above the registration form (issue #45), mirroring
- * `StudentIdCard`'s ticket-stub look but for a lecturer: shows the chosen department/position
- * instead of an enrollment date, once they've been picked.
+ * `StudentIdCard`'s ticket-stub look but for a lecturer: shows the chosen position once it's
+ * been typed in.
  */
-export function TeacherIdCard({ firstname, lastname, username, position, departmentLabel }: Props) {
+export function TeacherIdCard({ firstname, lastname, username, position }: Props) {
   const fullName = `${firstname} ${lastname}`.trim();
   const initials = `${firstname.trim().charAt(0)}${lastname.trim().charAt(0)}`.toUpperCase();
-  const role = [position, departmentLabel].filter(Boolean).join(' · ');
+  const role = position;
 
   return (
     <View style={styles.card}>

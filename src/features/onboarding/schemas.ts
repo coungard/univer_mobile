@@ -29,11 +29,10 @@ export const teacherRegistrationSchema = z.object({
   fullname: z.string().optional(),
   password: z.string().min(8, 'Минимум 8 символов'),
   email: z.string().email('Некорректный email'),
-  // Not part of RegisterTeacherRequest itself — an intermediate UI-only step to narrow the
-  // department picker, mirroring how a real org chart is navigated (see API.md: departments are
-  // listed per faculty/university, there's no flat "all departments" endpoint used here).
-  universityId: z.string().min(1, 'Выберите университет'),
-  departmentId: z.string().min(1, 'Выберите кафедру'),
+  birthday: z
+    .string()
+    .regex(DATE_RE, 'Формат: ГГГГ-ММ-ДД')
+    .refine((value) => value <= today(), 'Дата не может быть в будущем'),
   position: z.string().min(1, 'Обязательное поле'),
 });
 
