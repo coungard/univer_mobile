@@ -9,6 +9,7 @@ import { ErrorBanner } from '../../components/ErrorBanner';
 import { SearchableSelectField } from '../../components/SearchableSelectField';
 import { AuthStackParamList } from '../../navigation/types';
 import { libraryColors, libraryFonts } from '../../theme/library';
+import { formatDateInput } from './formatDateInput';
 import { useRegisterStudentMutation, useUniversitiesQuery } from './hooks';
 import { StudentRegistrationForm, studentRegistrationSchema } from './schemas';
 import { StudentIdCard } from './StudentIdCard';
@@ -261,8 +262,10 @@ export function RegisterStudentScreen({ navigation }: Props) {
           >
             <TextInput
               value={field.value}
-              onChangeText={field.onChange}
+              onChangeText={(text) => field.onChange(formatDateInput(text))}
               placeholder="2005-09-01"
+              keyboardType="number-pad"
+              maxLength={10}
               mode="outlined"
               theme={fieldTheme}
               outlineStyle={styles.fieldOutline}

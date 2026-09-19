@@ -8,6 +8,7 @@ import { ApiError } from '../../api/errors';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { AuthStackParamList } from '../../navigation/types';
 import { libraryColors, libraryFonts } from '../../theme/library';
+import { formatDateInput } from './formatDateInput';
 import { useRegisterTeacherMutation } from './hooks';
 import { TeacherRegistrationForm, teacherRegistrationSchema } from './schemas';
 import { TeacherIdCard } from './TeacherIdCard';
@@ -265,8 +266,10 @@ export function RegisterTeacherScreen({ navigation }: Props) {
           >
             <TextInput
               value={field.value}
-              onChangeText={field.onChange}
+              onChangeText={(text) => field.onChange(formatDateInput(text))}
               placeholder="1985-09-01"
+              keyboardType="number-pad"
+              maxLength={10}
               mode="outlined"
               theme={fieldTheme}
               outlineStyle={styles.fieldOutline}
