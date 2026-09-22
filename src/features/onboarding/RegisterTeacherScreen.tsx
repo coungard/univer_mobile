@@ -5,6 +5,7 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
+import { useAuth } from '../../auth/useAuth';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { AuthStackParamList } from '../../navigation/types';
 import { libraryColors, libraryFonts } from '../../theme/library';
@@ -53,6 +54,7 @@ function FieldBox({ label, error, helperText, validated = true, children }: Fiel
 
 export function RegisterTeacherScreen({ navigation }: Props) {
   const register = useRegisterTeacherMutation();
+  const { loginWithPassword } = useAuth();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -85,7 +87,14 @@ export function RegisterTeacherScreen({ navigation }: Props) {
     setSubmitError(null);
     try {
       await register.mutateAsync(request);
-      setDone(true);
+      // Log the user straight into their new profile with the credentials they just typed,
+      // instead of bouncing them through a second manual sign-in — falls back to the done screen
+      // below if that somehow fails.
+      try {
+        await loginWithPassword(request.username, request.password);
+      } catch {
+        setDone(true);
+      }
     } catch (error) {
       if (error instanceof ApiError && error.status === 400 && error.fieldErrors) {
         Object.entries(error.fieldErrors).forEach(([field, message]) => {
