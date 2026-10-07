@@ -1,4 +1,4 @@
-import { endKeycloakSession, login as browserLogin, refreshTokens } from './authService';
+import { endKeycloakSession, login as browserLogin, loginWithPassword, refreshTokens } from './authService';
 import { useAuthStore } from './authStore';
 import { clearTokens, loadTokens, saveTokens, StoredTokens } from './keychain';
 
@@ -20,6 +20,13 @@ export async function restoreSession(): Promise<void> {
 
 export async function performLogin(): Promise<void> {
   const tokens = await browserLogin();
+  await saveTokens(tokens);
+  useAuthStore.getState().setSession(tokens);
+}
+
+/** Straight to a profile after registration — see `authService.loginWithPassword`. */
+export async function performPasswordLogin(username: string, password: string): Promise<void> {
+  const tokens = await loginWithPassword(username, password);
   await saveTokens(tokens);
   useAuthStore.getState().setSession(tokens);
 }

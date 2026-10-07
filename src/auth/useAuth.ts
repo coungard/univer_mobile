@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { AuthCancelledError } from './authService';
 import { useAuthStore } from './authStore';
 import { mapAuthError } from './mapAuthError';
-import { performLogin, performLogout } from './sessionManager';
+import { performLogin, performLogout, performPasswordLogin } from './sessionManager';
 
 /** React-facing entry point for login/logout, with loading/error state for the UI to render. */
 export function useAuth() {
@@ -30,7 +30,20 @@ export function useAuth() {
     }
   }, []);
 
+  const loginWithPassword = useCallback(async (username: string, password: string) => {
+    setLoginError(null);
+    setIsLoggingIn(true);
+    try {
+      await performPasswordLogin(username, password);
+    } catch (error) {
+      setLoginError(mapAuthError(error));
+      throw error;
+    } finally {
+      setIsLoggingIn(false);
+    }
+  }, []);
+
   const logout = useCallback(() => performLogout(), []);
 
-  return { status, role, claims, isLoggingIn, loginError, login, logout };
+  return { status, role, claims, isLoggingIn, loginError, login, loginWithPassword, logout };
 }

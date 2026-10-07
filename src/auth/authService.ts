@@ -1,6 +1,6 @@
 import { authorize, logout as endSession, refresh as refreshTokenRequest } from 'react-native-app-auth';
 import { authConfig, endSessionConfig } from './authConfig';
-import { env } from '../config/env';
+import { env, keycloakEndpoints } from '../config/env';
 import { StoredTokens } from './keychain';
 
 /**
@@ -36,6 +36,45 @@ export async function login(): Promise<StoredTokens> {
     if (isUserCancelled(error)) throw new AuthCancelledError();
     throw error;
   }
+}
+
+/**
+ * `grant_type=password` — direct token exchange with the credentials the user just typed into
+ * the registration form, so a brand-new account logs straight into the app instead of bouncing
+ * through the system browser a second time. Requires "Direct access grants" to be enabled on the
+ * `univer-mobile` client in Keycloak — without it Keycloak answers `unauthorized_client` and the
+ * caller falls back to the manual sign-in screen. This is the only call site — every other login
+ * still goes through `login()` above (Authorization Code + PKCE via the system browser), which is
+ * the only flow Keycloak's own SSO session and cookie-based logout rely on.
+ */
+export async function loginWithPassword(username: string, password: string): Promise<StoredTokens> {
+  const body = new URLSearchParams({
+    grant_type: 'password',
+    client_id: env.clientId,
+    username,
+    password,
+    scope: 'openid profile email',
+  });
+
+  const response = await fetch(keycloakEndpoints.tokenEndpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    // Surface Keycloak's own reason in the dev console — the UI only shows the fallback screen.
+    console.warn('Password login after registration failed:', response.status, await response.text());
+    throw new Error('Не удалось войти. Попробуйте войти вручную.');
+  }
+
+  const result = await response.json();
+  return {
+    accessToken: result.access_token,
+    refreshToken: result.refresh_token,
+    accessTokenExpirationDate: new Date(Date.now() + result.expires_in * 1000).toISOString(),
+    idToken: result.id_token,
+  };
 }
 
 /** `grant_type=refresh_token` — used both for the silent-refresh interceptor and app startup. */
