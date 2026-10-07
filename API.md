@@ -71,9 +71,15 @@
 
 ### UniversityDto
 `id`, `name`, `description`, `rector`, `foundingYear`, `studentCount`, `createdAt`, `updatedAt` (только
-в ответе), `address: AddressDto`, `faculties: FacultyDto[]` (в ответе; при создании/обновлении можно не
-передавать — по умолчанию `[]`). `rector`/`foundingYear`/`studentCount` необязательны (`foundingYear`,
-если передан, — не меньше 1000; `studentCount`, если передан, — не отрицательный).
+в ответе), `address: AddressDto`, `regionId`★, `faculties: FacultyDto[]` (в ответе; при создании/обновлении
+можно не передавать — по умолчанию `[]`). `rector`/`foundingYear`/`studentCount` необязательны (`foundingYear`,
+если передан, — не меньше 1000; `studentCount`, если передан, — не отрицательный). `regionId` — ID региона
+из `GET /regions`, обязателен: регион есть у каждого вуза (issue #80). Без `regionId` `POST`/`PUT`
+вернут `400`, с несуществующим — `404`. Текстовый `address.region` от `regionId` не зависит.
+
+### RegionDto (только ответ)
+`id`, `code` (двузначный код субъекта РФ, например `05`), `name` (официальное название, например
+`Республика Дагестан`).
 
 ### FacultyDto
 `id`, `name`, `description`, `universityId`, `departments: DepartmentDto[]` (по умолчанию `[]`).
@@ -143,20 +149,27 @@
 
 ### StudentDto
 `id`, `username`★, `firstname`★, `lastname`★, `fullname`, `createdAt`, `updatedAt` (только в ответе),
-`email`★ (валидный email), `enrollmentDate`★ (не в будущем), `universityId`★, `groupId`.
+`email`★ (валидный email), `enrollmentDate` (не в будущем, необязательна — назначается администратором
+после регистрации, не собирается на самой регистрации), `birthday` (не в будущем), `universityId`★,
+`groupId`.
 
 ### RegisterStudentRequest (только запрос, `POST /students/register`)
-`username`★, `firstname`★, `lastname`★, `fullname`, `email`★, `password`★, `enrollmentDate`★
-(не в будущем), `universityId`★. Пароль и остальные данные регистрации уходят в Keycloak — `id` итогового
-`StudentDto` в ответе равен Keycloak user ID (см. флоу регистрации в `CLAUDE.md`).
+`username`★, `firstname`★, `lastname`★, `fullname`, `email`★, `password`★, `enrollmentDate` (не в
+будущем, необязательна — форма регистрации её больше не запрашивает, см.
+`coungard/univer_mobile#46`), `birthday`★ (не в будущем), `universityId`★. Пароль и остальные данные
+регистрации уходят в Keycloak — `id` итогового `StudentDto` в ответе равен Keycloak user ID (см. флоу
+регистрации в `CLAUDE.md`).
 
 ### TeacherDto
-`id`, `username`★, `firstname`★, `lastname`★, `fullname`, `email`★, `phone`, `createdAt`, `updatedAt`
-(только в ответе), `facultyId`★, `position`★, `registered` (`Boolean`, только в ответе — зарегистрирован ли
-преподаватель в Keycloak).
+`id`, `username`★, `firstname`★, `lastname`★, `fullname`, `email`★, `phone`, `birthday`, `createdAt`,
+`updatedAt` (только в ответе), `facultyId`★ (только для `PUT`/`POST /teachers` — на регистрации не
+приходит, см. ниже, может быть `null` в ответе, пока кафедра не назначена), `position`★, `registered`
+(`Boolean`, только в ответе — зарегистрирован ли преподаватель в Keycloak).
 
 ### RegisterTeacherRequest (только запрос, `POST /teachers/register`)
-`username`★, `firstname`★, `lastname`★, `fullname`, `password`★, `email`★, `departmentId`★, `position`★.
+`username`★, `firstname`★, `lastname`★, `fullname`, `password`★, `email`★, `departmentId` (необязателен
+— форма регистрации больше не выбирает кафедру, см. `coungard/univer_mobile#47`; кафедра
+назначается позже через `PUT /teachers/{id}`), `birthday`★ (не в будущем), `position`★.
 
 ### EnrollmentDto
 `studentId`★, `courseId`★, `enrolledAt` (заполняется сервером при `POST`), `status: EnrollmentStatus`.
@@ -175,7 +188,7 @@
 
 | Метод | Путь | Auth | Тело запроса | Тело ответа |
 |---|---|---|---|---|
-| GET | `/` | публично | — (`?search&page&size`) | `Page<UniversityDto>` |
+| GET | `/` | публично | — (`?search&regionId&page&size`) | `Page<UniversityDto>` |
 | GET | `/{id}` | публично | — | `UniversityDto` |
 | POST | `/` | `ADMIN` | `UniversityDto` | `201` + `UniversityDto` |
 | PUT | `/{id}` | `ADMIN` | `UniversityDto` | `UniversityDto` |
@@ -188,6 +201,18 @@
 > университеты постранично, как раньше. Мобильный клиент использует его в пикере «Университет» на
 > экране регистрации (`SearchableSelectField`, `useUniversitiesQuery` — `src/features/onboarding/`),
 > чтобы искать среди большого числа ВУЗов вместо прокрутки/загрузки всего списка целиком.
+>
+> `regionId` — необязательный фильтр по региону (ID из `GET /regions`), сочетается с `search`.
+
+## Regions — `/api/v1/regions`
+
+| Метод | Путь | Auth | Тело запроса | Тело ответа |
+|---|---|---|---|---|
+| GET | `/` | публично | — | `RegionDto[]` |
+
+> Справочник всех 89 субъектов РФ, отсортирован по названию, без пагинации. Наполняется миграцией
+> (`V24__insert_regions.sql`), эндпоинтов изменения нет. Публичный по той же причине, что и
+> `GET /universities`: нужен на экране регистрации до входа.
 
 ## Faculties — `/api/v1/faculties`
 
@@ -199,9 +224,10 @@
 | PUT | `/{id}` | любая роль | `FacultyDto` | `FacultyDto` |
 | DELETE | `/{id}` | любая роль | — | `204` |
 
-> `GET`-эндпоинты сделаны публичными по той же причине, что и у `Universities` выше: экран
-> регистрации преподавателя должен дать выбрать кафедру (`RegisterTeacherRequest.departmentId`)
-> до входа в систему, а кафедра ссылается на факультет.
+> `GET`-эндпоинты остаются публичными по историческим причинам (раньше — выбор кафедры на
+> регистрации преподавателя; с issue #79 форма регистрации кафедру больше не запрашивает,
+> `departmentId` необязателен — см. `RegisterTeacherRequest` выше), а также потому что на
+> факультеты/кафедры ссылаются списки курсов.
 >
 > В отличие от большинства ресурсов, у `Faculties` (и `Departments` ниже) нет `@PreAuthorize` на
 > create/update/delete — эти операции доступны любому аутентифицированному пользователю, не только `ADMIN`.

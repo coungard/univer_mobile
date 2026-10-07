@@ -319,7 +319,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Получить университеты с пагинацией и опциональным поиском по названию */
+        /** Получить университеты с пагинацией, опциональным поиском по названию и фильтром по региону */
         get: operations["getUniversities"];
         put?: never;
         /** Создать университет */
@@ -741,6 +741,23 @@ export interface paths {
         };
         /** Получить семестры по ID курса обучения с пагинацией */
         get: operations["getSemestersByStudyYear"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/regions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Получить все регионы, отсортированные по названию */
+        get: operations["getRegions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1171,6 +1188,11 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
             address?: components["schemas"]["AddressDto"];
+            /**
+             * Format: uuid
+             * @description ID региона (субъекта РФ), см. GET /api/v1/regions
+             */
+            regionId: string;
             faculties?: components["schemas"]["FacultyDto"][];
         };
         TeacherDto: {
@@ -1182,6 +1204,8 @@ export interface components {
             fullname?: string;
             email: string;
             phone?: string;
+            /** Format: date */
+            birthday?: string;
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
@@ -1212,7 +1236,9 @@ export interface components {
             updatedAt?: string;
             email: string;
             /** Format: date */
-            enrollmentDate: string;
+            enrollmentDate?: string;
+            /** Format: date */
+            birthday?: string;
             /** Format: uuid */
             universityId: string;
             /** Format: uuid */
@@ -1359,7 +1385,9 @@ export interface components {
             password: string;
             email: string;
             /** Format: uuid */
-            departmentId: string;
+            departmentId?: string;
+            /** Format: date */
+            birthday: string;
             position: string;
         };
         RegisterStudentRequest: {
@@ -1370,7 +1398,9 @@ export interface components {
             email: string;
             password: string;
             /** Format: date */
-            enrollmentDate: string;
+            enrollmentDate?: string;
+            /** Format: date */
+            birthday: string;
             /** Format: uuid */
             universityId: string;
         };
@@ -1398,11 +1428,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageableObject: {
@@ -1434,11 +1464,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         ContentDisposition: {
@@ -1467,22 +1497,17 @@ export interface components {
              */
             readDate?: string;
             inline?: boolean;
-            attachment?: boolean;
             formData?: boolean;
+            attachment?: boolean;
         };
         ErrorResponse: {
             headers?: {
-                /** Format: int64 */
-                ifModifiedSince?: number;
+                origin?: string;
                 contentType?: components["schemas"]["MediaType"];
-                /** Format: int64 */
-                contentLength?: number;
-                connection?: string[];
                 empty?: boolean;
                 /** Format: uri */
                 location?: string;
                 host?: {
-                    hostString?: string;
                     address?: {
                         hostAddress?: string;
                         /** Format: byte */
@@ -1504,6 +1529,7 @@ export interface components {
                     port?: number;
                     unresolved?: boolean;
                     hostName?: string;
+                    hostString?: string;
                 };
                 all?: {
                     [key: string]: string;
@@ -1512,8 +1538,40 @@ export interface components {
                 lastModified?: number;
                 /** Format: int64 */
                 date?: number;
-                range?: components["schemas"]["HttpRange"][];
+                /** Format: int64 */
+                contentLength?: number;
+                /** Format: int64 */
+                ifModifiedSince?: number;
+                /** Format: int64 */
+                accessControlMaxAge?: number;
+                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
+                accessControlExposeHeaders?: string[];
+                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
+                accessControlAllowHeaders?: string[];
+                accessControlAllowOrigin?: string;
+                accessControlAllowCredentials?: boolean;
+                accessControlRequestHeaders?: string[];
+                acceptLanguageAsLocales?: {
+                    language?: string;
+                    displayName?: string;
+                    country?: string;
+                    variant?: string;
+                    script?: string;
+                    unicodeLocaleAttributes?: string[];
+                    unicodeLocaleKeys?: string[];
+                    displayLanguage?: string;
+                    displayScript?: string;
+                    displayCountry?: string;
+                    displayVariant?: string;
+                    extensionKeys?: string[];
+                    iso3Language?: string;
+                    iso3Country?: string;
+                }[];
+                /** Format: int64 */
+                ifUnmodifiedSince?: number;
                 contentDisposition?: components["schemas"]["ContentDisposition"];
+                connection?: string[];
+                range?: components["schemas"]["HttpRange"][];
                 acceptCharset?: string[];
                 contentLanguage?: {
                     language?: string;
@@ -1535,33 +1593,6 @@ export interface components {
                 cacheControl?: string;
                 etag?: string;
                 accept?: components["schemas"]["MediaType"][];
-                accessControlExposeHeaders?: string[];
-                accessControlRequestHeaders?: string[];
-                accessControlAllowOrigin?: string;
-                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
-                /** Format: int64 */
-                accessControlMaxAge?: number;
-                accessControlAllowHeaders?: string[];
-                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
-                accessControlAllowCredentials?: boolean;
-                acceptLanguageAsLocales?: {
-                    language?: string;
-                    displayName?: string;
-                    country?: string;
-                    variant?: string;
-                    script?: string;
-                    unicodeLocaleAttributes?: string[];
-                    unicodeLocaleKeys?: string[];
-                    displayLanguage?: string;
-                    displayScript?: string;
-                    displayCountry?: string;
-                    displayVariant?: string;
-                    extensionKeys?: string[];
-                    iso3Language?: string;
-                    iso3Country?: string;
-                }[];
-                /** Format: int64 */
-                ifUnmodifiedSince?: number;
                 acceptPatch?: components["schemas"]["MediaType"][];
                 acceptLanguage?: {
                     range?: string;
@@ -1569,33 +1600,32 @@ export interface components {
                     weight?: number;
                 }[];
                 basicAuth?: string;
-                ifMatch?: string[];
-                pragma?: string;
-                bearerAuth?: string;
-                upgrade?: string;
-                origin?: string;
                 /** Format: int64 */
                 expires?: number;
-                ifNoneMatch?: string[];
+                pragma?: string;
+                ifMatch?: string[];
+                upgrade?: string;
                 vary?: string[];
+                ifNoneMatch?: string[];
+                bearerAuth?: string;
             } & {
                 [key: string]: string[];
             };
             body?: components["schemas"]["ProblemDetail"];
             statusCode?: components["schemas"]["HttpStatusCode"];
+            typeMessageCode?: string;
+            titleMessageCode?: string;
             detailMessageArguments?: Record<string, never>[];
             detailMessageCode?: string;
-            titleMessageCode?: string;
-            typeMessageCode?: string;
         };
         HttpMethod: Record<string, never>;
         HttpRange: Record<string, never>;
         HttpStatusCode: {
             error?: boolean;
-            is5xxServerError?: boolean;
             is4xxClientError?: boolean;
-            is2xxSuccessful?: boolean;
+            is5xxServerError?: boolean;
             is1xxInformational?: boolean;
+            is2xxSuccessful?: boolean;
             is3xxRedirection?: boolean;
         };
         MediaType: {
@@ -1608,8 +1638,8 @@ export interface components {
             qualityValue?: number;
             charset?: string;
             concrete?: boolean;
-            wildcardSubtype?: boolean;
             wildcardType?: boolean;
+            wildcardSubtype?: boolean;
             subtypeSuffix?: string;
         };
         ProblemDetail: {
@@ -1636,11 +1666,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageStudyYearDto: {
@@ -1654,11 +1684,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageStudentDto: {
@@ -1672,11 +1702,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageSemesterDto: {
@@ -1690,12 +1720,27 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
+        };
+        /** @description Субъект РФ */
+        RegionDto: {
+            /** Format: uuid */
+            id?: string;
+            /**
+             * @description Двузначный код субъекта РФ
+             * @example 05
+             */
+            code?: string;
+            /**
+             * @description Официальное название
+             * @example Республика Дагестан
+             */
+            name?: string;
         };
         PageProgramDto: {
             /** Format: int64 */
@@ -1708,11 +1753,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PagePairDto: {
@@ -1726,11 +1771,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageLectureDto: {
@@ -1744,11 +1789,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageGroupDto: {
@@ -1762,11 +1807,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageFacultyDto: {
@@ -1780,11 +1825,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageEnrollmentDto: {
@@ -1798,11 +1843,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageDepartmentDto: {
@@ -1816,11 +1861,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageCourseDto: {
@@ -1834,11 +1879,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageBellScheduleEntryDto: {
@@ -1852,11 +1897,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageLectureAttendanceDto: {
@@ -1870,11 +1915,11 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         AttendanceStatsDto: {
@@ -2940,6 +2985,8 @@ export interface operations {
             query?: {
                 /** @description Регистронезависимая подстрока для поиска по названию университета */
                 search?: string;
+                /** @description ID региона (см. GET /api/v1/regions); без него — университеты всех регионов */
+                regionId?: string;
                 page?: number;
                 size?: number;
             };
@@ -3789,6 +3836,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageSemesterDto"];
+                };
+            };
+        };
+    };
+    getRegions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RegionDto"][];
                 };
             };
         };
