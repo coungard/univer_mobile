@@ -30,6 +30,7 @@ export type AddressDto = components['schemas']['AddressDto'];
 export type FacultyDto = components['schemas']['FacultyDto'];
 export type UniversityDto = WithRequiredId<components['schemas']['UniversityDto']>;
 export type DepartmentDto = WithRequiredId<components['schemas']['DepartmentDto']>;
+export type RegionDto = WithRequiredId<components['schemas']['RegionDto']>;
 
 export type StudentDto = WithRequiredId<components['schemas']['StudentDto']> & {
   /**

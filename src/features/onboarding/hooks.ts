@@ -1,5 +1,6 @@
-import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { getRegions } from '../../api/endpoints/regions';
 import { registerStudent } from '../../api/endpoints/students';
 import { registerTeacher } from '../../api/endpoints/teachers';
 import { getUniversities } from '../../api/endpoints/universities';
@@ -12,7 +13,7 @@ import { getUniversities } from '../../api/endpoints/universities';
  * `useInfiniteQuery`, same incremental-loading pattern as `useCoursesQuery`
  * (`features/courses/hooks.ts`).
  */
-export function useUniversitiesQuery(search: string) {
+export function useUniversitiesQuery(search: string, regionId?: string) {
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
@@ -20,8 +21,8 @@ export function useUniversitiesQuery(search: string) {
   }, [search]);
 
   const query = useInfiniteQuery({
-    queryKey: ['universities', 'search', debouncedSearch],
-    queryFn: ({ pageParam }) => getUniversities(debouncedSearch || undefined, pageParam, 20),
+    queryKey: ['universities', 'search', debouncedSearch, regionId ?? null],
+    queryFn: ({ pageParam }) => getUniversities(debouncedSearch || undefined, pageParam, 20, regionId),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => (lastPage.last ? undefined : lastPage.number + 1),
   });
@@ -35,6 +36,11 @@ export function useUniversitiesQuery(search: string) {
       sublabel: u.address?.city,
     })),
   };
+}
+
+/** All 89 regions for the "select region" step — small and static, so cached for the session. */
+export function useRegionsQuery() {
+  return useQuery({ queryKey: ['regions'], queryFn: getRegions, staleTime: Infinity });
 }
 
 export function useRegisterStudentMutation() {

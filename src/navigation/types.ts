@@ -6,6 +6,10 @@ export type AuthStackParamList = {
   Login: undefined;
   RegisterRoleChoice: undefined;
   RegisterStudent: undefined;
+  /** Steps 2 and 3 of student registration (PLAN.md). */
+  RegisterStudentRegion: undefined;
+  /** No `regionId` means a country-wide search (region not in the list, or failed to load). */
+  RegisterStudentUniversity: { regionId?: string; regionName?: string } | undefined;
   RegisterTeacher: undefined;
 };
 

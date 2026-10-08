@@ -4,7 +4,10 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-/** Mirrors `RegisterStudentRequest` in API.md — required fields (★) become required here. */
+/**
+ * Step 1 of student registration (PLAN.md) — the personal-data part of `RegisterStudentRequest`
+ * in API.md. `universityId` is picked on the later region/university steps, not in this form.
+ */
 export const studentRegistrationSchema = z.object({
   username: z.string().min(3, 'Минимум 3 символа'),
   firstname: z.string().min(1, 'Обязательное поле'),
@@ -16,7 +19,6 @@ export const studentRegistrationSchema = z.object({
     .string()
     .regex(DATE_RE, 'Формат: ГГГГ-ММ-ДД')
     .refine((value) => value <= today(), 'Дата не может быть в будущем'),
-  universityId: z.string().min(1, 'Выберите университет'),
 });
 
 export type StudentRegistrationForm = z.infer<typeof studentRegistrationSchema>;
