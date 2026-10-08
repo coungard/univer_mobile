@@ -33,14 +33,14 @@ export function GroupScheduleScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const student = useOwnStudentQuery();
-  const academicPath = useGroupAcademicPathQuery(student.data?.groupId);
+  const academicPath = useGroupAcademicPathQuery(student.data?.groupId ?? undefined);
   const semester = useSemesterQuery(academicPath.group?.semesterId);
   const cycle = useWeekScheduleCycleQuery(academicPath.group?.semesterId);
-  const pairs = useGroupPairsQuery(student.data?.groupId);
+  const pairs = useGroupPairsQuery(student.data?.groupId ?? undefined);
   const courses = useAllCoursesQuery();
-  const bellSchedule = useBellScheduleEntriesQuery(student.data?.universityId);
+  const bellSchedule = useBellScheduleEntriesQuery(student.data?.universityId ?? undefined);
 
-  const deletePair = useDeletePairMutation(student.data?.groupId);
+  const deletePair = useDeletePairMutation(student.data?.groupId ?? undefined);
   const generate = useGenerateSemesterLecturesMutation();
 
   const courseTitleById = useMemo(() => {

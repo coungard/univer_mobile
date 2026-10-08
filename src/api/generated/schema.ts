@@ -525,7 +525,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Получить группы с пагинацией */
+        /**
+         * Получить группы с пагинацией
+         * @description Без фильтров — все группы. С facultyId и/или yearNumber — группы факультета на указанном курсе по всем программам факультета, только из актуального семестра: идущего сейчас, иначе ближайшего будущего, иначе последнего закончившегося. Если подходящих групп нет — пустая страница.
+         */
         get: operations["getGroups"];
         put?: never;
         /** Создать группу */
@@ -661,6 +664,30 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Получить свой профиль
+         * @description ID студента берётся из JWT (Keycloak subject = Student.id, см. флоу регистрации).
+         */
+        get: operations["getMyProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Заполнить свой профиль: университет, факультет, курс, группа
+         * @description Частичное обновление: переданное поле меняется, непереданное — нет, явный null очищает поле. Смена поля сбрасывает всё, что ниже по цепочке университет → факультет → курс → группа; незаполненные поля выше по цепочке проставляются по выбранному значению.
+         */
+        patch: operations["updateMyProfile"];
         trace?: never;
     };
     "/api/v1/week-schedule-cycles/{id}": {
@@ -1240,7 +1267,11 @@ export interface components {
             /** Format: date */
             birthday?: string;
             /** Format: uuid */
-            universityId: string;
+            universityId?: string;
+            /** Format: uuid */
+            facultyId?: string;
+            /** Format: int32 */
+            yearNumber?: number;
             /** Format: uuid */
             groupId?: string;
         };
@@ -1402,7 +1433,7 @@ export interface components {
             /** Format: date */
             birthday: string;
             /** Format: uuid */
-            universityId: string;
+            universityId?: string;
         };
         GenerateLectureRequest: {
             /** Format: uuid */
@@ -1417,22 +1448,32 @@ export interface components {
             lectureId: string;
             attended?: boolean;
         };
+        UpdateStudentProfileRequest: {
+            /** Format: uuid */
+            universityId?: string;
+            /** Format: uuid */
+            facultyId?: string;
+            /** Format: int32 */
+            yearNumber?: number;
+            /** Format: uuid */
+            groupId?: string;
+        };
         PageWeekScheduleCycleDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["WeekScheduleCycleDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageableObject: {
@@ -1454,21 +1495,21 @@ export interface components {
             ignoreCase?: boolean;
         };
         PageUniversityDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UniversityDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         ContentDisposition: {
@@ -1496,9 +1537,9 @@ export interface components {
              * @deprecated
              */
             readDate?: string;
-            inline?: boolean;
             formData?: boolean;
             attachment?: boolean;
+            inline?: boolean;
         };
         ErrorResponse: {
             headers?: {
@@ -1542,37 +1583,8 @@ export interface components {
                 contentLength?: number;
                 /** Format: int64 */
                 ifModifiedSince?: number;
-                /** Format: int64 */
-                accessControlMaxAge?: number;
-                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
-                accessControlExposeHeaders?: string[];
-                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
-                accessControlAllowHeaders?: string[];
-                accessControlAllowOrigin?: string;
-                accessControlAllowCredentials?: boolean;
-                accessControlRequestHeaders?: string[];
-                acceptLanguageAsLocales?: {
-                    language?: string;
-                    displayName?: string;
-                    country?: string;
-                    variant?: string;
-                    script?: string;
-                    unicodeLocaleAttributes?: string[];
-                    unicodeLocaleKeys?: string[];
-                    displayLanguage?: string;
-                    displayScript?: string;
-                    displayCountry?: string;
-                    displayVariant?: string;
-                    extensionKeys?: string[];
-                    iso3Language?: string;
-                    iso3Country?: string;
-                }[];
-                /** Format: int64 */
-                ifUnmodifiedSince?: number;
-                contentDisposition?: components["schemas"]["ContentDisposition"];
                 connection?: string[];
                 range?: components["schemas"]["HttpRange"][];
-                acceptCharset?: string[];
                 contentLanguage?: {
                     language?: string;
                     displayName?: string;
@@ -1589,10 +1601,21 @@ export interface components {
                     iso3Language?: string;
                     iso3Country?: string;
                 };
+                contentDisposition?: components["schemas"]["ContentDisposition"];
+                acceptCharset?: string[];
                 allow?: components["schemas"]["HttpMethod"][];
                 cacheControl?: string;
                 etag?: string;
                 accept?: components["schemas"]["MediaType"][];
+                accessControlAllowCredentials?: boolean;
+                accessControlRequestHeaders?: string[];
+                accessControlExposeHeaders?: string[];
+                accessControlAllowOrigin?: string;
+                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
+                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
+                accessControlAllowHeaders?: string[];
+                /** Format: int64 */
+                accessControlMaxAge?: number;
                 acceptPatch?: components["schemas"]["MediaType"][];
                 acceptLanguage?: {
                     range?: string;
@@ -1600,23 +1623,41 @@ export interface components {
                     weight?: number;
                 }[];
                 basicAuth?: string;
+                ifNoneMatch?: string[];
                 /** Format: int64 */
                 expires?: number;
-                pragma?: string;
-                ifMatch?: string[];
-                upgrade?: string;
-                vary?: string[];
-                ifNoneMatch?: string[];
                 bearerAuth?: string;
+                pragma?: string;
+                upgrade?: string;
+                ifMatch?: string[];
+                vary?: string[];
+                /** Format: int64 */
+                ifUnmodifiedSince?: number;
+                acceptLanguageAsLocales?: {
+                    language?: string;
+                    displayName?: string;
+                    country?: string;
+                    variant?: string;
+                    script?: string;
+                    unicodeLocaleAttributes?: string[];
+                    unicodeLocaleKeys?: string[];
+                    displayLanguage?: string;
+                    displayScript?: string;
+                    displayCountry?: string;
+                    displayVariant?: string;
+                    extensionKeys?: string[];
+                    iso3Language?: string;
+                    iso3Country?: string;
+                }[];
             } & {
                 [key: string]: string[];
             };
             body?: components["schemas"]["ProblemDetail"];
             statusCode?: components["schemas"]["HttpStatusCode"];
             typeMessageCode?: string;
-            titleMessageCode?: string;
             detailMessageArguments?: Record<string, never>[];
             detailMessageCode?: string;
+            titleMessageCode?: string;
         };
         HttpMethod: Record<string, never>;
         HttpRange: Record<string, never>;
@@ -1638,8 +1679,8 @@ export interface components {
             qualityValue?: number;
             charset?: string;
             concrete?: boolean;
-            wildcardType?: boolean;
             wildcardSubtype?: boolean;
+            wildcardType?: boolean;
             subtypeSuffix?: string;
         };
         ProblemDetail: {
@@ -1656,75 +1697,75 @@ export interface components {
             };
         };
         PageTeacherDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["TeacherDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageStudyYearDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StudyYearDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageStudentDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StudentDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageSemesterDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["SemesterDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         /** @description Субъект РФ */
@@ -1743,183 +1784,183 @@ export interface components {
             name?: string;
         };
         PageProgramDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["ProgramDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PagePairDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PairDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageLectureDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LectureDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageGroupDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["GroupDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageFacultyDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["FacultyDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageEnrollmentDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["EnrollmentDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageDepartmentDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["DepartmentDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageCourseDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CourseDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageBellScheduleEntryDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["BellScheduleEntryDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageLectureAttendanceDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LectureAttendanceDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         AttendanceStatsDto: {
@@ -3446,6 +3487,8 @@ export interface operations {
     getGroups: {
         parameters: {
             query?: {
+                facultyId?: string;
+                yearNumber?: number;
                 page?: number;
                 size?: number;
             };
@@ -3699,6 +3742,68 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["LectureAttendanceDto"];
+                };
+            };
+        };
+    };
+    getMyProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StudentDto"];
+                };
+            };
+        };
+    };
+    updateMyProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateStudentProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Профиль обновлён */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StudentDto"];
+                };
+            };
+            /** @description Университет, факультет или группа не найдены */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StudentDto"];
+                };
+            };
+            /** @description Поля не согласованы между собой */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StudentDto"];
                 };
             };
         };

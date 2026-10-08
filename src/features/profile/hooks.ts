@@ -4,7 +4,7 @@ import { getFaculty } from '../../api/endpoints/faculties';
 import { getGroup } from '../../api/endpoints/groups';
 import { getProgram } from '../../api/endpoints/programs';
 import { getSemester } from '../../api/endpoints/semesters';
-import { getStudent } from '../../api/endpoints/students';
+import { getOwnStudent } from '../../api/endpoints/students';
 import { getStudyYear } from '../../api/endpoints/studyYears';
 import { getTeacher } from '../../api/endpoints/teachers';
 import { getUniversity } from '../../api/endpoints/universities';
@@ -23,7 +23,7 @@ export function useOwnStudentQuery() {
   const id = useOwnUserId();
   return useQuery({
     queryKey: ['students', id],
-    queryFn: () => getStudent(id as string),
+    queryFn: getOwnStudent,
     enabled: id !== null,
   });
 }

@@ -6,7 +6,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 /**
  * Step 1 of student registration (PLAN.md) — the personal-data part of `RegisterStudentRequest`
- * in API.md. `universityId` is picked on the later region/university steps, not in this form.
+ * in API.md. `universityId` isn't sent at all: it is saved on the later university step.
  */
 export const studentRegistrationSchema = z.object({
   username: z.string().min(3, 'Минимум 3 символа'),

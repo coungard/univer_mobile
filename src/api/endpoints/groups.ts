@@ -1,5 +1,22 @@
 import { apiClient } from '../client';
-import { GroupDto } from '../types';
+import { GroupDto, Page } from '../types';
+
+/**
+ * `GET /groups?facultyId=&yearNumber=` — groups of a faculty on a given year across all of its
+ * programs, limited by the backend to each study year's current semester (see API.md). An empty
+ * page is a normal answer ("no groups yet"), not an error.
+ */
+export async function getGroupsByFacultyAndYear(
+  facultyId: string,
+  yearNumber: number,
+  page = 0,
+  size = 200,
+): Promise<Page<GroupDto>> {
+  const { data } = await apiClient.get<Page<GroupDto>>('/groups', {
+    params: { facultyId, yearNumber, page, size },
+  });
+  return data;
+}
 
 /**
  * `GET /groups/{id}`. `GroupDto` only carries `semesterId` — there is no direct link to a

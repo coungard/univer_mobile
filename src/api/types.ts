@@ -27,21 +27,39 @@ export interface Page<T> {
 }
 
 export type AddressDto = components['schemas']['AddressDto'];
-export type FacultyDto = components['schemas']['FacultyDto'];
+export type FacultyDto = WithRequiredId<components['schemas']['FacultyDto']>;
 export type UniversityDto = WithRequiredId<components['schemas']['UniversityDto']>;
 export type DepartmentDto = WithRequiredId<components['schemas']['DepartmentDto']>;
 export type RegionDto = WithRequiredId<components['schemas']['RegionDto']>;
 
-export type StudentDto = WithRequiredId<components['schemas']['StudentDto']> & {
-  /**
-   * The generated type says `groupId?: string` (present/absent), but the backend actually sends
-   * `groupId: null` in the response body until an admin assigns one (`StudentDto` isn't annotated
-   * `@JsonInclude(NON_NULL)` — see API.md) — springdoc's schema doesn't capture that distinction.
-   * `!student.groupId` works correctly either way, but this makes the real shape explicit.
-   * See ROADMAP.md "Фаза 2".
-   */
+/**
+ * The generated type says e.g. `groupId?: string` (present/absent), but the backend actually sends
+ * `null` for every step of university → faculty → year → group the student hasn't filled in yet
+ * (`StudentDto` isn't annotated `@JsonInclude(NON_NULL)` — see API.md) — springdoc's schema
+ * doesn't capture that distinction, so the four fields are spelled out here.
+ */
+export type StudentDto = Omit<
+  WithRequiredId<components['schemas']['StudentDto']>,
+  keyof UpdateStudentProfileRequest
+> & {
+  universityId?: string | null;
+  facultyId?: string | null;
+  /** Номер курса, `≥ 1`. */
+  yearNumber?: number | null;
   groupId?: string | null;
 };
+
+/**
+ * `PATCH /students/me` body. Hand-written because the semantics the generated schema can't express
+ * matter here: a field left out is untouched, an explicit `null` clears it and everything below it
+ * in the chain (see API.md).
+ */
+export interface UpdateStudentProfileRequest {
+  universityId?: string | null;
+  facultyId?: string | null;
+  yearNumber?: number | null;
+  groupId?: string | null;
+}
 
 export type RegisterStudentRequest = components['schemas']['RegisterStudentRequest'];
 

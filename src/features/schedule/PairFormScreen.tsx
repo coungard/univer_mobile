@@ -49,14 +49,14 @@ export function PairFormScreen({ route, navigation }: Props) {
   const isEdit = pairId !== undefined;
 
   const student = useOwnStudentQuery();
-  const academicPath = useGroupAcademicPathQuery(student.data?.groupId);
+  const academicPath = useGroupAcademicPathQuery(student.data?.groupId ?? undefined);
   const cycle = useWeekScheduleCycleQuery(academicPath.group?.semesterId);
   const existingPair = usePairQuery(pairId);
   const courses = useAllCoursesQuery();
-  const bellSchedule = useBellScheduleEntriesQuery(student.data?.universityId);
+  const bellSchedule = useBellScheduleEntriesQuery(student.data?.universityId ?? undefined);
 
-  const createPair = useCreatePairMutation(student.data?.groupId);
-  const updatePair = useUpdatePairMutation(student.data?.groupId);
+  const createPair = useCreatePairMutation(student.data?.groupId ?? undefined);
+  const updatePair = useUpdatePairMutation(student.data?.groupId ?? undefined);
 
   const [submitError, setSubmitError] = useState<string | null>(null);
 

@@ -1,14 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
+import { ApiError } from '../../api/errors';
+import { useAuth } from '../../auth/useAuth';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { AuthStackParamList } from '../../navigation/types';
 import { libraryColors, libraryFonts } from '../../theme/library';
 import { formatDateInput } from './formatDateInput';
-import { useRegistrationDraftStore } from './registrationDraftStore';
+import { useRegisterStudentMutation } from './hooks';
 import { StepProgress } from './RegistrationStep';
 import { StudentRegistrationForm, studentRegistrationSchema } from './schemas';
 import { StudentIdCard } from './StudentIdCard';
@@ -53,17 +55,22 @@ function FieldBox({ label, error, helperText, validated = true, children }: Fiel
 
 const FORM_FIELDS = Object.keys(studentRegistrationSchema.shape);
 
+const isFormField = (field: string | undefined): field is keyof StudentRegistrationForm =>
+  field !== undefined && FORM_FIELDS.includes(field);
+
 /**
- * Step 1 of student registration (PLAN.md): personal data. Nothing is sent from here — the values
- * go into the registration draft, and the university step submits the whole request.
+ * Step 1 of student registration (PLAN.md): personal data. The account is created right here,
+ * without a university, and the app signs in with the credentials just typed — steps 2–6 then run
+ * under that session (`StudentSetup*Screen`), so a taken login or email shows up on this screen
+ * and a missing university, faculty or group never blocks the registration itself.
  */
 export function RegisterStudentScreen({ navigation }: Props) {
-  const setPersonal = useRegistrationDraftStore((state) => state.setPersonal);
-  const serverFieldErrors = useRegistrationDraftStore((state) => state.serverFieldErrors);
-  const setServerFieldErrors = useRegistrationDraftStore((state) => state.setServerFieldErrors);
-  const resetDraft = useRegistrationDraftStore((state) => state.reset);
+  const register = useRegisterStudentMutation();
+  const { loginWithPassword } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [done, setDone] = useState(false);
 
   const {
     control,
@@ -85,30 +92,53 @@ export function RegisterStudentScreen({ navigation }: Props) {
 
   const [firstname, lastname, username] = useWatch({ control, name: ['firstname', 'lastname', 'username'] });
 
-  // The backend only validates these fields when the university step submits, so its rejections
-  // arrive here after the fact — show them on the fields they belong to.
-  useEffect(() => {
-    if (!serverFieldErrors) return;
-    const other: string[] = [];
-    Object.entries(serverFieldErrors).forEach(([field, message]) => {
-      if (FORM_FIELDS.includes(field)) {
-        setError(field as keyof StudentRegistrationForm, { message });
-      } else {
-        other.push(message);
-      }
-    });
-    if (other.length > 0) setSubmitError(other.join(' '));
-    setServerFieldErrors(null);
-  }, [serverFieldErrors, setError, setServerFieldErrors]);
-
-  // Leaving this screen means leaving the wizard — drop the draft (it holds the password).
-  useEffect(() => resetDraft, [resetDraft]);
-
-  const onSubmit = handleSubmit((values) => {
+  const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
-    setPersonal(values);
-    navigation.navigate('RegisterStudentRegion');
+    setSubmitting(true);
+    try {
+      await register.mutateAsync(values);
+      // Log the user straight into their new profile with the credentials they just typed,
+      // instead of bouncing them through a second manual sign-in — falls back to the done screen
+      // below if that somehow fails.
+      try {
+        await loginWithPassword(values.username, values.password);
+      } catch {
+        setDone(true);
+      }
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 400 && error.fieldErrors) {
+        const other: string[] = [];
+        Object.entries(error.fieldErrors).forEach(([field, message]) => {
+          if (isFormField(field)) setError(field, { message });
+          else other.push(message);
+        });
+        if (other.length > 0) setSubmitError(other.join(' '));
+      } else if (error instanceof ApiError && error.status === 409 && isFormField(error.field)) {
+        // A taken email or login — the backend names the field (see API.md "Формат ошибок").
+        setError(error.field, { message: error.message });
+      } else {
+        setSubmitError(error instanceof Error ? error.message : 'Не удалось зарегистрироваться. Попробуйте ещё раз.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
   });
+
+  if (done) {
+    return (
+      <View style={styles.doneContainer}>
+        <Text variant="headlineSmall" style={styles.doneTitle}>
+          Регистрация завершена
+        </Text>
+        <Text variant="bodyMedium" style={styles.doneText}>
+          Ваш профиль создан. Войдите — и приложение предложит выбрать университет, факультет и группу.
+        </Text>
+        <Button mode="contained" onPress={() => navigation.popTo('Login')}>
+          Перейти ко входу
+        </Button>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
@@ -275,13 +305,15 @@ export function RegisterStudentScreen({ navigation }: Props) {
       <Button
         mode="contained"
         onPress={onSubmit}
+        loading={submitting}
+        disabled={submitting}
         buttonColor={libraryColors.terracottaButton}
         textColor={libraryColors.cream}
         style={styles.submitButton}
         contentStyle={styles.submitButtonContent}
         labelStyle={styles.submitButtonLabel}
       >
-        Далее
+        Зарегистрироваться
       </Button>
 
       <Button
@@ -359,5 +391,18 @@ const styles = StyleSheet.create({
   footerLinkLabel: {
     fontFamily: libraryFonts.bodyBold,
     fontSize: 13,
+  },
+  doneContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    gap: 16,
+  },
+  doneTitle: {
+    textAlign: 'center',
+  },
+  doneText: {
+    textAlign: 'center',
+    opacity: 0.8,
   },
 });

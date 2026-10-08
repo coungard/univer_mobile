@@ -12,18 +12,23 @@ export class ApiError extends Error {
   readonly status: number;
   /** Present only for 400 responses — a flat map of field name -> validation message. */
   readonly fieldErrors?: FieldErrors;
+  /** Present only for 409 responses — the request field whose value is already taken, if known. */
+  readonly field?: string;
 
-  constructor(status: number, message: string, fieldErrors?: FieldErrors) {
+  constructor(status: number, message: string, fieldErrors?: FieldErrors, field?: string) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.fieldErrors = fieldErrors;
+    this.field = field;
   }
 }
 
 interface SpringErrorBody {
   status?: number;
   message?: string;
+  /** Only on 409: `"email"` or `"username"`, or `null` when the backend couldn't tell. */
+  field?: string | null;
   // `error`/`path` deliberately not read for 404/422 — see class doc comment above.
 }
 
@@ -44,8 +49,10 @@ export function toApiError(status: number, data: unknown): ApiError {
       const body = (data ?? {}) as SpringErrorBody;
       return new ApiError(status, body.message ?? 'Запрос не может быть выполнен.');
     }
-    case 409:
-      return new ApiError(409, 'Такой email уже зарегистрирован.');
+    case 409: {
+      const body = (data ?? {}) as SpringErrorBody;
+      return new ApiError(409, body.message ?? 'Такое значение уже занято.', undefined, body.field ?? undefined);
+    }
     default:
       return new ApiError(status, 'Не удалось выполнить запрос. Попробуйте ещё раз.');
   }

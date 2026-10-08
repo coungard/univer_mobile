@@ -1,15 +1,12 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { CompositeScreenProps } from '@react-navigation/native';
+import { CompositeScreenProps, NavigatorScreenParams } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 export type AuthStackParamList = {
   Login: undefined;
   RegisterRoleChoice: undefined;
+  /** Step 1 of student registration (PLAN.md) — creates the account; steps 2–6 are `Setup*` below. */
   RegisterStudent: undefined;
-  /** Steps 2 and 3 of student registration (PLAN.md). */
-  RegisterStudentRegion: undefined;
-  /** No `regionId` means a country-wide search (region not in the list, or failed to load). */
-  RegisterStudentUniversity: { regionId?: string; regionName?: string } | undefined;
   RegisterTeacher: undefined;
 };
 
@@ -34,9 +31,21 @@ export type StudentTabParamList = {
  * "Фаза 4") pushes a details screen over the tab bar instead of replacing the tabs.
  */
 export type StudentStackParamList = {
-  Tabs: undefined;
+  Tabs: NavigatorScreenParams<StudentTabParamList> | undefined;
   LectureDetails: { lectureId: string };
   CourseDetails: { courseId: string };
+  /**
+   * Steps 2–6 of student registration (PLAN.md), done under the new account's token: each choice
+   * is saved with `PATCH /students/me`, so the wizard can be left and resumed at any step.
+   */
+  SetupRegion: undefined;
+  /** No `regionId` means a country-wide search (region not in the list, or failed to load). */
+  SetupUniversity: { regionId?: string; regionName?: string } | undefined;
+  SetupFaculty: undefined;
+  SetupYear: undefined;
+  SetupGroup: undefined;
+  /** Final screen of the wizard — says how far the profile got and what is still missing. */
+  SetupDone: undefined;
   /** «Расписание группы» — заполнение `Pair` и генерация `Lecture` (`UI_UX.md` раздел 4). */
   GroupSchedule: undefined;
   /** Add-`Pair` when `pairId` is omitted, edit that `Pair` otherwise. */

@@ -1,23 +1,21 @@
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
 import { Button } from 'react-native-paper';
 import { RegionDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
 import { QueryErrorState } from '../../components/QueryErrorState';
-import { AuthStackParamList } from '../../navigation/types';
+import { StudentStackScreenProps } from '../../navigation/types';
 import { libraryColors } from '../../theme/library';
 import { useRegionsQuery } from './hooks';
 import { OptionRow, StepHeader, StepSearchInput, stepStyles } from './RegistrationStep';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'RegisterStudentRegion'>;
-
 /**
  * Step 2 of student registration (PLAN.md): pick a region to narrow the university list. The
  * region is only a filter, so "not in the list" — and a failed load — still lead on to the
- * university step, just unfiltered, instead of dead-ending the wizard here.
+ * university step, just unfiltered, instead of dead-ending the wizard here. Nothing is saved on
+ * this step: the region isn't part of the student's profile.
  */
-export function RegisterStudentRegionScreen({ navigation }: Props) {
+export function StudentSetupRegionScreen({ navigation }: StudentStackScreenProps<'SetupRegion'>) {
   const regions = useRegionsQuery();
   const [search, setSearch] = useState('');
 
@@ -29,7 +27,7 @@ export function RegisterStudentRegionScreen({ navigation }: Props) {
 
   const goToUniversities = (region?: RegionDto) =>
     navigation.navigate(
-      'RegisterStudentUniversity',
+      'SetupUniversity',
       region ? { regionId: region.id, regionName: region.name ?? '' } : undefined,
     );
 
@@ -81,6 +79,14 @@ export function RegisterStudentRegionScreen({ navigation }: Props) {
           labelStyle={stepStyles.footerLinkLabel}
         >
           {regions.isError ? 'Искать университет по всем регионам' : 'Моего региона нет в списке'}
+        </Button>
+        <Button
+          mode="text"
+          onPress={() => navigation.navigate('SetupDone')}
+          textColor={libraryColors.inkMuted}
+          labelStyle={stepStyles.footerLinkLabel}
+        >
+          Выберу университет позже
         </Button>
       </View>
     </View>

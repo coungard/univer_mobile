@@ -4,7 +4,14 @@ import { TextInput } from 'react-native-paper';
 import { libraryColors, libraryFonts, librarySpineColors } from '../../theme/library';
 
 /** Steps of student registration, in order (PLAN.md). The progress indicator derives from this. */
-export const STUDENT_REGISTRATION_STEPS = ['Личные данные', 'Регион', 'Университет'] as const;
+export const STUDENT_REGISTRATION_STEPS = [
+  'Личные данные',
+  'Регион',
+  'Университет',
+  'Факультет',
+  'Курс',
+  'Группа',
+] as const;
 
 interface StepProgressProps {
   /** 1-based index into `STUDENT_REGISTRATION_STEPS`. */

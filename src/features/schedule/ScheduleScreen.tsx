@@ -6,6 +6,7 @@ import { LectureDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentTabScreenProps } from '../../navigation/types';
+import { firstUnfilledSetupStep } from '../onboarding/studentSetup';
 import { useGroupAcademicPathQuery, useOwnStudentQuery } from '../profile/hooks';
 import { dayName, formatDayDate, formatTime, formatWeekRangeLabel, getWeek, isSameDay } from './dateUtils';
 import { useGroupPairsQuery, useMyLecturesQuery, useWeekScheduleCycleQuery } from './hooks';
@@ -29,9 +30,9 @@ export function ScheduleScreen({ navigation }: Props) {
   // called unconditionally — same reasoning as `StudentProfileScreen`'s `useGroupAcademicPathQuery`
   // call: each hook already no-ops via `enabled` when its id is undefined, so there's nothing wrong
   // with paying for it even on the (far more common) non-empty path, and it keeps hook order stable.
-  const academicPath = useGroupAcademicPathQuery(student.data?.groupId);
+  const academicPath = useGroupAcademicPathQuery(student.data?.groupId ?? undefined);
   const cycle = useWeekScheduleCycleQuery(academicPath.group?.semesterId);
-  const pairs = useGroupPairsQuery(student.data?.groupId);
+  const pairs = useGroupPairsQuery(student.data?.groupId ?? undefined);
 
   // This tab's `Tab.Navigator` renders with `headerShown: false`, so nothing else accounts for the
   // status bar — without this, the week-navigation buttons render partly underneath it, where taps
@@ -75,15 +76,21 @@ export function ScheduleScreen({ navigation }: Props) {
   if ((lectures.data ?? []).length === 0) {
     const hasGroup = student.data?.groupId != null;
 
-    // Фаза 2: без группы вообще нет смысла смотреть на цикл/пары — этот кейс не меняется
-    // «студенческой генерацией расписания» из UI_UX.md.
+    // Без группы вообще нет смысла смотреть на цикл/пары — этот кейс не меняется «студенческой
+    // генерацией расписания» из UI_UX.md. Группу студент выбирает сам в мастере настройки (PLAN.md).
     if (!hasGroup) {
+      const setupStep = student.data ? firstUnfilledSetupStep(student.data) : null;
       return (
         <View style={styles.center}>
           <EmptyState
             title="Расписание пока пусто"
-            description="Группа ещё не назначена — обратитесь к администратору. Расписание появится, как только вас включат в группу."
+            description="Вы ещё не выбрали группу. Расписание появится сразу после этого."
           />
+          {setupStep ? (
+            <Button mode="contained" onPress={() => navigation.navigate(setupStep)}>
+              Завершить настройку
+            </Button>
+          ) : null}
         </View>
       );
     }
