@@ -122,8 +122,7 @@
 `pairNumber`★ (`≥ 1`), `startTime`★, `endTime`★.
 
 ### PairDto
-`id`, `weekScheduleCycleId`★, `dayOfWeek`★ (тип допускает `MONDAY`…`SUNDAY`, но сервис отклоняет
-`SATURDAY`/`SUNDAY` как `422` — де-факто только `MONDAY`…`FRIDAY`), `weekParity: WeekParity`★,
+`id`, `weekScheduleCycleId`★, `dayOfWeek`★ (`MONDAY`…`SUNDAY`), `weekParity: WeekParity`★,
 `pairNumber`★ (`≥ 1`), `startTime` (опционально — если не задано, подставляется из
 `BellScheduleEntry` по университету курса и `pairNumber`), `endTime`, `courseId`★, `teacherId`, `room`,
 `groupIds: UUID[]`★ (непусто). Шаблон повторяющегося занятия в циклическом расписании — из него
@@ -165,6 +164,26 @@
 ### UpdateStudentProfileRequest (только запрос, `PATCH /students/me`)
 `universityId`, `facultyId`, `yearNumber` (от 1 до 6), `groupId` — все необязательны. Поле, которого нет
 в теле, не меняется; поле с явным `null` очищается.
+
+### UniversityRequestDto (только ответ)
+Заявка студента на добавление университета. `id`, `name` (название, как его ввёл студент), `regionId`,
+`regionName` (оба `null`, если студент региона не указал), `status: UniversityRequestStatus`,
+`universityId` (университет, которым заявка закрыта; заполнен только у `COMPLETED`), `comment`
+(пояснение администратора при отклонении; бывает только у `REJECTED`, и то не всегда), `studentId`,
+`studentUsername`, `studentFullname` (автор заявки), `createdAt`, `updatedAt`.
+`UniversityRequestStatus` (enum): `PENDING` (необработанная) | `COMPLETED` (выполнена) | `REJECTED`
+(отклонена).
+
+### SubmitUniversityRequest (только запрос, `PUT /students/me/university-request`)
+`name`★ (до 255 символов; крайние пробелы отбрасываются), `regionId` (необязателен — ID региона из
+`GET /regions`).
+
+### CompleteUniversityRequest (только запрос, `POST /university-requests/{id}/complete`)
+`universityId`★.
+
+### RejectUniversityRequest (только запрос, `POST /university-requests/{id}/reject`)
+`comment` (необязателен, до 500 символов; крайние пробелы отбрасываются, пустой сохраняется как
+`null`). Тело можно не передавать вовсе.
 
 ### RegisterStudentRequest (только запрос, `POST /students/register`)
 `username`★, `firstname`★, `lastname`★, `fullname`, `email`★, `password`★, `enrollmentDate` (не в
@@ -218,6 +237,34 @@
 > чтобы искать среди большого числа ВУЗов вместо прокрутки/загрузки всего списка целиком.
 >
 > `regionId` — необязательный фильтр по региону (ID из `GET /regions`), сочетается с `search`.
+
+## UniversityRequests — `/api/v1/university-requests`
+
+Заявки студентов на добавление университета, которого нет в справочнике (issue #92). Студент
+оставляет и смотрит свою заявку через `PUT`/`GET /students/me/university-request`; здесь — разбор
+заявок администратором.
+
+| Метод | Путь | Auth | Тело запроса | Тело ответа |
+|---|---|---|---|---|
+| GET | `/` | `ADMIN` | — (`?status&page&size`) | `Page<UniversityRequestDto>` |
+| POST | `/{id}/complete` | `ADMIN` | `CompleteUniversityRequest` | `UniversityRequestDto` |
+| POST | `/{id}/reject` | `ADMIN` | `RejectUniversityRequest` (необязательно) | `UniversityRequestDto` |
+
+- **`GET /`** — сначала самые давние заявки. `status` — необязательный фильтр (`PENDING`,
+  `COMPLETED`, `REJECTED`); без него — заявки во всех статусах. Одинаковые заявки разных студентов
+  не группируются — каждая закрывается отдельно.
+- **`POST /{id}/complete`** — закрыть заявку, указав университет: только что созданный через
+  `POST /universities` или уже существующий, если студент его просто не нашёл. Заявка переходит в
+  `COMPLETED`, университет проставляется в профиль автора, **если `universityId` там всё ещё
+  пуст**. Заявка без региона допустима, но университет без региона создать нельзя — регион
+  администратор указывает сам при создании университета.
+- **`POST /{id}/reject`** — отклонить заявку (не университет, дубль, мусор): статус `REJECTED`,
+  профиль автора не меняется. В необязательном `comment` администратор поясняет, что не так, —
+  студент увидит его в `GET /students/me/university-request` и поймёт, исправить ли название или
+  искать университет под другим именем.
+- `GET /?status=` с неизвестным статусом — `400`.
+- Закрыть или отклонить можно только необработанную заявку: для уже обработанной — `422`.
+  Несуществующая заявка или университет — `404`.
 
 ## Regions — `/api/v1/regions`
 
@@ -432,6 +479,8 @@
 | GET | `/` | `ADMIN` | — (`?page&size`) | `Page<StudentDto>` |
 | GET | `/me` | `STUDENT` | — | `StudentDto` |
 | PATCH | `/me` | `STUDENT` | `UpdateStudentProfileRequest` | `StudentDto` |
+| GET | `/me/university-request` | `STUDENT` | — | `UniversityRequestDto` |
+| PUT | `/me/university-request` | `STUDENT` | `SubmitUniversityRequest` | `UniversityRequestDto` |
 | POST | `/me/faculty` | `STUDENT` | `CreateStudentFacultyRequest` | `201` + `StudentDto` |
 | PUT | `/me/faculty` | `STUDENT` | `CreateStudentFacultyRequest` | `FacultyDto` |
 | POST | `/me/group` | `STUDENT` | `CreateStudentGroupRequest` | `201` + `StudentDto` |
@@ -447,7 +496,8 @@
 - **Студент без университета** (`universityId: null`) — валидное состояние: `GET /lectures/me` отдаёт
   ему пустую страницу, а не ошибку (группы у него тоже ещё нет).
 - **`PUT /{id}`** — `universityId: null` в теле снимает привязку к университету (как `groupId: null` —
-  к группе). `facultyId` и `yearNumber` этот эндпоинт не меняет и согласованность цепочки не
+  к группе). Переданный `universityId` закрывает необработанную заявку студента на добавление
+  университета. `facultyId` и `yearNumber` этот эндпоинт не меняет и согласованность цепочки не
   проверяет — это делает только `PATCH /me`.
 - **`GET /me`** — профиль вызывающего студента; студент определяется по `sub` из JWT (как в
   `GET /lectures/me`), подставлять свой ID в `GET /{id}` не нужно.
@@ -467,6 +517,28 @@
   - Несуществующий `universityId`/`facultyId`/`groupId` — `404`; `yearNumber` вне диапазона 1–6 —
     `400`.
   - После выбора группы `GET /lectures/me` сразу отдаёт её расписание.
+  - Если в профиле появился университет, необработанная заявка студента на добавление университета
+    закрывается автоматически (см. `PUT /me/university-request`).
+- **`PUT /me/university-request`** — студент не нашёл свой университет в `GET /universities` и
+  оставляет заявку на его добавление. Сам он университеты не создаёт: заявку разбирает
+  администратор (см. «UniversityRequests»). В ответе `200` и `UniversityRequestDto` в статусе
+  `PENDING`.
+  - У студента не больше одной необработанной заявки: повторный запрос обновляет её название и
+    регион, а не создаёт вторую. `regionId`, не переданный в теле, очищается. Два одновременных
+    запроса (двойное нажатие «Отправить») тоже дают одну заявку: оба получают `200` с ней.
+  - Профиль заявка не меняет: `universityId` остаётся пустым, пока администратор её не закроет.
+    Уведомления о закрытии нет — клиент увидит университет в `GET /me`.
+  - После закрытия или отклонения заявки следующий `PUT` создаёт новую необработанную.
+  - Регион необязателен: студент мог не найти и регион. Несуществующий `regionId` — `404`.
+  - В профиле уже выбран университет — `422`: такая заявка закрылась бы сразу. Чтобы оставить
+    заявку, университет сначала снимается через `PATCH /me` (`universityId: null`).
+  - Заявка закрывается автоматически (`COMPLETED` с `universityId` выбранного университета), если
+    студент, не дожидаясь администратора, выбрал университет сам через `PATCH /me` — напрямую либо
+    выбором факультета или группы — или университет ему назначил администратор через `PUT /{id}`.
+- **`GET /me/university-request`** — последняя заявка студента: необработанная, а если её нет —
+  последняя закрытая или отклонённая. У закрытой заполнен `universityId`, у отклонённой может быть
+  `comment` с причиной. Студент заявок не
+  оставлял — `404`.
 - **`POST /me/faculty`** — студент создаёт факультет, которого нет в
   `GET /faculties/university/{id}`, и сразу выбирает его: в ответе `StudentDto` с новым `facultyId`,
   в заголовке `Location` — адрес факультета. Подтверждение администратора не требуется, факультет

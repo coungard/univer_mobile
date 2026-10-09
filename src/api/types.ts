@@ -96,7 +96,7 @@ export type CourseDto = WithRequiredId<components['schemas']['CourseDto']>;
 export type PairDto = WithRequiredId<components['schemas']['PairDto']>;
 /** `POST`/`PUT /pairs` body — `id` is server-assigned, never sent by the client. */
 export type PairInput = Omit<components['schemas']['PairDto'], 'id'>;
-/** `PairDto.dayOfWeek` de-facto only accepts `MONDAY`…`FRIDAY` — `SATURDAY`/`SUNDAY` is rejected as `422` (API.md). */
+/** Days offered by the pair form. The backend also accepts `SATURDAY`/`SUNDAY` (API.md) — the form doesn't offer them yet. */
 export type Weekday = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY';
 export type WeekParity = components['schemas']['PairDto']['weekParity'];
 
