@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { getDepartment } from '../../api/endpoints/departments';
 import { getFaculty } from '../../api/endpoints/faculties';
 import { getGroup } from '../../api/endpoints/groups';
-import { getProgram } from '../../api/endpoints/programs';
 import { getSemester } from '../../api/endpoints/semesters';
 import { getOwnStudent } from '../../api/endpoints/students';
 import { getStudyYear } from '../../api/endpoints/studyYears';
@@ -85,8 +84,8 @@ export function useFacultyQuery(facultyId: string | undefined) {
 }
 
 /**
- * Resolves a student's group → semester → study year → program → faculty chain (see API.md —
- * `GroupDto` only carries `semesterId`, there is no direct link to program/faculty). Each step is
+ * Resolves a student's group → semester → study year → faculty chain (see API.md —
+ * `GroupDto` only carries `semesterId`, there is no direct link to the faculty). Each step is
  * a separate dependent query, gated on the previous one having resolved, so the whole chain stays
  * cheap (cached per id) and simply doesn't run at all when `groupId` is null/undefined (Фаза 2:
  * student without an assigned group).
@@ -110,20 +109,13 @@ export function useGroupAcademicPathQuery(groupId: string | null | undefined) {
     enabled: semester.data?.studyYearId !== undefined,
   });
 
-  const program = useQuery({
-    queryKey: ['programs', studyYear.data?.programId],
-    queryFn: () => getProgram(studyYear.data!.programId),
-    enabled: studyYear.data?.programId !== undefined,
-  });
-
-  const faculty = useFacultyQuery(program.data?.facultyId);
+  const faculty = useFacultyQuery(studyYear.data?.facultyId);
 
   return {
     group: group.data,
-    program: program.data,
     faculty: faculty.data,
-    isLoading: !!groupId && (group.isLoading || semester.isLoading || studyYear.isLoading || program.isLoading || faculty.isLoading),
-    isError: group.isError || semester.isError || studyYear.isError || program.isError || faculty.isError,
-    error: group.error ?? semester.error ?? studyYear.error ?? program.error ?? faculty.error,
+    isLoading: !!groupId && (group.isLoading || semester.isLoading || studyYear.isLoading || faculty.isLoading),
+    isError: group.isError || semester.isError || studyYear.isError || faculty.isError,
+    error: group.error ?? semester.error ?? studyYear.error ?? faculty.error,
   };
 }

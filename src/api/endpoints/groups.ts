@@ -2,8 +2,8 @@ import { apiClient } from '../client';
 import { GroupDto, Page } from '../types';
 
 /**
- * `GET /groups?facultyId=&yearNumber=` — groups of a faculty on a given year across all of its
- * programs, limited by the backend to each study year's current semester (see API.md). An empty
+ * `GET /groups?facultyId=&yearNumber=` — groups of a faculty on a given year, limited by the
+ * backend to each study year's current semester (see API.md). An empty
  * page is a normal answer ("no groups yet"), not an error.
  */
 export async function getGroupsByFacultyAndYear(
@@ -20,8 +20,7 @@ export async function getGroupsByFacultyAndYear(
 
 /**
  * `GET /groups/{id}`. `GroupDto` only carries `semesterId` — there is no direct link to a
- * program/faculty, so resolving those means walking group → semester → study year → program →
- * faculty (see `features/profile/hooks.ts`'s `useGroupAcademicPathQuery`).
+ * faculty, so resolving it means walking group → semester → study year → faculty (see `features/profile/hooks.ts`'s `useGroupAcademicPathQuery`).
  */
 export async function getGroup(id: string): Promise<GroupDto> {
   const { data } = await apiClient.get<GroupDto>(`/groups/${id}`);

@@ -105,20 +105,12 @@ export function StudentProfileScreen() {
       ) : null}
 
       {hasGroup ? (
-        <>
-          <View style={styles.section}>
-            <Text variant="labelLarge" style={styles.label}>
-              Программа
-            </Text>
-            <Text variant="bodyLarge">{academicPath.program?.name ?? (academicPath.isLoading ? '…' : '—')}</Text>
-          </View>
-          <View style={styles.section}>
-            <Text variant="labelLarge" style={styles.label}>
-              Группа
-            </Text>
-            <Text variant="bodyLarge">{academicPath.group?.name ?? (academicPath.isLoading ? '…' : '—')}</Text>
-          </View>
-        </>
+        <View style={styles.section}>
+          <Text variant="labelLarge" style={styles.label}>
+            Группа
+          </Text>
+          <Text variant="bodyLarge">{academicPath.group?.name ?? (academicPath.isLoading ? '…' : '—')}</Text>
+        </View>
       ) : null}
 
       {setupStep ? (

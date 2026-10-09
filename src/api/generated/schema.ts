@@ -117,25 +117,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/programs/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Получить программу по ID */
-        get: operations["getProgramById"];
-        /** Обновить программу */
-        put: operations["updateProgram"];
-        post?: never;
-        /** Удалить программу */
-        delete: operations["deleteProgram"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/pairs/{id}": {
         parameters: {
             query?: never;
@@ -421,24 +402,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/programs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Поиск образовательных программ */
-        get: operations["searchPrograms"];
-        put?: never;
-        /** Создать новую образовательную программу */
-        post: operations["createProgram"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/pairs": {
         parameters: {
             query?: never;
@@ -527,7 +490,7 @@ export interface paths {
         };
         /**
          * Получить группы с пагинацией
-         * @description Без фильтров — все группы. С facultyId и/или yearNumber — группы факультета на указанном курсе по всем программам факультета, только из актуального семестра: идущего сейчас, иначе ближайшего будущего, иначе последнего закончившегося. Если подходящих групп нет — пустая страница.
+         * @description Без фильтров — все группы. С facultyId и/или yearNumber — группы факультета на указанном курсе, только из актуального семестра: идущего сейчас, иначе ближайшего будущего, иначе последнего закончившегося. Если подходящих групп нет — пустая страница.
          */
         get: operations["getGroups"];
         put?: never;
@@ -725,15 +688,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/study-years/program/{programId}": {
+    "/api/v1/study-years/faculty/{facultyId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Получить курсы обучения по ID программы с пагинацией */
-        get: operations["getStudyYearsByProgram"];
+        /** Получить курсы обучения по ID факультета с пагинацией */
+        get: operations["getStudyYearsByFaculty"];
         put?: never;
         post?: never;
         delete?: never;
@@ -785,23 +748,6 @@ export interface paths {
         };
         /** Получить все регионы, отсортированные по названию */
         get: operations["getRegions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/programs/faculty/{facultyId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Получить программы по факультету */
-        get: operations["getProgramsByFaculty"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1246,7 +1192,7 @@ export interface components {
             /** Format: uuid */
             id?: string;
             /** Format: uuid */
-            programId: string;
+            facultyId: string;
             /** Format: int32 */
             yearNumber: number;
         };
@@ -1286,42 +1232,6 @@ export interface components {
             startDate: string;
             /** Format: date */
             endDate: string;
-        };
-        CreateProgramRequest: {
-            /** Format: uuid */
-            facultyId: string;
-            code: string;
-            name: string;
-            profession?: string;
-            direction?: string;
-            educationLevel: string;
-            /** @enum {string} */
-            educationForm?: "FULL_TIME" | "PART_TIME" | "FULL_AND_PART_TIME";
-            durationOfStudy: components["schemas"]["StudyDuration"];
-            qualification?: string;
-        };
-        StudyDuration: {
-            /** Format: int32 */
-            years?: number;
-            /** Format: int32 */
-            months?: number;
-            /** Format: int32 */
-            days?: number;
-        };
-        ProgramDto: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            facultyId?: string;
-            code?: string;
-            name?: string;
-            profession?: string;
-            direction?: string;
-            educationLevel?: string;
-            /** @enum {string} */
-            educationForm?: "FULL_TIME" | "PART_TIME" | "FULL_AND_PART_TIME";
-            durationOfStudy?: components["schemas"]["StudyDuration"];
-            qualification?: string;
         };
         LocalTime: {
             /** Format: int32 */
@@ -1782,24 +1692,6 @@ export interface components {
              * @example Республика Дагестан
              */
             name?: string;
-        };
-        PageProgramDto: {
-            /** Format: int32 */
-            totalPages?: number;
-            /** Format: int64 */
-            totalElements?: number;
-            /** Format: int32 */
-            size?: number;
-            content?: components["schemas"]["ProgramDto"][];
-            /** Format: int32 */
-            number?: number;
-            sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
-            empty?: boolean;
         };
         PagePairDto: {
             /** Format: int32 */
@@ -2340,74 +2232,6 @@ export interface operations {
         };
     };
     deleteSemester: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    getProgramById: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProgramDto"];
-                };
-            };
-        };
-    };
-    updateProgram: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateProgramRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProgramDto"];
-                };
-            };
-        };
-    };
-    deleteProgram: {
         parameters: {
             query?: never;
             header?: never;
@@ -3297,53 +3121,6 @@ export interface operations {
             };
         };
     };
-    searchPrograms: {
-        parameters: {
-            query?: {
-                page?: number;
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PageProgramDto"];
-                };
-            };
-        };
-    };
-    createProgram: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateProgramRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProgramDto"];
-                };
-            };
-        };
-    };
     getPairs: {
         parameters: {
             query?: {
@@ -3872,7 +3649,7 @@ export interface operations {
             };
         };
     };
-    getStudyYearsByProgram: {
+    getStudyYearsByFaculty: {
         parameters: {
             query?: {
                 page?: number;
@@ -3880,7 +3657,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                programId: string;
+                facultyId: string;
             };
             cookie?: never;
         };
@@ -3961,28 +3738,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["RegionDto"][];
-                };
-            };
-        };
-    };
-    getProgramsByFaculty: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                facultyId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PageProgramDto"];
                 };
             };
         };
