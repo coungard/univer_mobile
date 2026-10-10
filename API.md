@@ -72,11 +72,18 @@
 
 ### UniversityDto
 `id`, `name`, `description`, `rector`, `foundingYear`, `studentCount`, `createdAt`, `updatedAt` (только
-в ответе), `address: AddressDto`, `regionId`★, `faculties: FacultyDto[]` (в ответе; при создании/обновлении
+в ответе), `address: AddressDto`, `regionId`★, `facultyCount` (только в ответе), `faculties: FacultyDto[]` (в ответе; при создании/обновлении
 можно не передавать — по умолчанию `[]`). `rector`/`foundingYear`/`studentCount` необязательны (`foundingYear`,
 если передан, — не меньше 1000; `studentCount`, если передан, — не отрицательный). `regionId` — ID региона
 из `GET /regions`, обязателен: регион есть у каждого вуза (issue #80). Без `regionId` `POST`/`PUT`
 вернут `400`, с несуществующим — `404`. Текстовый `address.region` от `regionId` не зависит.
+
+`facultyCount` (только в ответе) — число факультетов университета, целое, `0`, если факультетов нет
+(issue #94). Учитывает и факультеты, созданные студентами через `POST /students/me/faculty`. В отличие
+от `studentCount`, который вводит администратор, значение вычисляется сервером: в теле `POST`/`PUT`
+поле игнорируется. Приходит во всех ответах с `UniversityDto`, включая каждую строку
+`GET /universities`, — запрашивать `GET /faculties/university/{id}` ради подписи «Факультетов пока
+нет» не нужно.
 
 ### RegionDto (только ответ)
 `id`, `code` (двузначный код субъекта РФ, например `05`), `name` (официальное название, например

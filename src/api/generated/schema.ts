@@ -1166,6 +1166,12 @@ export interface components {
              * @description ID региона (субъекта РФ), см. GET /api/v1/regions
              */
             regionId: string;
+            /**
+             * Format: int64
+             * @description Число факультетов университета, включая созданные студентами. Вычисляется сервером, в теле запроса игнорируется
+             * @example 12
+             */
+            readonly facultyCount?: number;
             faculties?: components["schemas"]["FacultyDto"][];
         };
         TeacherDto: {

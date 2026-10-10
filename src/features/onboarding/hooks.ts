@@ -37,7 +37,11 @@ export function useUniversitiesQuery(search: string, regionId?: string) {
     data: query.data?.pages.flatMap((page) => page.content).map((u) => ({
       label: u.name ?? 'Без названия',
       value: u.id,
-      sublabel: u.address?.city,
+      // A university without faculties isn't a dead end (the student creates one on the next
+      // step), but it's worth knowing before picking it — PLAN.md, сценарий 2.
+      sublabel:
+        [u.address?.city, u.facultyCount === 0 ? 'Факультетов пока нет' : undefined].filter(Boolean).join(' · ') ||
+        undefined,
     })),
   };
 }
