@@ -1,5 +1,6 @@
 import { apiClient } from '../client';
 import {
+  CreateStudentFacultyRequest,
   CreateStudentGroupRequest,
   RegisterStudentRequest,
   StudentDto,
@@ -29,6 +30,16 @@ export async function getOwnStudent(): Promise<StudentDto> {
  */
 export async function updateOwnStudent(request: UpdateStudentProfileRequest): Promise<StudentDto> {
   const { data } = await apiClient.patch<StudentDto>('/students/me', request);
+  return data;
+}
+
+/**
+ * `POST /students/me/faculty` — the student creates a faculty missing from the list of their
+ * university; it is saved in the profile right away, year and group are reset. A name already
+ * taken in that university is a `409` carrying the existing faculty's ID (see API.md).
+ */
+export async function createOwnFaculty(request: CreateStudentFacultyRequest): Promise<StudentDto> {
+  const { data } = await apiClient.post<StudentDto>('/students/me/faculty', request);
   return data;
 }
 

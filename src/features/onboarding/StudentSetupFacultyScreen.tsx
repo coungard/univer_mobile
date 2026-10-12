@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Button } from 'react-native-paper';
 import { EmptyState } from '../../components/EmptyState';
 import { StudentStackScreenProps } from '../../navigation/types';
+import { libraryColors } from '../../theme/library';
 import { useOwnStudentQuery, useUniversityQuery } from '../profile/hooks';
 import { ChoiceStep } from './ChoiceStep';
 import { useFacultiesQuery } from './hooks';
@@ -12,7 +14,8 @@ const SEARCH_THRESHOLD = 8;
 /**
  * Step 4 of student registration (PLAN.md): pick a faculty of the university saved on step 3.
  * Many universities have no faculties in the catalog yet, so the empty list is an ordinary outcome
- * here: the university stays saved and the wizard ends on the final screen.
+ * here. A faculty that isn't there — the list is empty or just doesn't have it — is created by the
+ * student on `SetupNewFaculty`.
  */
 export function StudentSetupFacultyScreen({ navigation }: StudentStackScreenProps<'SetupFaculty'>) {
   const student = useOwnStudentQuery();
@@ -67,10 +70,19 @@ export function StudentSetupFacultyScreen({ navigation }: StudentStackScreenProp
       items={items}
       empty={
         all.length === 0 ? (
-          <EmptyState
-            title="В этом университете пока нет факультетов"
-            description="Университет сохранён в профиле. Когда факультеты появятся, продолжите настройку оттуда."
-          />
+          <>
+            <EmptyState
+              title="В этом университете пока нет факультетов"
+              description="Добавьте свой факультет — его сразу увидят другие студенты университета."
+            />
+            <Button
+              mode="outlined"
+              onPress={() => navigation.navigate('SetupNewFaculty')}
+              textColor={libraryColors.terracottaButton}
+            >
+              Создать факультет
+            </Button>
+          </>
         ) : (
           <EmptyState title="Ничего не найдено" description="Проверьте название." />
         )
@@ -82,7 +94,11 @@ export function StudentSetupFacultyScreen({ navigation }: StudentStackScreenProp
       submitError={error}
       onDismissSubmitError={clearError}
       skipLabel={all.length === 0 ? 'Завершить без факультета' : 'Моего факультета нет в списке'}
-      onSkip={() => navigation.navigate('SetupDone')}
+      onSkip={() =>
+        all.length === 0
+          ? navigation.navigate('SetupDone')
+          : navigation.navigate('SetupNewFaculty', { name: search.trim() || undefined })
+      }
     />
   );
 }

@@ -4,6 +4,7 @@ import { CourseDetailsScreen } from '../features/courses/CourseDetailsScreen';
 import { StudentSetupDoneScreen } from '../features/onboarding/StudentSetupDoneScreen';
 import { StudentSetupFacultyScreen } from '../features/onboarding/StudentSetupFacultyScreen';
 import { StudentSetupGroupScreen } from '../features/onboarding/StudentSetupGroupScreen';
+import { StudentSetupNewFacultyScreen } from '../features/onboarding/StudentSetupNewFacultyScreen';
 import { StudentSetupNewGroupScreen } from '../features/onboarding/StudentSetupNewGroupScreen';
 import { StudentSetupRegionScreen } from '../features/onboarding/StudentSetupRegionScreen';
 import { StudentSetupUniversityScreen } from '../features/onboarding/StudentSetupUniversityScreen';
@@ -38,6 +39,7 @@ export function StudentStack() {
       <Stack.Screen name="SetupFaculty" component={StudentSetupFacultyScreen} options={setupOptions} />
       <Stack.Screen name="SetupYear" component={StudentSetupYearScreen} options={setupOptions} />
       <Stack.Screen name="SetupGroup" component={StudentSetupGroupScreen} options={setupOptions} />
+      <Stack.Screen name="SetupNewFaculty" component={StudentSetupNewFacultyScreen} options={setupOptions} />
       <Stack.Screen name="SetupNewGroup" component={StudentSetupNewGroupScreen} options={setupOptions} />
       <Stack.Screen name="SetupDone" component={StudentSetupDoneScreen} options={setupOptions} />
     </Stack.Navigator>

@@ -27,7 +27,7 @@ function describeOutcome(student: StudentDto): { title: string; text: string } {
   if (student.universityId) {
     return {
       title: 'Профиль создан',
-      text: `Университет сохранён, факультет не выбран. Если его пока нет в списке — загляните позже. ${RESUME_HINT}`,
+      text: `Университет сохранён, факультет не выбран. Если его нет в списке — создайте его сами. ${RESUME_HINT}`,
     };
   }
   return {

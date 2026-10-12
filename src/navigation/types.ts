@@ -44,6 +44,8 @@ export type StudentStackParamList = {
   SetupFaculty: undefined;
   SetupYear: undefined;
   SetupGroup: undefined;
+  /** Step Y (PLAN.md, 9.1): create a faculty missing from the list. `name` prefills the form. */
+  SetupNewFaculty: { name?: string } | undefined;
   /** Step X (PLAN.md, 9.1): create a group missing from the list. `name` prefills the form. */
   SetupNewGroup: { name?: string } | undefined;
   /** Final screen of the wizard — says how far the profile got and what is still missing. */
