@@ -6,7 +6,12 @@ import { useAuth } from '../../auth/useAuth';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentTabScreenProps } from '../../navigation/types';
 import { useOwnUniversityRequestQuery } from '../onboarding/hooks';
-import { firstUnfilledSetupStep, SETUP_STEP_PROMPTS, useSetupPromptStore } from '../onboarding/studentSetup';
+import {
+  firstUnfilledSetupStep,
+  openSetupAt,
+  SETUP_STEP_PROMPTS,
+  useSetupPromptStore,
+} from '../onboarding/studentSetup';
 import {
   useFacultyQuery,
   useGroupAcademicPathQuery,
@@ -45,7 +50,7 @@ export function StudentProfileScreen() {
   useEffect(() => {
     if (!setupStep || !userId || promptedFor === userId) return;
     markPrompted(userId);
-    navigation.navigate(setupStep);
+    openSetupAt(setupStep, (route) => navigation.navigate(route));
   }, [setupStep, userId, promptedFor, markPrompted, navigation]);
 
   if (student.isLoading) {
@@ -143,7 +148,7 @@ export function StudentProfileScreen() {
             )}
           </Card.Content>
           <Card.Actions>
-            <Button mode="contained" onPress={() => navigation.navigate(setupStep)}>
+            <Button mode="contained" onPress={() => openSetupAt(setupStep, (route) => navigation.navigate(route))}>
               Продолжить
             </Button>
           </Card.Actions>

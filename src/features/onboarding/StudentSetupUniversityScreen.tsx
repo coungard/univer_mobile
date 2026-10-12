@@ -3,6 +3,7 @@ import { Button } from 'react-native-paper';
 import { EmptyState } from '../../components/EmptyState';
 import { StudentStackScreenProps } from '../../navigation/types';
 import { libraryColors } from '../../theme/library';
+import { useOwnStudentQuery, useUniversityQuery } from '../profile/hooks';
 import { ChoiceItem, ChoiceStep } from './ChoiceStep';
 import { useUniversitiesQuery } from './hooks';
 import { useSaveSetupStep } from './studentSetup';
@@ -20,11 +21,19 @@ export function StudentSetupUniversityScreen({ navigation, route }: StudentStack
 
   const [search, setSearch] = useState('');
   const universities = useUniversitiesQuery(search, regionId);
-  const [selected, setSelected] = useState<ChoiceItem | null>(null);
+  const [picked, setPicked] = useState<ChoiceItem | null>(null);
   const { save, saving, error, clearError } = useSaveSetupStep(() => {
-    setSelected(null);
+    setPicked(null);
     universities.refetch();
   });
+
+  // Until something is picked, the university saved in the profile is the selection — the step is
+  // also reached by going back from step 4.
+  const student = useOwnStudentQuery();
+  const savedId = student.data?.universityId ?? undefined;
+  const saved = useUniversityQuery(savedId);
+  const selected: ChoiceItem | null =
+    picked ?? (savedId && saved.data?.name ? { id: savedId, title: saved.data.name } : null);
 
   const searchAllRegions = () => navigation.setParams({ allRegions: true });
   const requestUniversity = () =>
@@ -81,7 +90,7 @@ export function StudentSetupUniversityScreen({ navigation, route }: StudentStack
         </>
       }
       selected={selected}
-      onSelect={setSelected}
+      onSelect={setPicked}
       onSubmit={onSubmit}
       submitting={saving}
       submitError={error}

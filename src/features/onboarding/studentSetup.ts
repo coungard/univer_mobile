@@ -26,6 +26,17 @@ export function firstUnfilledSetupStep(student: StudentDto): SetupStepRoute | nu
   return null;
 }
 
+const SETUP_CHAIN = ['SetupRegion', 'SetupUniversity', 'SetupFaculty', 'SetupYear', 'SetupGroup'] as const;
+
+/**
+ * Opens the wizard on `step` with every step above it already in the back stack, so «Назад» leads
+ * one step up — not out to the profile — when the wizard starts mid-way (PLAN.md, M17). The
+ * university step comes without a region filter and with the saved university selected.
+ */
+export function openSetupAt(step: SetupStepRoute, navigate: (route: (typeof SETUP_CHAIN)[number]) => void) {
+  for (const route of SETUP_CHAIN.slice(0, SETUP_CHAIN.indexOf(step) + 1)) navigate(route);
+}
+
 /** What the unfilled step asks for — for the «Завершить настройку» card in the profile. */
 export const SETUP_STEP_PROMPTS: Record<SetupStepRoute, string> = {
   SetupRegion: 'Выберите университет',

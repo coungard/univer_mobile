@@ -6,7 +6,7 @@ import { LectureDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentTabScreenProps } from '../../navigation/types';
-import { firstUnfilledSetupStep } from '../onboarding/studentSetup';
+import { firstUnfilledSetupStep, openSetupAt } from '../onboarding/studentSetup';
 import { useGroupAcademicPathQuery, useOwnStudentQuery } from '../profile/hooks';
 import { dayName, formatDayDate, formatTime, formatWeekRangeLabel, getWeek, isSameDay } from './dateUtils';
 import { useGroupPairsQuery, useMyLecturesQuery, useWeekScheduleCycleQuery } from './hooks';
@@ -87,7 +87,7 @@ export function ScheduleScreen({ navigation }: Props) {
             description="Вы ещё не выбрали группу. Расписание появится сразу после этого."
           />
           {setupStep ? (
-            <Button mode="contained" onPress={() => navigation.navigate(setupStep)}>
+            <Button mode="contained" onPress={() => openSetupAt(setupStep, (route) => navigation.navigate(route))}>
               Завершить настройку
             </Button>
           ) : null}
