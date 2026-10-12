@@ -63,6 +63,9 @@ export function StudentSetupNewFacultyScreen({ navigation, route }: StudentStack
         student.refetch();
       } else {
         setError(e instanceof Error ? e.message : 'Не удалось создать факультет. Попробуйте ещё раз.');
+        // A profile that lost its university in the meantime gets `422`, not `404`: the reloaded
+        // profile sends the wizard back up through the same effect.
+        if (e instanceof ApiError && e.status === 422) student.refetch();
       }
     }
   };

@@ -65,6 +65,9 @@ export function StudentSetupNewGroupScreen({ navigation, route }: StudentStackSc
         student.refetch();
       } else {
         setError(e instanceof Error ? e.message : 'Не удалось создать группу. Попробуйте ещё раз.');
+        // A deleted faculty is cleared from the profile, and then the server answers `422`, not
+        // `404`: the reloaded profile sends the wizard back up through the same effect.
+        if (e instanceof ApiError && e.status === 422) student.refetch();
       }
     }
   };
