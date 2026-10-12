@@ -10,11 +10,13 @@ import { useSaveSetupStep } from './studentSetup';
 /**
  * Step 3 of student registration (PLAN.md): pick a university — within the region chosen on step
  * 2, or country-wide when there is none. A university missing from the region's list leads to the
- * country-wide search first (it may be filed under another region), and only then out of the wizard.
+ * country-wide search first (it may be filed under another region), and only then to the request
+ * for an administrator to add it.
  */
 export function StudentSetupUniversityScreen({ navigation, route }: StudentStackScreenProps<'SetupUniversity'>) {
-  const regionId = route.params?.regionId;
-  const regionName = route.params?.regionName;
+  // The region of step 2 outlives the filter: the request form is prefilled with it.
+  const regionId = route.params?.allRegions ? undefined : route.params?.regionId;
+  const regionName = route.params?.allRegions ? undefined : route.params?.regionName;
 
   const [search, setSearch] = useState('');
   const universities = useUniversitiesQuery(search, regionId);
@@ -24,7 +26,13 @@ export function StudentSetupUniversityScreen({ navigation, route }: StudentStack
     universities.refetch();
   });
 
-  const searchAllRegions = () => navigation.setParams({ regionId: undefined, regionName: undefined });
+  const searchAllRegions = () => navigation.setParams({ allRegions: true });
+  const requestUniversity = () =>
+    navigation.navigate('SetupUniversityRequest', {
+      name: search.trim() || undefined,
+      regionId: route.params?.regionId,
+      regionName: route.params?.regionName,
+    });
 
   const onSubmit = async () => {
     if (!selected) return;
@@ -61,7 +69,7 @@ export function StudentSetupUniversityScreen({ navigation, route }: StudentStack
               regionId
                 ? 'Возможно, университет привязан к другому региону — попробуйте поиск по всем регионам.'
                 : hasSearch
-                  ? 'Проверьте название.'
+                  ? 'Проверьте название. Если университета нет в списке — оставьте заявку на добавление.'
                   : undefined
             }
           />
@@ -79,7 +87,7 @@ export function StudentSetupUniversityScreen({ navigation, route }: StudentStack
       submitError={error}
       onDismissSubmitError={clearError}
       skipLabel={regionId ? 'Нет в списке — искать по всем регионам' : 'Моего университета нет в списке'}
-      onSkip={regionId ? searchAllRegions : () => navigation.navigate('SetupDone')}
+      onSkip={regionId ? searchAllRegions : requestUniversity}
     />
   );
 }

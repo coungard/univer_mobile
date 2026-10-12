@@ -6,12 +6,27 @@ import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentStackScreenProps } from '../../navigation/types';
 import { libraryColors, libraryFonts } from '../../theme/library';
 import { useOwnStudentQuery } from '../profile/hooks';
+import { useOwnUniversityRequestQuery } from './hooks';
 import { stepStyles } from './RegistrationStep';
 
 const RESUME_HINT = 'Продолжить можно в любой момент — в профиле появилась карточка «Завершить настройку».';
 
-/** Final-screen wording by how far the profile got (PLAN.md, раздел 4.4). */
-function describeOutcome(student: StudentDto): { title: string; text: string } {
+/**
+ * Final-screen wording by how far the profile got (PLAN.md, раздел 4.4). `requestedUniversity` is
+ * the name from a request for a missing university sent just now, `pendingRequest` — the name from
+ * one sent earlier and still waiting for an administrator.
+ */
+function describeOutcome(
+  student: StudentDto,
+  requestedUniversity?: string,
+  pendingRequest?: string,
+): { title: string; text: string } {
+  if (requestedUniversity && !student.universityId) {
+    return {
+      title: 'Заявка отправлена',
+      text: `Мы добавим «${requestedUniversity}» в список. Продолжить настройку можно будет из профиля.`,
+    };
+  }
   if (student.groupId) {
     return { title: 'Готово', text: 'Вы в своей группе — расписание уже доступно.' };
   }
@@ -30,9 +45,15 @@ function describeOutcome(student: StudentDto): { title: string; text: string } {
       text: `Университет сохранён, факультет не выбран. Если его нет в списке — создайте его сами. ${RESUME_HINT}`,
     };
   }
+  if (pendingRequest) {
+    return {
+      title: 'Профиль создан',
+      text: `Университет не выбран. Заявка на «${pendingRequest}» отправлена — мы добавим его в список. ${RESUME_HINT}`,
+    };
+  }
   return {
     title: 'Профиль создан',
-    text: `Университет не выбран. Если его пока нет в списке — загляните позже. ${RESUME_HINT}`,
+    text: `Университет не выбран. Если его нет в списке — оставьте заявку на добавление. ${RESUME_HINT}`,
   };
 }
 
@@ -40,8 +61,9 @@ function describeOutcome(student: StudentDto): { title: string; text: string } {
  * Final screen of the student setup wizard (PLAN.md): reached both by finishing step 6 and by
  * leaving any step early, so it reads the saved profile and says what is done and what is missing.
  */
-export function StudentSetupDoneScreen({ navigation }: StudentStackScreenProps<'SetupDone'>) {
+export function StudentSetupDoneScreen({ navigation, route }: StudentStackScreenProps<'SetupDone'>) {
   const student = useOwnStudentQuery();
+  const request = useOwnUniversityRequestQuery(!!student.data && !student.data.universityId);
 
   if (student.isPending) {
     return (
@@ -59,7 +81,11 @@ export function StudentSetupDoneScreen({ navigation }: StudentStackScreenProps<'
     );
   }
 
-  const { title, text } = describeOutcome(student.data);
+  const { title, text } = describeOutcome(
+    student.data,
+    route.params?.requestedUniversity,
+    request.data?.status === 'PENDING' ? request.data.name : undefined,
+  );
   const hasGroup = !!student.data.groupId;
 
   return (

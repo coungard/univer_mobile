@@ -3,7 +3,14 @@ import { useEffect, useState } from 'react';
 import { getFacultiesByUniversity } from '../../api/endpoints/faculties';
 import { getGroupsByFacultyAndYear } from '../../api/endpoints/groups';
 import { getRegions } from '../../api/endpoints/regions';
-import { createOwnFaculty, createOwnGroup, registerStudent, updateOwnStudent } from '../../api/endpoints/students';
+import {
+  createOwnFaculty,
+  createOwnGroup,
+  getOwnUniversityRequest,
+  registerStudent,
+  submitOwnUniversityRequest,
+  updateOwnStudent,
+} from '../../api/endpoints/students';
 import { registerTeacher } from '../../api/endpoints/teachers';
 import { getUniversities } from '../../api/endpoints/universities';
 import { GroupDto, Page } from '../../api/types';
@@ -133,6 +140,30 @@ export function useCreateOwnGroupMutation() {
       queryClient.setQueryData(['students', id], student);
       queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== 'students' });
     },
+  });
+}
+
+/**
+ * The student's latest request to add a university, `null` if there never was one. Not under the
+ * `students` key on purpose: saving the profile invalidates it, and choosing a university closes a
+ * pending request on the server.
+ */
+export function useOwnUniversityRequestQuery(enabled = true) {
+  const id = useOwnUserId();
+  return useQuery({
+    queryKey: ['university-request', id],
+    queryFn: getOwnUniversityRequest,
+    enabled: enabled && !!id,
+  });
+}
+
+/** `PUT /students/me/university-request`; the response replaces the cached request. */
+export function useSubmitUniversityRequestMutation() {
+  const queryClient = useQueryClient();
+  const id = useOwnUserId();
+  return useMutation({
+    mutationFn: submitOwnUniversityRequest,
+    onSuccess: (request) => queryClient.setQueryData(['university-request', id], request),
   });
 }
 

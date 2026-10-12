@@ -40,7 +40,13 @@ export type StudentStackParamList = {
    */
   SetupRegion: undefined;
   /** No `regionId` means a country-wide search (region not in the list, or failed to load). */
-  SetupUniversity: { regionId?: string; regionName?: string } | undefined;
+  /**
+   * `allRegions` drops the region filter but keeps the region itself: it goes on into the request
+   * for a missing university.
+   */
+  SetupUniversity: { regionId?: string; regionName?: string; allRegions?: boolean } | undefined;
+  /** Request to add a university missing from the catalog (PLAN.md, сценарий 1). */
+  SetupUniversityRequest: { name?: string; regionId?: string; regionName?: string } | undefined;
   SetupFaculty: undefined;
   SetupYear: undefined;
   SetupGroup: undefined;
@@ -49,7 +55,8 @@ export type StudentStackParamList = {
   /** Step X (PLAN.md, 9.1): create a group missing from the list. `name` prefills the form. */
   SetupNewGroup: { name?: string } | undefined;
   /** Final screen of the wizard — says how far the profile got and what is still missing. */
-  SetupDone: undefined;
+  /** `requestedUniversity` — the name from a request just sent: the screen confirms it. */
+  SetupDone: { requestedUniversity?: string } | undefined;
   /** «Расписание группы» — заполнение `Pair` и генерация `Lecture` (`UI_UX.md` раздел 4). */
   GroupSchedule: undefined;
   /** Add-`Pair` when `pairId` is omitted, edit that `Pair` otherwise. */

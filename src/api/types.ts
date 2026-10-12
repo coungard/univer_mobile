@@ -67,6 +67,11 @@ export type CreateStudentGroupRequest = components['schemas']['CreateStudentGrou
 /** `POST`/`PUT /students/me/faculty` body — the student creates (or renames) their own faculty. */
 export type CreateStudentFacultyRequest = components['schemas']['CreateStudentFacultyRequest'];
 
+/** A student's request to add a university missing from the catalog (see API.md). */
+export type UniversityRequestDto = components['schemas']['UniversityRequestDto'];
+/** `PUT /students/me/university-request` body. A `regionId` left out is cleared on the server. */
+export type SubmitUniversityRequest = components['schemas']['SubmitUniversityRequest'];
+
 export type RegisterStudentRequest = components['schemas']['RegisterStudentRequest'];
 
 export type TeacherDto = WithRequiredId<components['schemas']['TeacherDto']>;

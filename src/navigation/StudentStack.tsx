@@ -7,6 +7,7 @@ import { StudentSetupGroupScreen } from '../features/onboarding/StudentSetupGrou
 import { StudentSetupNewFacultyScreen } from '../features/onboarding/StudentSetupNewFacultyScreen';
 import { StudentSetupNewGroupScreen } from '../features/onboarding/StudentSetupNewGroupScreen';
 import { StudentSetupRegionScreen } from '../features/onboarding/StudentSetupRegionScreen';
+import { StudentSetupUniversityRequestScreen } from '../features/onboarding/StudentSetupUniversityRequestScreen';
 import { StudentSetupUniversityScreen } from '../features/onboarding/StudentSetupUniversityScreen';
 import { StudentSetupYearScreen } from '../features/onboarding/StudentSetupYearScreen';
 import { GroupScheduleScreen } from '../features/schedule/GroupScheduleScreen';
@@ -36,6 +37,11 @@ export function StudentStack() {
       <Stack.Screen name="PairForm" component={PairFormScreen} options={{ title: 'Занятие в расписании' }} />
       <Stack.Screen name="SetupRegion" component={StudentSetupRegionScreen} options={setupOptions} />
       <Stack.Screen name="SetupUniversity" component={StudentSetupUniversityScreen} options={setupOptions} />
+      <Stack.Screen
+        name="SetupUniversityRequest"
+        component={StudentSetupUniversityRequestScreen}
+        options={setupOptions}
+      />
       <Stack.Screen name="SetupFaculty" component={StudentSetupFacultyScreen} options={setupOptions} />
       <Stack.Screen name="SetupYear" component={StudentSetupYearScreen} options={setupOptions} />
       <Stack.Screen name="SetupGroup" component={StudentSetupGroupScreen} options={setupOptions} />

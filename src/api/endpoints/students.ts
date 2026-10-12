@@ -1,9 +1,12 @@
 import { apiClient } from '../client';
+import { ApiError } from '../errors';
 import {
   CreateStudentFacultyRequest,
   CreateStudentGroupRequest,
   RegisterStudentRequest,
   StudentDto,
+  SubmitUniversityRequest,
+  UniversityRequestDto,
   UpdateStudentProfileRequest,
 } from '../types';
 
@@ -50,5 +53,29 @@ export async function createOwnFaculty(request: CreateStudentFacultyRequest): Pr
  */
 export async function createOwnGroup(request: CreateStudentGroupRequest): Promise<StudentDto> {
   const { data } = await apiClient.post<StudentDto>('/students/me/group', request);
+  return data;
+}
+
+/**
+ * `GET /students/me/university-request` — the student's latest request to add a university: the
+ * pending one, or else the last closed or rejected one. `null` when the student never left a
+ * request (the server answers `404`, which is not an error here).
+ */
+export async function getOwnUniversityRequest(): Promise<UniversityRequestDto | null> {
+  try {
+    const { data } = await apiClient.get<UniversityRequestDto>('/students/me/university-request');
+    return data;
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
+}
+
+/**
+ * `PUT /students/me/university-request` — leaves a request, or updates the pending one (there is
+ * never more than one). A `422` means the profile already has a university (see API.md).
+ */
+export async function submitOwnUniversityRequest(request: SubmitUniversityRequest): Promise<UniversityRequestDto> {
+  const { data } = await apiClient.put<UniversityRequestDto>('/students/me/university-request', request);
   return data;
 }

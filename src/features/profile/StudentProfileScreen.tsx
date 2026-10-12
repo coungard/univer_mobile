@@ -5,6 +5,7 @@ import { Button, Card, Text } from 'react-native-paper';
 import { useAuth } from '../../auth/useAuth';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentTabScreenProps } from '../../navigation/types';
+import { useOwnUniversityRequestQuery } from '../onboarding/hooks';
 import { firstUnfilledSetupStep, SETUP_STEP_PROMPTS, useSetupPromptStore } from '../onboarding/studentSetup';
 import {
   useFacultyQuery,
@@ -29,6 +30,13 @@ export function StudentProfileScreen() {
   const university = useUniversityQuery(student.data?.universityId ?? undefined);
   const ownFaculty = useFacultyQuery(student.data?.facultyId ?? undefined);
   const academicPath = useGroupAcademicPathQuery(student.data?.groupId);
+  // A request for a missing university matters only while the profile has no university; a
+  // completed one whose university the student later dropped reads as "no request".
+  const universityRequest = useOwnUniversityRequestQuery(!!student.data && !student.data.universityId);
+  const request =
+    !student.data?.universityId && universityRequest.data && universityRequest.data.status !== 'COMPLETED'
+      ? universityRequest.data
+      : null;
 
   const setupStep = student.data ? firstUnfilledSetupStep(student.data) : null;
   const promptedFor = useSetupPromptStore((state) => state.promptedFor);
@@ -117,7 +125,22 @@ export function StudentProfileScreen() {
         <Card mode="outlined" style={styles.section}>
           <Card.Title title="Завершить настройку" subtitle={SETUP_STEP_PROMPTS[setupStep]} />
           <Card.Content>
-            <Text variant="bodyMedium">Расписание появится, как только вы выберете свою группу.</Text>
+            {request ? (
+              <>
+                <Text variant="bodyMedium">
+                  {request.status === 'PENDING'
+                    ? `Заявка на «${request.name}» отправлена.`
+                    : `Заявка на «${request.name}» отклонена.`}
+                </Text>
+                {request.status === 'REJECTED' && request.comment ? (
+                  <Text variant="bodyMedium" style={styles.requestComment}>
+                    {request.comment}
+                  </Text>
+                ) : null}
+              </>
+            ) : (
+              <Text variant="bodyMedium">Расписание появится, как только вы выберете свою группу.</Text>
+            )}
           </Card.Content>
           <Card.Actions>
             <Button mode="contained" onPress={() => navigation.navigate(setupStep)}>
@@ -164,6 +187,10 @@ const styles = StyleSheet.create({
   label: {
     opacity: 0.6,
     marginBottom: 2,
+  },
+  requestComment: {
+    opacity: 0.7,
+    marginTop: 4,
   },
   logout: {
     marginTop: 24,
