@@ -73,6 +73,10 @@ export function StudentProfileScreen() {
   // A group assigned by an administrator may come without `facultyId` — fall back to the group's own chain.
   const facultyName = ownFaculty.data?.name ?? academicPath.faculty?.name;
   const facultyLoading = ownFaculty.isLoading || academicPath.isLoading;
+  // Only what the student created themselves can be renamed by them; whether somebody else has
+  // picked it since is known only to the server (`422` on saving).
+  const canRenameFaculty = !!ownFaculty.data && ownFaculty.data.createdByStudentId === student.data.id;
+  const canRenameGroup = !!academicPath.group && academicPath.group.createdByStudentId === student.data.id;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -105,6 +109,16 @@ export function StudentProfileScreen() {
             Факультет
           </Text>
           <Text variant="bodyLarge">{facultyName ?? (facultyLoading ? '…' : '—')}</Text>
+          {canRenameFaculty ? (
+            <Button
+              mode="text"
+              compact
+              style={styles.rename}
+              onPress={() => navigation.navigate('RenameOwn', { kind: 'faculty' })}
+            >
+              Изменить название
+            </Button>
+          ) : null}
         </View>
       ) : null}
 
@@ -123,6 +137,16 @@ export function StudentProfileScreen() {
             Группа
           </Text>
           <Text variant="bodyLarge">{academicPath.group?.name ?? (academicPath.isLoading ? '…' : '—')}</Text>
+          {canRenameGroup ? (
+            <Button
+              mode="text"
+              compact
+              style={styles.rename}
+              onPress={() => navigation.navigate('RenameOwn', { kind: 'group' })}
+            >
+              Изменить название
+            </Button>
+          ) : null}
         </View>
       ) : null}
 
@@ -192,6 +216,10 @@ const styles = StyleSheet.create({
   label: {
     opacity: 0.6,
     marginBottom: 2,
+  },
+  rename: {
+    alignSelf: 'flex-start',
+    marginLeft: -8,
   },
   requestComment: {
     opacity: 0.7,

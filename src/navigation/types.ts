@@ -55,6 +55,8 @@ export type StudentStackParamList = {
   /** Step X (PLAN.md, 9.1): create a group missing from the list. `name` prefills the form. */
   SetupNewGroup: { name?: string } | undefined;
   /** Final screen of the wizard — says how far the profile got and what is still missing. */
+  /** Fixing the name of the faculty or the group the student created themselves (PLAN.md, M19). */
+  RenameOwn: { kind: 'faculty' | 'group' };
   /** `requestedUniversity` — the name from a request just sent: the screen confirms it. */
   SetupDone: { requestedUniversity?: string } | undefined;
   /** «Расписание группы» — заполнение `Pair` и генерация `Lecture` (`UI_UX.md` раздел 4). */

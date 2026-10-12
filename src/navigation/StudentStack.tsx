@@ -11,6 +11,7 @@ import { StudentSetupUniversityRequestScreen } from '../features/onboarding/Stud
 import { StudentSetupUniversityScreen } from '../features/onboarding/StudentSetupUniversityScreen';
 import { StudentSetupYearScreen } from '../features/onboarding/StudentSetupYearScreen';
 import { GroupScheduleScreen } from '../features/schedule/GroupScheduleScreen';
+import { StudentRenameOwnScreen } from '../features/profile/StudentRenameOwnScreen';
 import { LectureDetailsScreen } from '../features/schedule/LectureDetailsScreen';
 import { PairFormScreen } from '../features/schedule/PairFormScreen';
 import { StudentTabs } from './StudentTabs';
@@ -47,6 +48,7 @@ export function StudentStack() {
       <Stack.Screen name="SetupGroup" component={StudentSetupGroupScreen} options={setupOptions} />
       <Stack.Screen name="SetupNewFaculty" component={StudentSetupNewFacultyScreen} options={setupOptions} />
       <Stack.Screen name="SetupNewGroup" component={StudentSetupNewGroupScreen} options={setupOptions} />
+      <Stack.Screen name="RenameOwn" component={StudentRenameOwnScreen} options={{ title: 'Изменить название' }} />
       <Stack.Screen name="SetupDone" component={StudentSetupDoneScreen} options={setupOptions} />
     </Stack.Navigator>
   );

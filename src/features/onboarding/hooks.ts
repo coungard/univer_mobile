@@ -8,6 +8,8 @@ import {
   createOwnGroup,
   getOwnUniversityRequest,
   registerStudent,
+  renameOwnFaculty,
+  renameOwnGroup,
   submitOwnUniversityRequest,
   updateOwnStudent,
 } from '../../api/endpoints/students';
@@ -164,6 +166,24 @@ export function useSubmitUniversityRequestMutation() {
   return useMutation({
     mutationFn: submitOwnUniversityRequest,
     onSuccess: (request) => queryClient.setQueryData(['university-request', id], request),
+  });
+}
+
+/** `PUT /students/me/faculty`. The profile itself doesn't change; everything showing the name does. */
+export function useRenameOwnFacultyMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: renameOwnFaculty,
+    onSuccess: () => queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== 'students' }),
+  });
+}
+
+/** `PUT /students/me/group`. The profile itself doesn't change; everything showing the name does. */
+export function useRenameOwnGroupMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: renameOwnGroup,
+    onSuccess: () => queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== 'students' }),
   });
 }
 

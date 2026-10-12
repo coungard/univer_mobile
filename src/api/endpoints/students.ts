@@ -3,6 +3,8 @@ import { ApiError } from '../errors';
 import {
   CreateStudentFacultyRequest,
   CreateStudentGroupRequest,
+  FacultyDto,
+  GroupDto,
   RegisterStudentRequest,
   StudentDto,
   SubmitUniversityRequest,
@@ -77,5 +79,24 @@ export async function getOwnUniversityRequest(): Promise<UniversityRequestDto | 
  */
 export async function submitOwnUniversityRequest(request: SubmitUniversityRequest): Promise<UniversityRequestDto> {
   const { data } = await apiClient.put<UniversityRequestDto>('/students/me/university-request', request);
+  return data;
+}
+
+/**
+ * `PUT /students/me/faculty` — the student fixes the name of the faculty in their profile. Allowed
+ * only for a faculty they created that nobody else has picked — otherwise `422` (see API.md).
+ */
+export async function renameOwnFaculty(request: CreateStudentFacultyRequest): Promise<FacultyDto> {
+  const { data } = await apiClient.put<FacultyDto>('/students/me/faculty', request);
+  return data;
+}
+
+/**
+ * `PUT /students/me/group` — the student fixes the name and the full name of their group. Allowed
+ * only for a group they created with nobody else in it — otherwise `422`. A `fullName` left out
+ * of the body is cleared (see API.md).
+ */
+export async function renameOwnGroup(request: CreateStudentGroupRequest): Promise<GroupDto> {
+  const { data } = await apiClient.put<GroupDto>('/students/me/group', request);
   return data;
 }
