@@ -14,13 +14,19 @@ export class ApiError extends Error {
   readonly fieldErrors?: FieldErrors;
   /** Present only for 409 responses — the request field whose value is already taken, if known. */
   readonly field?: string;
+  /**
+   * Present only for 409 responses to creating a group or a faculty — the ID of the existing entity
+   * with that name, so the client can offer to pick it instead (see API.md "Формат ошибок").
+   */
+  readonly existingId?: string;
 
-  constructor(status: number, message: string, fieldErrors?: FieldErrors, field?: string) {
+  constructor(status: number, message: string, fieldErrors?: FieldErrors, field?: string, existingId?: string) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.fieldErrors = fieldErrors;
     this.field = field;
+    this.existingId = existingId;
   }
 }
 
@@ -29,6 +35,8 @@ interface SpringErrorBody {
   message?: string;
   /** Only on 409: `"email"` or `"username"`, or `null` when the backend couldn't tell. */
   field?: string | null;
+  /** Only on 409 for a group/faculty name: the ID of the existing entity. Absent for email/username. */
+  id?: string | null;
   // `error`/`path` deliberately not read for 404/422 — see class doc comment above.
 }
 
@@ -51,7 +59,13 @@ export function toApiError(status: number, data: unknown): ApiError {
     }
     case 409: {
       const body = (data ?? {}) as SpringErrorBody;
-      return new ApiError(409, body.message ?? 'Такое значение уже занято.', undefined, body.field ?? undefined);
+      return new ApiError(
+        409,
+        body.message ?? 'Такое значение уже занято.',
+        undefined,
+        body.field ?? undefined,
+        body.id ?? undefined,
+      );
     }
     default:
       return new ApiError(status, 'Не удалось выполнить запрос. Попробуйте ещё раз.');

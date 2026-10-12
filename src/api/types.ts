@@ -61,6 +61,9 @@ export interface UpdateStudentProfileRequest {
   groupId?: string | null;
 }
 
+/** `POST`/`PUT /students/me/group` body — the student creates (or renames) their own group. */
+export type CreateStudentGroupRequest = components['schemas']['CreateStudentGroupRequest'];
+
 export type RegisterStudentRequest = components['schemas']['RegisterStudentRequest'];
 
 export type TeacherDto = WithRequiredId<components['schemas']['TeacherDto']>;

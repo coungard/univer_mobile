@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { TextInput } from 'react-native-paper';
+import { HelperText, TextInput } from 'react-native-paper';
 import { libraryColors, libraryFonts, librarySpineColors } from '../../theme/library';
 
 /** Steps of student registration, in order (PLAN.md). The progress indicator derives from this. */
@@ -84,6 +84,60 @@ export function StepSearchInput({ value, onChangeText, placeholder }: StepSearch
       outlineStyle={styles.searchOutline}
       style={styles.searchInput}
     />
+  );
+}
+
+interface StepTextFieldProps {
+  label: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  maxLength?: number;
+  autoCapitalize?: React.ComponentProps<typeof TextInput>['autoCapitalize'];
+  /** Shown under the field, which is then outlined as invalid. */
+  errorText?: string;
+}
+
+/** A labelled text field for the forms of the wizard (creating a group, a faculty, ...). */
+export function StepTextField({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  maxLength,
+  autoCapitalize,
+  errorText,
+}: StepTextFieldProps) {
+  return (
+    <View style={styles.field}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        autoCapitalize={autoCapitalize}
+        autoCorrect={false}
+        mode="outlined"
+        error={!!errorText}
+        theme={{
+          colors: {
+            primary: libraryColors.terracottaButton,
+            outline: libraryColors.border,
+            background: libraryColors.surface,
+            onSurfaceVariant: libraryColors.inkMuted,
+            onSurface: libraryColors.ink,
+          },
+        }}
+        outlineStyle={styles.searchOutline}
+        style={styles.searchInput}
+      />
+      {errorText ? (
+        <HelperText type="error" visible style={styles.fieldError}>
+          {errorText}
+        </HelperText>
+      ) : null}
+    </View>
   );
 }
 
@@ -204,6 +258,19 @@ const styles = StyleSheet.create({
   searchInput: {
     backgroundColor: libraryColors.surface,
     fontFamily: libraryFonts.bodyRegular,
+  },
+  field: {
+    gap: 4,
+  },
+  fieldLabel: {
+    fontFamily: libraryFonts.bodyBold,
+    fontSize: 9.5,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    color: libraryColors.inkMuted,
+  },
+  fieldError: {
+    marginTop: -6,
   },
   option: {
     flexDirection: 'row',

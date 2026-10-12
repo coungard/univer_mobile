@@ -18,7 +18,7 @@ function describeOutcome(student: StudentDto): { title: string; text: string } {
   if (student.yearNumber != null) {
     return {
       title: 'Почти готово',
-      text: `Факультет и курс сохранены, осталась группа. Если её пока нет в списке — загляните позже. ${RESUME_HINT}`,
+      text: `Факультет и курс сохранены, осталась группа. Если её нет в списке — создайте её сами. ${RESUME_HINT}`,
     };
   }
   if (student.facultyId) {

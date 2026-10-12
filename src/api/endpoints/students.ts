@@ -1,5 +1,10 @@
 import { apiClient } from '../client';
-import { RegisterStudentRequest, StudentDto, UpdateStudentProfileRequest } from '../types';
+import {
+  CreateStudentGroupRequest,
+  RegisterStudentRequest,
+  StudentDto,
+  UpdateStudentProfileRequest,
+} from '../types';
 
 /**
  * `POST /students/register` — the only public (no JWT) student-creation endpoint. Creates the
@@ -24,5 +29,15 @@ export async function getOwnStudent(): Promise<StudentDto> {
  */
 export async function updateOwnStudent(request: UpdateStudentProfileRequest): Promise<StudentDto> {
   const { data } = await apiClient.patch<StudentDto>('/students/me', request);
+  return data;
+}
+
+/**
+ * `POST /students/me/group` — the student creates a group missing from the list of their faculty
+ * and year and joins it right away; the response is the profile with the new `groupId`. A name
+ * already taken on that year is a `409` carrying the existing group's ID (see API.md).
+ */
+export async function createOwnGroup(request: CreateStudentGroupRequest): Promise<StudentDto> {
+  const { data } = await apiClient.post<StudentDto>('/students/me/group', request);
   return data;
 }

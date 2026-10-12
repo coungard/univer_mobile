@@ -5,8 +5,8 @@ import { StudentDto, UpdateStudentProfileRequest } from '../../api/types';
 import { StudentStackParamList } from '../../navigation/types';
 import { useUpdateOwnStudentMutation } from './hooks';
 
-/** Years offered on the year step (PLAN.md: «курс 1–5»). */
-export const SETUP_YEARS = [1, 2, 3, 4, 5] as const;
+/** Years offered on the year step (PLAN.md: «курс 1–6» — the range the server accepts). */
+export const SETUP_YEARS = [1, 2, 3, 4, 5, 6] as const;
 
 export type SetupStepRoute = Extract<
   keyof StudentStackParamList,

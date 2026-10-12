@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { getFacultiesByUniversity } from '../../api/endpoints/faculties';
 import { getGroupsByFacultyAndYear } from '../../api/endpoints/groups';
 import { getRegions } from '../../api/endpoints/regions';
-import { registerStudent, updateOwnStudent } from '../../api/endpoints/students';
+import { createOwnGroup, registerStudent, updateOwnStudent } from '../../api/endpoints/students';
 import { registerTeacher } from '../../api/endpoints/teachers';
 import { getUniversities } from '../../api/endpoints/universities';
 import { GroupDto, Page } from '../../api/types';
@@ -97,6 +97,22 @@ export function useUpdateOwnStudentMutation() {
   const id = useOwnUserId();
   return useMutation({
     mutationFn: updateOwnStudent,
+    onSuccess: (student) => {
+      queryClient.setQueryData(['students', id], student);
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== 'students' });
+    },
+  });
+}
+
+/**
+ * `POST /students/me/group`. Same cache handling as `useUpdateOwnStudentMutation`: the response is
+ * the profile with the new group, and the group lists are stale now that one more exists.
+ */
+export function useCreateOwnGroupMutation() {
+  const queryClient = useQueryClient();
+  const id = useOwnUserId();
+  return useMutation({
+    mutationFn: createOwnGroup,
     onSuccess: (student) => {
       queryClient.setQueryData(['students', id], student);
       queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== 'students' });

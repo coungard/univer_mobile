@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Button } from 'react-native-paper';
 import { EmptyState } from '../../components/EmptyState';
 import { StudentStackScreenProps } from '../../navigation/types';
+import { libraryColors } from '../../theme/library';
 import { useFacultyQuery, useOwnStudentQuery } from '../profile/hooks';
 import { ChoiceStep } from './ChoiceStep';
 import { useGroupsQuery } from './hooks';
@@ -11,8 +13,8 @@ const SEARCH_THRESHOLD = 8;
 
 /**
  * Step 6 of student registration (PLAN.md): pick a group of the saved faculty on the saved year.
- * The student joins it right away, no administrator involved. No groups on that year is an
- * ordinary outcome: faculty and year stay saved and the wizard ends on the final screen.
+ * The student joins it right away, no administrator involved. A group that isn't there — the
+ * list is empty or just doesn't have it — is created by the student on `SetupNewGroup`.
  */
 export function StudentSetupGroupScreen({ navigation }: StudentStackScreenProps<'SetupGroup'>) {
   const student = useOwnStudentQuery();
@@ -69,10 +71,19 @@ export function StudentSetupGroupScreen({ navigation }: StudentStackScreenProps<
       items={items}
       empty={
         all.length === 0 ? (
-          <EmptyState
-            title={`На ${yearNumber} курсе пока нет групп`}
-            description="Факультет и курс сохранены в профиле. Когда группы появятся, выберите свою оттуда."
-          />
+          <>
+            <EmptyState
+              title={`На ${yearNumber} курсе пока нет групп`}
+              description="Добавьте свою группу — её сразу увидят однокурсники."
+            />
+            <Button
+              mode="outlined"
+              onPress={() => navigation.navigate('SetupNewGroup')}
+              textColor={libraryColors.terracottaButton}
+            >
+              Создать группу
+            </Button>
+          </>
         ) : (
           <EmptyState title="Ничего не найдено" description="Проверьте название." />
         )
@@ -84,7 +95,11 @@ export function StudentSetupGroupScreen({ navigation }: StudentStackScreenProps<
       submitError={error}
       onDismissSubmitError={clearError}
       skipLabel={all.length === 0 ? 'Завершить без группы' : 'Моей группы нет в списке'}
-      onSkip={() => navigation.navigate('SetupDone')}
+      onSkip={() =>
+        all.length === 0
+          ? navigation.navigate('SetupDone')
+          : navigation.navigate('SetupNewGroup', { name: search.trim() || undefined })
+      }
     />
   );
 }

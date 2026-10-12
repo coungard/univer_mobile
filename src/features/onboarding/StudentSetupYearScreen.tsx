@@ -6,10 +6,10 @@ import { useGroupCountsByYear } from './hooks';
 import { firstUnfilledSetupStep, SETUP_YEARS, useSaveSetupStep } from './studentSetup';
 
 /**
- * Step 5 of student registration (PLAN.md): pick a year. Always offered from the fixed 1–5 range,
+ * Step 5 of student registration (PLAN.md): pick a year. Always offered from the fixed 1–6 range,
  * whatever study years the faculty has in the catalog — the year is something the student knows,
  * and it is saved even when no group exists for it yet. Each year carries a hint with the number
- * of groups, so a year with none isn't a surprise on the next step.
+ * of groups; a year with none leads straight to the form of a new group, past the empty step 6.
  */
 export function StudentSetupYearScreen({ navigation }: StudentStackScreenProps<'SetupYear'>) {
   const student = useOwnStudentQuery();
@@ -40,7 +40,11 @@ export function StudentSetupYearScreen({ navigation }: StudentStackScreenProps<'
 
   const onSubmit = async () => {
     if (!selected) return;
-    if (await save({ yearNumber: Number(selected.id) })) navigation.navigate('SetupGroup');
+    const year = Number(selected.id);
+    if (!(await save({ yearNumber: year }))) return;
+    // A count that hasn't loaded is not "no groups": step 6 handles an empty list by itself.
+    const noGroups = groupCounts[SETUP_YEARS.findIndex((y) => y === year)] === 0;
+    navigation.navigate(noGroups ? 'SetupNewGroup' : 'SetupGroup');
   };
 
   return (

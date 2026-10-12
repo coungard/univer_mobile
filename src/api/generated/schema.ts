@@ -98,6 +98,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/students/me/university-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Получить свою заявку на добавление университета
+         * @description Последняя заявка студента: необработанная, а если её нет — последняя закрытая или отклонённая. У закрытой заполнен universityId.
+         */
+        get: operations["getMyUniversityRequest"];
+        /**
+         * Оставить заявку на добавление университета
+         * @description Для случая, когда нужного университета нет в GET /universities. У студента не больше одной необработанной заявки: повторный запрос обновляет её. Профиль заявка не меняет — университет появится в нём, когда администратор закроет заявку.
+         */
+        put: operations["submitMyUniversityRequest"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/me/group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Исправить название своей группы
+         * @description Меняет название и расшифровку группы, в которой состоит студент. Разрешено, только если он сам создал эту группу и кроме него в ней никого нет.
+         */
+        put: operations["updateMyGroup"];
+        /**
+         * Создать свою группу и зачислиться в неё
+         * @description Для случая, когда нужной группы нет в GET /groups?facultyId=&yearNumber=. Факультет и курс берутся из профиля студента, семестр подбирается на сервере: актуальный семестр курса, а если учебного года или семестров ещё нет — они создаются. Созданная группа сразу видна в списке групп курса.
+         */
+        post: operations["createMyGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/me/faculty": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Исправить название своего факультета
+         * @description Меняет название факультета, выбранного в профиле студента. Разрешено, только если он сам создал этот факультет и кроме него факультет никто из студентов не выбрал.
+         */
+        put: operations["updateMyFaculty"];
+        /**
+         * Создать свой факультет и выбрать его в профиле
+         * @description Для случая, когда нужного факультета нет в GET /faculties/university/{id}. Университет берётся из профиля студента. Курс и группа в профиле сбрасываются, как при смене факультета через PATCH /students/me. Созданный факультет сразу виден в списке факультетов университета.
+         */
+        post: operations["createMyFaculty"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/semesters/{id}": {
         parameters: {
             query?: never;
@@ -287,6 +359,46 @@ export interface paths {
         put?: never;
         /** Создать цикл расписания для семестра */
         post: operations["createWeekScheduleCycle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/university-requests/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Отклонить заявку
+         * @description Не университет, дубль, мусор. Профиль автора заявки не меняется. Тело необязательно: в comment можно пояснить студенту, почему заявка отклонена.
+         */
+        post: operations["rejectRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/university-requests/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Закрыть заявку с указанием университета
+         * @description Университет — только что созданный или уже существующий, если студент его просто не нашёл. Он проставляется в профиль автора заявки, если университет там всё ещё не выбран.
+         */
+        post: operations["completeRequest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -680,6 +792,26 @@ export interface paths {
         };
         /** Получить цикл по ID семестра */
         get: operations["getWeekScheduleCycleBySemester"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/university-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Получить заявки с пагинацией
+         * @description Сначала самые давние. Без status — заявки во всех статусах.
+         */
+        get: operations["getRequests"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1133,6 +1265,8 @@ export interface components {
             departments?: components["schemas"]["DepartmentDto"][];
             /** Format: uuid */
             universityId?: string;
+            /** Format: uuid */
+            createdByStudentId?: string;
         };
         UniversityDto: {
             /** Format: uuid */
@@ -1227,6 +1361,61 @@ export interface components {
             /** Format: uuid */
             groupId?: string;
         };
+        SubmitUniversityRequest: {
+            name: string;
+            /** Format: uuid */
+            regionId?: string;
+        };
+        /** @description Заявка студента на добавление университета */
+        UniversityRequestDto: {
+            /** Format: uuid */
+            id?: string;
+            /** @description Название университета, как его ввёл студент */
+            name?: string;
+            /**
+             * Format: uuid
+             * @description Регион, выбранный студентом; null, если студент региона не указал
+             */
+            regionId?: string;
+            regionName?: string;
+            /** @enum {string} */
+            status?: "PENDING" | "COMPLETED" | "REJECTED";
+            /**
+             * Format: uuid
+             * @description Университет, которым заявка закрыта; заполнен только у COMPLETED
+             */
+            universityId?: string;
+            /** @description Пояснение администратора при отклонении; заполнено только у REJECTED и не всегда */
+            comment?: string;
+            /**
+             * Format: uuid
+             * @description Автор заявки
+             */
+            studentId?: string;
+            studentUsername?: string;
+            studentFullname?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        CreateStudentGroupRequest: {
+            name: string;
+            fullName?: string;
+        };
+        GroupDto: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            semesterId: string;
+            name: string;
+            fullName?: string;
+            /** Format: uuid */
+            createdByStudentId?: string;
+        };
+        CreateStudentFacultyRequest: {
+            name: string;
+        };
         SemesterDto: {
             /** Format: uuid */
             id?: string;
@@ -1287,13 +1476,6 @@ export interface components {
             sourcePairId?: string;
             groupIds: string[];
         };
-        GroupDto: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            semesterId: string;
-            name: string;
-        };
         EnrollmentDto: {
             /** Format: uuid */
             studentId: string;
@@ -1323,6 +1505,13 @@ export interface components {
             pairNumber: number;
             startTime: components["schemas"]["LocalTime"];
             endTime: components["schemas"]["LocalTime"];
+        };
+        RejectUniversityRequest: {
+            comment?: string;
+        };
+        CompleteUniversityRequest: {
+            /** Format: uuid */
+            universityId: string;
         };
         RegisterTeacherRequest: {
             username: string;
@@ -1375,21 +1564,21 @@ export interface components {
             groupId?: string;
         };
         PageWeekScheduleCycleDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["WeekScheduleCycleDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageableObject: {
@@ -1410,22 +1599,40 @@ export interface components {
             property?: string;
             ignoreCase?: boolean;
         };
-        PageUniversityDto: {
-            /** Format: int32 */
-            totalPages?: number;
+        PageUniversityRequestDto: {
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int32 */
+            size?: number;
+            content?: components["schemas"]["UniversityRequestDto"][];
+            /** Format: int32 */
+            number?: number;
+            sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            numberOfElements?: number;
+            empty?: boolean;
+        };
+        PageUniversityDto: {
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UniversityDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         ContentDisposition: {
@@ -1453,18 +1660,23 @@ export interface components {
              * @deprecated
              */
             readDate?: string;
-            formData?: boolean;
-            attachment?: boolean;
             inline?: boolean;
+            attachment?: boolean;
+            formData?: boolean;
         };
         ErrorResponse: {
             headers?: {
-                origin?: string;
+                connection?: string[];
+                /** Format: int64 */
+                ifModifiedSince?: number;
                 contentType?: components["schemas"]["MediaType"];
+                /** Format: int64 */
+                contentLength?: number;
                 empty?: boolean;
                 /** Format: uri */
                 location?: string;
                 host?: {
+                    hostString?: string;
                     address?: {
                         hostAddress?: string;
                         /** Format: byte */
@@ -1486,7 +1698,6 @@ export interface components {
                     port?: number;
                     unresolved?: boolean;
                     hostName?: string;
-                    hostString?: string;
                 };
                 all?: {
                     [key: string]: string;
@@ -1495,12 +1706,9 @@ export interface components {
                 lastModified?: number;
                 /** Format: int64 */
                 date?: number;
-                /** Format: int64 */
-                contentLength?: number;
-                /** Format: int64 */
-                ifModifiedSince?: number;
-                connection?: string[];
                 range?: components["schemas"]["HttpRange"][];
+                contentDisposition?: components["schemas"]["ContentDisposition"];
+                acceptCharset?: string[];
                 contentLanguage?: {
                     language?: string;
                     displayName?: string;
@@ -1517,36 +1725,19 @@ export interface components {
                     iso3Language?: string;
                     iso3Country?: string;
                 };
-                contentDisposition?: components["schemas"]["ContentDisposition"];
-                acceptCharset?: string[];
                 allow?: components["schemas"]["HttpMethod"][];
                 cacheControl?: string;
                 etag?: string;
                 accept?: components["schemas"]["MediaType"][];
-                accessControlAllowCredentials?: boolean;
                 accessControlRequestHeaders?: string[];
-                accessControlExposeHeaders?: string[];
-                accessControlAllowOrigin?: string;
-                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
                 accessControlRequestMethod?: components["schemas"]["HttpMethod"];
-                accessControlAllowHeaders?: string[];
                 /** Format: int64 */
                 accessControlMaxAge?: number;
-                acceptPatch?: components["schemas"]["MediaType"][];
-                acceptLanguage?: {
-                    range?: string;
-                    /** Format: double */
-                    weight?: number;
-                }[];
-                basicAuth?: string;
-                ifNoneMatch?: string[];
-                /** Format: int64 */
-                expires?: number;
-                bearerAuth?: string;
-                pragma?: string;
-                upgrade?: string;
-                ifMatch?: string[];
-                vary?: string[];
+                accessControlAllowCredentials?: boolean;
+                accessControlAllowOrigin?: string;
+                accessControlExposeHeaders?: string[];
+                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
+                accessControlAllowHeaders?: string[];
                 /** Format: int64 */
                 ifUnmodifiedSince?: number;
                 acceptLanguageAsLocales?: {
@@ -1565,15 +1756,31 @@ export interface components {
                     iso3Language?: string;
                     iso3Country?: string;
                 }[];
+                acceptPatch?: components["schemas"]["MediaType"][];
+                acceptLanguage?: {
+                    range?: string;
+                    /** Format: double */
+                    weight?: number;
+                }[];
+                basicAuth?: string;
+                ifNoneMatch?: string[];
+                upgrade?: string;
+                /** Format: int64 */
+                expires?: number;
+                bearerAuth?: string;
+                origin?: string;
+                vary?: string[];
+                pragma?: string;
+                ifMatch?: string[];
             } & {
                 [key: string]: string[];
             };
             body?: components["schemas"]["ProblemDetail"];
             statusCode?: components["schemas"]["HttpStatusCode"];
-            typeMessageCode?: string;
-            detailMessageArguments?: Record<string, never>[];
-            detailMessageCode?: string;
             titleMessageCode?: string;
+            detailMessageCode?: string;
+            detailMessageArguments?: Record<string, never>[];
+            typeMessageCode?: string;
         };
         HttpMethod: Record<string, never>;
         HttpRange: Record<string, never>;
@@ -1581,8 +1788,8 @@ export interface components {
             error?: boolean;
             is4xxClientError?: boolean;
             is5xxServerError?: boolean;
-            is1xxInformational?: boolean;
             is2xxSuccessful?: boolean;
+            is1xxInformational?: boolean;
             is3xxRedirection?: boolean;
         };
         MediaType: {
@@ -1595,8 +1802,8 @@ export interface components {
             qualityValue?: number;
             charset?: string;
             concrete?: boolean;
-            wildcardSubtype?: boolean;
             wildcardType?: boolean;
+            wildcardSubtype?: boolean;
             subtypeSuffix?: string;
         };
         ProblemDetail: {
@@ -1613,75 +1820,75 @@ export interface components {
             };
         };
         PageTeacherDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["TeacherDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageStudyYearDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StudyYearDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageStudentDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StudentDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageSemesterDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["SemesterDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         /** @description Субъект РФ */
@@ -1700,165 +1907,165 @@ export interface components {
             name?: string;
         };
         PagePairDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PairDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageLectureDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LectureDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageGroupDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["GroupDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageFacultyDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["FacultyDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageEnrollmentDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["EnrollmentDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageDepartmentDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["DepartmentDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageCourseDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CourseDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageBellScheduleEntryDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["BellScheduleEntryDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageLectureAttendanceDto: {
-            /** Format: int32 */
-            totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LectureAttendanceDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
+            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         AttendanceStatsDto: {
@@ -2186,6 +2393,245 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    getMyUniversityRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Заявка найдена */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UniversityRequestDto"];
+                };
+            };
+            /** @description Студент заявок не оставлял */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UniversityRequestDto"];
+                };
+            };
+        };
+    };
+    submitMyUniversityRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitUniversityRequest"];
+            };
+        };
+        responses: {
+            /** @description Заявка создана или обновлена */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UniversityRequestDto"];
+                };
+            };
+            /** @description Регион не найден */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UniversityRequestDto"];
+                };
+            };
+            /** @description В профиле уже выбран университет */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UniversityRequestDto"];
+                };
+            };
+        };
+    };
+    updateMyGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStudentGroupRequest"];
+            };
+        };
+        responses: {
+            /** @description Название изменено */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GroupDto"];
+                };
+            };
+            /** @description Группа с таким названием на этом курсе уже есть; в теле — field: "name" и id существующей группы */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GroupDto"];
+                };
+            };
+            /** @description У студента нет группы, группу создал не он или в ней уже есть другие студенты */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GroupDto"];
+                };
+            };
+        };
+    };
+    createMyGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStudentGroupRequest"];
+            };
+        };
+        responses: {
+            /** @description Группа создана, студент зачислен в неё */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StudentDto"];
+                };
+            };
+            /** @description Группа с таким названием на этом курсе уже есть; в теле — field: "name" и id существующей группы */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StudentDto"];
+                };
+            };
+            /** @description В профиле не выбраны факультет и курс либо студент уже создал максимум групп */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StudentDto"];
+                };
+            };
+        };
+    };
+    updateMyFaculty: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStudentFacultyRequest"];
+            };
+        };
+        responses: {
+            /** @description Название изменено */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FacultyDto"];
+                };
+            };
+            /** @description Факультет с таким названием в этом университете уже есть; в теле — field: "name" и id существующего факультета */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FacultyDto"];
+                };
+            };
+            /** @description У студента не выбран факультет, факультет создал не он или его уже выбрали другие студенты */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FacultyDto"];
+                };
+            };
+        };
+    };
+    createMyFaculty: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStudentFacultyRequest"];
+            };
+        };
+        responses: {
+            /** @description Факультет создан и выбран в профиле */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StudentDto"];
+                };
+            };
+            /** @description Факультет с таким названием в этом университете уже есть; в теле — field: "name" и id существующего факультета */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StudentDto"];
+                };
+            };
+            /** @description В профиле не выбран университет либо студент уже создал максимум факультетов */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StudentDto"];
+                };
             };
         };
     };
@@ -2847,6 +3293,94 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["WeekScheduleCycleDto"];
+                };
+            };
+        };
+    };
+    rejectRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RejectUniversityRequest"];
+            };
+        };
+        responses: {
+            /** @description Заявка отклонена */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UniversityRequestDto"];
+                };
+            };
+            /** @description Заявка не найдена */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UniversityRequestDto"];
+                };
+            };
+            /** @description Заявка уже обработана */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UniversityRequestDto"];
+                };
+            };
+        };
+    };
+    completeRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteUniversityRequest"];
+            };
+        };
+        responses: {
+            /** @description Заявка закрыта */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UniversityRequestDto"];
+                };
+            };
+            /** @description Заявка или университет не найдены */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UniversityRequestDto"];
+                };
+            };
+            /** @description Заявка уже обработана */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UniversityRequestDto"];
                 };
             };
         };
@@ -3651,6 +4185,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["WeekScheduleCycleDto"];
+                };
+            };
+        };
+    };
+    getRequests: {
+        parameters: {
+            query?: {
+                status?: "PENDING" | "COMPLETED" | "REJECTED";
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageUniversityRequestDto"];
                 };
             };
         };
