@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/useAuth';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentTabScreenProps } from '../../navigation/types';
 import { Hint } from '../hints/Hint';
+import { useHints } from '../hints/HintProvider';
 import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnUniversityRequestQuery } from '../onboarding/hooks';
 import {
@@ -47,6 +48,7 @@ export function StudentProfileScreen() {
 
   const setupStep = student.data ? firstUnfilledSetupStep(student.data) : null;
   const newcomer = useNewcomer();
+  const hints = useHints();
   const promptedFor = useSetupPromptStore((state) => state.promptedFor);
   const markPrompted = useSetupPromptStore((state) => state.markPrompted);
 
@@ -195,6 +197,13 @@ export function StudentProfileScreen() {
         // above it — e.g. out of a university that turned out to have no faculties in the catalog.
         <Button mode="text" onPress={() => navigation.navigate('SetupRegion')}>
           Изменить университет или группу
+        </Button>
+      ) : null}
+
+      {/* Only while there is a path to lead along and something on it was hidden (PLAN.md, M29). */}
+      {newcomer.kind === 'newcomer' && hints.anyHidden ? (
+        <Button mode="text" onPress={hints.reset}>
+          Показать подсказки снова
         </Button>
       ) : null}
 

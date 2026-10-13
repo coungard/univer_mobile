@@ -5,6 +5,8 @@ interface HintsContextValue {
   /** False until the stored state is read — hints stay hidden meanwhile, so a closed one never flashes. */
   ready: boolean;
   disabled: boolean;
+  /** Whether anything is hidden — the mode is off or some hint was closed — so there is something to bring back. */
+  anyHidden: boolean;
   isDismissed: (id: string) => boolean;
   /** Close one hint for good. */
   dismiss: (id: string) => void;
@@ -45,6 +47,7 @@ export function HintProvider({ children }: { children: React.ReactNode }) {
     () => ({
       ready,
       disabled: hints.disabled,
+      anyHidden: hints.disabled || hints.dismissed.length > 0,
       isDismissed: id => hints.dismissed.includes(id),
       dismiss: id =>
         update(current =>
