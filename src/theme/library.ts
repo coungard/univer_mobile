@@ -24,6 +24,18 @@ export const libraryColors = {
   surface: '#FEFBF7',
 } as const;
 
+/**
+ * Bottom tab bar (issue #55): a dark bar, so the active tab takes a lightened tint of a spine
+ * colour — the spine colours themselves are too dark to read on it.
+ */
+export const libraryTabBarColors = {
+  background: libraryColors.ink,
+  inactive: '#B9AEA2',
+  profile: '#E08E78',
+  schedule: '#8FC09A',
+  courses: '#7FB4CF',
+} as const;
+
 /** The book-spine stripe's 5 repeating colors, in the order the design uses them. */
 export const librarySpineColors = [
   libraryColors.terracotta,
