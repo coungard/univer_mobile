@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getBellScheduleEntriesByUniversity } from '../../api/endpoints/bellScheduleEntries';
+import { getEffectiveBellSchedule } from '../../api/endpoints/bellScheduleEntries';
 import { generateSemesterLectures, getLecture, getMyLectures } from '../../api/endpoints/lectures';
 import { createPair, deletePair, getPair, getPairsByGroup, updatePair } from '../../api/endpoints/pairs';
-import { getWeekScheduleCycleBySemester } from '../../api/endpoints/weekScheduleCycles';
+import { openOwnWeekScheduleCycle } from '../../api/endpoints/weekScheduleCycles';
 import { fetchAllPages } from '../../api/pagination';
 import { PairInput } from '../../api/types';
 
@@ -29,16 +29,16 @@ export function useLectureQuery(lectureId: string) {
 }
 
 /**
- * Whether the semester has a `WeekScheduleCycle` at all, and if so its `DRAFT`/`AGREED` status — the
- * central gate for "студент сам заполняет расписание" (`UI_UX.md` разделы 4/6). Resolves to `null`
- * (not an error) when the admin hasn't opened the semester's schedule yet — see
- * `api/endpoints/weekScheduleCycles.ts`.
+ * The `WeekScheduleCycle` of the semester the student's group studies in, with its `DRAFT`/`AGREED`
+ * status — the central gate for "студент сам заполняет расписание" (`UI_UX.md` разделы 4/6). The
+ * server opens the cycle when the semester has none (see `api/endpoints/weekScheduleCycles.ts`), so
+ * a group always gets one; `groupId` is only what the result is cached by.
  */
-export function useWeekScheduleCycleQuery(semesterId: string | undefined) {
+export function useOwnWeekScheduleCycleQuery(groupId: string | undefined) {
   return useQuery({
-    queryKey: ['weekScheduleCycles', 'semester', semesterId],
-    queryFn: () => getWeekScheduleCycleBySemester(semesterId as string),
-    enabled: semesterId !== undefined,
+    queryKey: ['weekScheduleCycles', 'own', groupId],
+    queryFn: () => openOwnWeekScheduleCycle(),
+    enabled: groupId !== undefined,
   });
 }
 
@@ -61,14 +61,14 @@ export function usePairQuery(pairId: string | undefined) {
 }
 
 /**
- * "Номер пары -> время" по университету студента — превью времени в форме заполнения `Pair`, без
- * того чтобы студент вводил его вручную (см. `api/endpoints/bellScheduleEntries.ts`).
+ * "Номер пары -> время" для университета студента: свои звонки, а где их нет — звонки по умолчанию.
+ * Время пары студент не вводит — форма показывает его рядом с номером, а подставляет сервер (см.
+ * `api/endpoints/bellScheduleEntries.ts`).
  */
-export function useBellScheduleEntriesQuery(universityId: string | undefined) {
+export function useEffectiveBellScheduleQuery(universityId: string | undefined) {
   return useQuery({
-    queryKey: ['bellScheduleEntries', 'university', universityId],
-    queryFn: () => getBellScheduleEntriesByUniversity(universityId as string),
-    select: (page) => page.content,
+    queryKey: ['bellScheduleEntries', 'effective', universityId],
+    queryFn: () => getEffectiveBellSchedule(universityId as string),
     enabled: universityId !== undefined,
   });
 }
@@ -77,6 +77,16 @@ export function useBellScheduleEntriesQuery(universityId: string | undefined) {
 function usePairsInvalidation(groupId: string | undefined) {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ queryKey: ['pairs', 'group', groupId] });
+}
+
+/**
+ * Same, plus the student's lectures: the server recreates a pair's lectures when the pair is changed
+ * and removes them when it is deleted (univer#99), so the schedule tab has to refetch too.
+ */
+function usePairsAndLecturesInvalidation(groupId: string | undefined) {
+  const queryClient = useQueryClient();
+  const invalidatePairs = usePairsInvalidation(groupId);
+  return () => Promise.all([invalidatePairs(), queryClient.invalidateQueries({ queryKey: ['lectures', 'me'] })]);
 }
 
 export function useCreatePairMutation(groupId: string | undefined) {
@@ -88,7 +98,7 @@ export function useCreatePairMutation(groupId: string | undefined) {
 }
 
 export function useUpdatePairMutation(groupId: string | undefined) {
-  const invalidate = usePairsInvalidation(groupId);
+  const invalidate = usePairsAndLecturesInvalidation(groupId);
   return useMutation({
     mutationFn: ({ id, pair }: { id: string; pair: PairInput }) => updatePair(id, pair),
     onSuccess: invalidate,
@@ -96,7 +106,7 @@ export function useUpdatePairMutation(groupId: string | undefined) {
 }
 
 export function useDeletePairMutation(groupId: string | undefined) {
-  const invalidate = usePairsInvalidation(groupId);
+  const invalidate = usePairsAndLecturesInvalidation(groupId);
   return useMutation({
     mutationFn: (id: string) => deletePair(id),
     onSuccess: invalidate,

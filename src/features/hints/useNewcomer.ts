@@ -1,5 +1,5 @@
-import { useGroupAcademicPathQuery, useOwnStudentQuery } from '../profile/hooks';
-import { useGroupPairsQuery, useWeekScheduleCycleQuery } from '../schedule/hooks';
+import { useOwnStudentQuery } from '../profile/hooks';
+import { useGroupPairsQuery, useOwnWeekScheduleCycleQuery } from '../schedule/hooks';
 import { newcomerState, NewcomerState } from './newcomerState';
 
 /**
@@ -10,12 +10,11 @@ export function useNewcomer(): NewcomerState {
   const student = useOwnStudentQuery();
   const groupId = student.data?.groupId ?? undefined;
   const pairs = useGroupPairsQuery(groupId);
-  const academicPath = useGroupAcademicPathQuery(groupId);
-  const cycle = useWeekScheduleCycleQuery(academicPath.group?.semesterId);
+  const cycle = useOwnWeekScheduleCycleQuery(groupId);
 
   return newcomerState({
     student: student.data,
     pairCount: pairs.data?.length,
-    cycleStatus: cycle.data === undefined ? undefined : cycle.data?.status ?? null,
+    cycleStatus: cycle.data?.status,
   });
 }

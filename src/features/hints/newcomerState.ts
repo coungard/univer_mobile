@@ -6,12 +6,8 @@ export type NewcomerMissing = 'university' | 'faculty' | 'year' | 'group' | 'pai
 export type NewcomerState =
   /** Not enough data yet (loading or a failed request) — no hints rather than wrong ones. */
   | { kind: 'unknown' }
-  /**
-   * No pair in the schedule; `stage` is the index into `HINT_STAGES` the student is on.
-   * `scheduleOpen` matters for `missing: 'pair'` only: whether the semester has a schedule the
-   * student can add the pair to — without one there is no screen to lead them to yet.
-   */
-  | { kind: 'newcomer'; missing: NewcomerMissing; stage: 0 | 1 | 2; scheduleOpen: boolean }
+  /** No pair in the schedule; `stage` is the index into `HINT_STAGES` the student is on. */
+  | { kind: 'newcomer'; missing: NewcomerMissing; stage: 0 | 1 | 2 }
   /** No pairs, but the schedule is agreed — the student can't add any, so there's nowhere to lead. */
   | { kind: 'closed' }
   /** The group has pairs — not a newcomer. */
@@ -21,8 +17,11 @@ interface NewcomerInput {
   student: StudentDto | undefined;
   /** Number of pairs of the student's group; `undefined` while unknown. Ignored without a group. */
   pairCount: number | undefined;
-  /** The semester's schedule: its status, `null` when there is none, `undefined` while unknown. */
-  cycleStatus: WeekScheduleCycleStatus | null | undefined;
+  /**
+   * Status of the schedule of the group's semester; `undefined` while unknown. A group always has
+   * one: the server opens it when the semester has none (univer#96).
+   */
+  cycleStatus: WeekScheduleCycleStatus | undefined;
 }
 
 /**
@@ -32,14 +31,14 @@ interface NewcomerInput {
  */
 export function newcomerState({ student, pairCount, cycleStatus }: NewcomerInput): NewcomerState {
   if (!student) return { kind: 'unknown' };
-  if (!student.universityId) return { kind: 'newcomer', missing: 'university', stage: 0, scheduleOpen: false };
-  if (!student.facultyId) return { kind: 'newcomer', missing: 'faculty', stage: 0, scheduleOpen: false };
-  if (student.yearNumber == null) return { kind: 'newcomer', missing: 'year', stage: 1, scheduleOpen: false };
-  if (!student.groupId) return { kind: 'newcomer', missing: 'group', stage: 1, scheduleOpen: false };
+  if (!student.universityId) return { kind: 'newcomer', missing: 'university', stage: 0 };
+  if (!student.facultyId) return { kind: 'newcomer', missing: 'faculty', stage: 0 };
+  if (student.yearNumber == null) return { kind: 'newcomer', missing: 'year', stage: 1 };
+  if (!student.groupId) return { kind: 'newcomer', missing: 'group', stage: 1 };
 
   if (pairCount === undefined) return { kind: 'unknown' };
   if (pairCount > 0) return { kind: 'settled' };
   if (cycleStatus === undefined) return { kind: 'unknown' };
   if (cycleStatus === 'AGREED') return { kind: 'closed' };
-  return { kind: 'newcomer', missing: 'pair', stage: 2, scheduleOpen: cycleStatus === 'DRAFT' };
+  return { kind: 'newcomer', missing: 'pair', stage: 2 };
 }

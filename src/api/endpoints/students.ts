@@ -1,6 +1,7 @@
 import { apiClient } from '../client';
 import { ApiError } from '../errors';
 import {
+  CourseDto,
   CreateStudentFacultyRequest,
   CreateStudentGroupRequest,
   FacultyDto,
@@ -55,6 +56,16 @@ export async function createOwnFaculty(request: CreateStudentFacultyRequest): Pr
  */
 export async function createOwnGroup(request: CreateStudentGroupRequest): Promise<StudentDto> {
   const { data } = await apiClient.post<StudentDto>('/students/me/group', request);
+  return data;
+}
+
+/**
+ * `POST /students/me/course` — the student creates a subject missing from the list of their
+ * faculty (univer#97); the profile is not changed. A title already taken on that faculty is a `409`
+ * carrying the existing subject's ID (see API.md), no faculty in the profile is a `422`.
+ */
+export async function createOwnCourse(title: string): Promise<CourseDto> {
+  const { data } = await apiClient.post<CourseDto>('/students/me/course', { title });
   return data;
 }
 

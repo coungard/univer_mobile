@@ -43,15 +43,10 @@ function describeOutcome(
       };
     }
     if (newcomer.kind === 'newcomer') {
-      return newcomer.scheduleOpen
-        ? {
-            title: 'Группа есть',
-            text: 'Факультет и группа готовы. Остался последний шаг — первая пара в расписании группы.',
-          }
-        : {
-            title: 'Группа есть',
-            text: 'В расписании группы пока нет пар. Добавить их можно будет, когда откроется расписание семестра.',
-          };
+      return {
+        title: 'Группа есть',
+        text: 'Факультет и группа готовы. Остался последний шаг — первая пара в расписании группы.',
+      };
     }
     // Pairs are still loading (or failed to): say only what is certain.
     return { title: 'Готово', text: 'Вы в своей группе.' };
@@ -116,7 +111,7 @@ export function StudentSetupDoneScreen({ navigation, route }: StudentStackScreen
   );
   const hasGroup = !!student.data.groupId;
   // A newcomer with a group goes on to the first pair instead of an empty schedule.
-  const toFirstPair = hasGroup && newcomer.kind === 'newcomer' && newcomer.scheduleOpen;
+  const toFirstPair = hasGroup && newcomer.kind === 'newcomer' && newcomer.missing === 'pair';
 
   const onPrimary = () => {
     navigation.popTo('Tabs', { screen: hasGroup ? 'Schedule' : 'Profile' });

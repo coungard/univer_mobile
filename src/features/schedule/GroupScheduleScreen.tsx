@@ -9,14 +9,14 @@ import { StudentStackScreenProps } from '../../navigation/types';
 import { useAllCoursesQuery } from '../courses/hooks';
 import { Hint } from '../hints/Hint';
 import { useNewcomer } from '../hints/useNewcomer';
-import { useGroupAcademicPathQuery, useOwnStudentQuery, useSemesterQuery } from '../profile/hooks';
+import { useOwnStudentQuery, useSemesterQuery } from '../profile/hooks';
 import { DAY_OPTIONS, PARITY_OPTIONS } from './PairFormScreen';
 import {
-  useBellScheduleEntriesQuery,
   useDeletePairMutation,
+  useEffectiveBellScheduleQuery,
   useGenerateSemesterLecturesMutation,
   useGroupPairsQuery,
-  useWeekScheduleCycleQuery,
+  useOwnWeekScheduleCycleQuery,
 } from './hooks';
 
 type Props = StudentStackScreenProps<'GroupSchedule'>;
@@ -26,8 +26,9 @@ const PARITY_LABELS = Object.fromEntries(PARITY_OPTIONS.map((o) => [o.value, o.l
 const DAY_ORDER = DAY_OPTIONS.map((o) => o.value);
 
 /**
- * «Расписание группы» — студент заполняет `Pair` своей группы и запускает генерацию `Lecture`
- * (`UI_UX.md` раздел 4). Список по дням, как и `ScheduleScreen`, не жёсткая сетка день×номер пары —
+ * «Расписание группы» — студент заполняет `Pair` своей группы (`UI_UX.md` раздел 4). Занятия по
+ * паре создаются при её сохранении, а при изменении и удалении пары сервер сам приводит их в
+ * соответствие; кнопка генерации здесь — запасная, на случай сбоя после сохранения. Список по дням, как и `ScheduleScreen`, не жёсткая сетка день×номер пары —
  * та же причина, что и там: `weekParity` может дать две разные пары на один день+номер (ODD/EVEN
  * недели), сетка усложнила бы отображение без реальной пользы для MVP.
  */
@@ -35,12 +36,11 @@ export function GroupScheduleScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const student = useOwnStudentQuery();
-  const academicPath = useGroupAcademicPathQuery(student.data?.groupId ?? undefined);
-  const semester = useSemesterQuery(academicPath.group?.semesterId);
-  const cycle = useWeekScheduleCycleQuery(academicPath.group?.semesterId);
+  const cycle = useOwnWeekScheduleCycleQuery(student.data?.groupId ?? undefined);
+  const semester = useSemesterQuery(cycle.data?.semesterId);
   const pairs = useGroupPairsQuery(student.data?.groupId ?? undefined);
   const courses = useAllCoursesQuery();
-  const bellSchedule = useBellScheduleEntriesQuery(student.data?.universityId ?? undefined);
+  const bellSchedule = useEffectiveBellScheduleQuery(student.data?.universityId ?? undefined);
 
   const deletePair = useDeletePairMutation(student.data?.groupId ?? undefined);
   const generate = useGenerateSemesterLecturesMutation();
@@ -52,21 +52,15 @@ export function GroupScheduleScreen({ navigation }: Props) {
     return map;
   }, [courses.data]);
 
-  const timeFor = (pairNumber: number) => {
-    const entry = (bellSchedule.data ?? []).find((e) => e.pairNumber === pairNumber);
-    return entry ? `${entry.startTime.slice(0, 5)}–${entry.endTime.slice(0, 5)}` : null;
+  // The pair's own time is what its lectures are made with; the bell schedule covers pairs saved
+  // before the server started filling it in.
+  const timeFor = (pair: PairDto) => {
+    const entry = pair.startTime && pair.endTime ? pair : bellSchedule.data?.find((e) => e.pairNumber === pair.pairNumber);
+    return entry?.startTime && entry.endTime ? `${entry.startTime.slice(0, 5)}–${entry.endTime.slice(0, 5)}` : null;
   };
 
-  const isLoading = student.isLoading || academicPath.isLoading || cycle.isLoading || pairs.isLoading;
-  const queryError = student.isError
-    ? student.error
-    : academicPath.isError
-      ? academicPath.error
-      : cycle.isError
-        ? cycle.error
-        : pairs.isError
-          ? pairs.error
-          : null;
+  const isLoading = student.isLoading || cycle.isLoading || pairs.isLoading;
+  const queryError = student.isError ? student.error : cycle.isError ? cycle.error : pairs.isError ? pairs.error : null;
 
   if (isLoading) {
     return (
@@ -91,12 +85,13 @@ export function GroupScheduleScreen({ navigation }: Props) {
     );
   }
 
+  // Only a student without a group gets here: with one, the server opens the semester's schedule.
   if (!cycle.data) {
     return (
       <View style={[styles.center, { paddingTop: insets.top }]}>
         <EmptyState
-          title="Расписание семестра ещё не открыто"
-          description="Сначала администратор должен открыть расписание семестра — тогда здесь появится форма заполнения."
+          title="Группа не выбрана"
+          description="Расписание группы появится, когда вы выберете группу в профиле."
         />
       </View>
     );
@@ -112,18 +107,22 @@ export function GroupScheduleScreen({ navigation }: Props) {
   }));
 
   const handleDelete = (pair: PairDto) => {
-    Alert.alert('Удалить занятие?', `${DAY_LABELS[pair.dayOfWeek]}, пара ${pair.pairNumber}`, [
-      { text: 'Отмена', style: 'cancel' },
-      {
-        text: 'Удалить',
-        style: 'destructive',
-        onPress: () => {
-          deletePair.mutate(pair.id, {
-            onError: (error) => Alert.alert('Не удалось удалить', error instanceof Error ? error.message : ''),
-          });
+    Alert.alert(
+      'Удалить занятие?',
+      `${DAY_LABELS[pair.dayOfWeek]}, пара ${pair.pairNumber}. Занятия по ней будут убраны из расписания.`,
+      [
+        { text: 'Отмена', style: 'cancel' },
+        {
+          text: 'Удалить',
+          style: 'destructive',
+          onPress: () => {
+            deletePair.mutate(pair.id, {
+              onError: (error) => Alert.alert('Не удалось удалить', error instanceof Error ? error.message : ''),
+            });
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const handleGenerate = () => {
@@ -194,10 +193,9 @@ export function GroupScheduleScreen({ navigation }: Props) {
                     <Text variant="bodyMedium">
                       Пара {pair.pairNumber} · {PARITY_LABELS[pair.weekParity]}
                     </Text>
-                    <Text variant="bodyMedium">{courseTitleById.get(pair.courseId) ?? 'Курс'}</Text>
+                    <Text variant="bodyMedium">{courseTitleById.get(pair.courseId) ?? 'Предмет'}</Text>
                     <Text style={styles.muted}>
-                      {[timeFor(pair.pairNumber), pair.room ? `ауд. ${pair.room}` : null].filter(Boolean).join(' · ') ||
-                        '—'}
+                      {[timeFor(pair), pair.room ? `ауд. ${pair.room}` : null].filter(Boolean).join(' · ') || '—'}
                     </Text>
                   </View>
                   {isDraft ? (

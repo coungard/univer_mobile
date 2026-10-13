@@ -1,19 +1,13 @@
 import { apiClient } from '../client';
-import { ApiError } from '../errors';
 import { WeekScheduleCycleDto } from '../types';
 
 /**
- * `GET /week-schedule-cycles/semester/{semesterId}` — the semester's cycle, if an admin has opened
- * one yet (`UI_UX.md` "генерация расписания/лекций «на ходу»", раздел 4/6). A `404` here is an
- * expected, everyday state — "admin hasn't opened the semester's schedule yet" — not a failure, so
- * it resolves to `null` instead of rejecting; callers don't have to special-case `ApiError` themselves.
+ * `PUT /students/me/week-schedule-cycle` — the schedule cycle of the semester the student's group
+ * studies in. The server creates it in `DRAFT` when there is none, so no administrator is needed
+ * (univer#96); an existing cycle comes back as is, `AGREED` included. Safe to repeat. `422` when the
+ * student has no group.
  */
-export async function getWeekScheduleCycleBySemester(semesterId: string): Promise<WeekScheduleCycleDto | null> {
-  try {
-    const { data } = await apiClient.get<WeekScheduleCycleDto>(`/week-schedule-cycles/semester/${semesterId}`);
-    return data;
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 404) return null;
-    throw error;
-  }
+export async function openOwnWeekScheduleCycle(): Promise<WeekScheduleCycleDto> {
+  const { data } = await apiClient.put<WeekScheduleCycleDto>('/students/me/week-schedule-cycle');
+  return data;
 }

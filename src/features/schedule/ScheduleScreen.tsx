@@ -9,10 +9,10 @@ import { StudentTabScreenProps } from '../../navigation/types';
 import { Hint } from '../hints/Hint';
 import { useNewcomer } from '../hints/useNewcomer';
 import { firstUnfilledSetupStep, openSetupAt } from '../onboarding/studentSetup';
-import { useGroupAcademicPathQuery, useOwnStudentQuery } from '../profile/hooks';
+import { useOwnStudentQuery } from '../profile/hooks';
 import { libraryHintColors } from '../../theme/library';
 import { dayName, formatDayDate, formatTime, formatWeekRangeLabel, getWeek, isSameDay, weekOffsetOf } from './dateUtils';
-import { useGroupPairsQuery, useMyLecturesQuery, useWeekScheduleCycleQuery } from './hooks';
+import { useGroupPairsQuery, useMyLecturesQuery, useOwnWeekScheduleCycleQuery } from './hooks';
 
 const TODAY = new Date();
 
@@ -31,11 +31,10 @@ export function ScheduleScreen({ navigation, route }: Props) {
   const newcomer = useNewcomer();
 
   // Only actually used once the schedule turns out empty (see the empty-state branch below), but
-  // called unconditionally — same reasoning as `StudentProfileScreen`'s `useGroupAcademicPathQuery`
-  // call: each hook already no-ops via `enabled` when its id is undefined, so there's nothing wrong
-  // with paying for it even on the (far more common) non-empty path, and it keeps hook order stable.
-  const academicPath = useGroupAcademicPathQuery(student.data?.groupId ?? undefined);
-  const cycle = useWeekScheduleCycleQuery(academicPath.group?.semesterId);
+  // called unconditionally: each hook already no-ops via `enabled` when its id is undefined, so
+  // there's nothing wrong with paying for it even on the (far more common) non-empty path, and it
+  // keeps hook order stable.
+  const cycle = useOwnWeekScheduleCycleQuery(student.data?.groupId ?? undefined);
   const pairs = useGroupPairsQuery(student.data?.groupId ?? undefined);
 
   // This tab's `Tab.Navigator` renders with `headerShown: false`, so nothing else accounts for the
@@ -114,7 +113,7 @@ export function ScheduleScreen({ navigation, route }: Props) {
       );
     }
 
-    if (academicPath.isLoading || cycle.isLoading || pairs.isLoading) {
+    if (cycle.isLoading || pairs.isLoading) {
       return (
         <View style={styles.center}>
           <Text>Загрузка расписания…</Text>
@@ -122,14 +121,12 @@ export function ScheduleScreen({ navigation, route }: Props) {
       );
     }
 
-    // `UI_UX.md` раздел 6, «Цикл на семестр не создан» — блокер вне контроля студента.
+    // The server opens the semester's schedule itself (univer#96), so a group without one is no
+    // longer a state — only a failed request leaves `cycle.data` empty.
     if (!cycle.data) {
       return (
         <View style={styles.center}>
-          <EmptyState
-            title="Расписание пока пусто"
-            description="Расписание семестра ещё не открыто администратором — загляните позже."
-          />
+          <QueryErrorState error={cycle.error} onRetry={() => cycle.refetch()} />
         </View>
       );
     }

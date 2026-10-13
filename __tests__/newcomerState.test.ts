@@ -28,7 +28,7 @@ describe('newcomerState', () => {
     // Pairs and the cycle are irrelevant without a group — they must not hold the hint back.
     expect(
       newcomerState({ student: student(patch as Partial<StudentDto>), pairCount: undefined, cycleStatus: undefined }),
-    ).toEqual({ kind: 'newcomer', missing, stage, scheduleOpen: false });
+    ).toEqual({ kind: 'newcomer', missing, stage });
   });
 
   test('a group without pairs leads to the first pair', () => {
@@ -36,16 +36,6 @@ describe('newcomerState', () => {
       kind: 'newcomer',
       missing: 'pair',
       stage: 2,
-      scheduleOpen: true,
-    });
-  });
-
-  test('a group without a schedule cycle is still a newcomer, with nowhere to add the pair yet', () => {
-    expect(newcomerState({ student: full, pairCount: 0, cycleStatus: null })).toEqual({
-      kind: 'newcomer',
-      missing: 'pair',
-      stage: 2,
-      scheduleOpen: false,
     });
   });
 

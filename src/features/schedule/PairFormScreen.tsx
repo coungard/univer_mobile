@@ -6,21 +6,23 @@ import { Button, HelperText, Text, TextInput } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
 import { PairInput, Weekday, WeekParity } from '../../api/types';
 import { ErrorBanner } from '../../components/ErrorBanner';
+import { QueryErrorState } from '../../components/QueryErrorState';
 import { SelectField } from '../../components/SelectField';
 import { StudentStackScreenProps } from '../../navigation/types';
-import { useAllCoursesQuery } from '../courses/hooks';
+import { useCourseQuery, useFacultyCoursesQuery } from '../courses/hooks';
 import { Hint } from '../hints/Hint';
 import { useNewcomer } from '../hints/useNewcomer';
-import { useGroupAcademicPathQuery, useOwnStudentQuery } from '../profile/hooks';
+import { useOwnStudentQuery } from '../profile/hooks';
 import {
-  useBellScheduleEntriesQuery,
   useCreatePairMutation,
+  useEffectiveBellScheduleQuery,
   useGenerateSemesterLecturesMutation,
   useGroupPairsQuery,
+  useOwnWeekScheduleCycleQuery,
   usePairQuery,
   useUpdatePairMutation,
-  useWeekScheduleCycleQuery,
 } from './hooks';
+import { NewCourseDialog } from './NewCourseDialog';
 import { PairForm, pairFormSchema } from './pairFormSchema';
 
 type Props = StudentStackScreenProps<'PairForm'>;
@@ -43,23 +45,25 @@ export const PARITY_OPTIONS = [
 
 /**
  * Форма заполнения одного `Pair` — студент своей группы, пока цикл в `DRAFT` (`UI_UX.md` раздел 4).
- * Курс — из полного каталога (`GET /courses`); время начала/окончания не запрашивается — форма берёт
- * его из звонков университета студента по `pairNumber` и передаёт сама: сервер ищет звонки по кафедре
- * предмета и для предмета без кафедры отвечает `422` (univer#98). Новая пара сразу превращается в
- * занятия на семестр, и открывается расписание с первым из них (`PLAN.md`, M28); кафедра/
- * преподаватель/группы — не поля формы: `teacherId` берётся из выбранного курса, `groupIds` всегда
- * `[student.groupId]` (см. вопросы в `UI_UX.md` разделе 7 — оба зафиксированы для этой реализации).
+ * Предмет — из предметов факультета студента (`GET /courses?facultyId=`), недостающий студент
+ * добавляет сам («Добавить свой предмет», `PLAN.md`, M26). Время начала/окончания не запрашивается и
+ * не передаётся: номер пары выбирается из звонков, действующих для университета студента, и по ним же
+ * время подставляет сервер (M27). Новая пара сразу превращается в занятия на семестр, и открывается
+ * расписание с первым из них (M28); кафедра/преподаватель/группы — не поля формы: `teacherId` берётся
+ * из выбранного предмета, `groupIds` всегда `[student.groupId]` (см. вопросы в `UI_UX.md` разделе 7 —
+ * оба зафиксированы для этой реализации).
  */
 export function PairFormScreen({ route, navigation }: Props) {
   const { pairId } = route.params ?? {};
   const isEdit = pairId !== undefined;
 
   const student = useOwnStudentQuery();
-  const academicPath = useGroupAcademicPathQuery(student.data?.groupId ?? undefined);
-  const cycle = useWeekScheduleCycleQuery(academicPath.group?.semesterId);
+  const cycle = useOwnWeekScheduleCycleQuery(student.data?.groupId ?? undefined);
   const existingPair = usePairQuery(pairId);
-  const courses = useAllCoursesQuery();
-  const bellSchedule = useBellScheduleEntriesQuery(student.data?.universityId ?? undefined);
+  const courses = useFacultyCoursesQuery(student.data?.facultyId ?? undefined);
+  // A pair saved earlier may point at a subject outside the faculty's list — it still needs a title.
+  const pairCourse = useCourseQuery(existingPair.data?.courseId);
+  const bellSchedule = useEffectiveBellScheduleQuery(student.data?.universityId ?? undefined);
 
   const createPair = useCreatePairMutation(student.data?.groupId ?? undefined);
   const updatePair = useUpdatePairMutation(student.data?.groupId ?? undefined);
@@ -68,13 +72,17 @@ export function PairFormScreen({ route, navigation }: Props) {
   const newcomer = useNewcomer();
 
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [courseDialog, setCourseDialog] = useState(false);
+  // Subjects picked through «Добавить свой предмет» — on the form before the list is refetched.
+  const [addedCourses, setAddedCourses] = useState<{ id: string; title: string }[]>([]);
+  const [courseNote, setCourseNote] = useState<string | null>(null);
 
   const {
     control,
     handleSubmit,
     setError,
+    setValue,
     reset,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<PairForm>({
     resolver: zodResolver(pairFormSchema),
@@ -94,20 +102,27 @@ export function PairFormScreen({ route, navigation }: Props) {
     }
   }, [existingPair.data, reset]);
 
-  const courseOptions = useMemo(
-    () => (courses.data ?? []).map((c) => ({ label: c.title, value: c.id })),
-    [courses.data],
-  );
+  const courseOptions = useMemo(() => {
+    const options = (courses.data ?? []).map((c) => ({ label: c.title, value: c.id }));
+    const extra = pairCourse.data ? [...addedCourses, pairCourse.data] : addedCourses;
+    for (const course of extra) {
+      if (!options.some((o) => o.value === course.id)) options.push({ label: course.title, value: course.id });
+    }
+    return options;
+  }, [courses.data, addedCourses, pairCourse.data]);
 
-  const pairNumberValue = watch('pairNumber');
-  const timePreview = useMemo(() => {
-    const number = Number(pairNumberValue);
-    if (!number) return null;
-    const entry = (bellSchedule.data ?? []).find((e) => e.pairNumber === number);
-    return entry ? `${entry.startTime.slice(0, 5)}–${entry.endTime.slice(0, 5)}` : null;
-  }, [pairNumberValue, bellSchedule.data]);
+  // Only the numbers the university has a time for: any other the server rejects (`422`).
+  const pairNumberOptions = useMemo(() => {
+    const options = (bellSchedule.data ?? []).map((e) => ({
+      label: `${e.pairNumber} пара · ${e.startTime.slice(0, 5)}–${e.endTime.slice(0, 5)}`,
+      value: String(e.pairNumber),
+    }));
+    const saved = existingPair.data ? String(existingPair.data.pairNumber) : null;
+    if (saved && !options.some((o) => o.value === saved)) options.push({ label: `${saved} пара`, value: saved });
+    return options;
+  }, [bellSchedule.data, existingPair.data]);
 
-  if (student.isLoading || academicPath.isLoading || cycle.isLoading || (isEdit && existingPair.isLoading)) {
+  if (student.isLoading || cycle.isLoading || (isEdit && existingPair.isLoading)) {
     return (
       <View style={styles.center}>
         <Text>Загрузка…</Text>
@@ -115,9 +130,17 @@ export function PairFormScreen({ route, navigation }: Props) {
     );
   }
 
+  if (!cycle.data) {
+    return (
+      <View style={styles.center}>
+        <QueryErrorState error={cycle.error} onRetry={() => cycle.refetch()} />
+      </View>
+    );
+  }
+
   // Defensive — `GroupScheduleScreen` hides the entry points to this screen once the cycle is
-  // `AGREED` or missing, but a stale back-navigation could still land here.
-  if (!cycle.data || cycle.data.status === 'AGREED') {
+  // `AGREED`, but a stale back-navigation could still land here.
+  if (cycle.data.status === 'AGREED') {
     return (
       <View style={styles.center}>
         <Text variant="titleMedium" style={styles.centerTitle}>
@@ -136,16 +159,15 @@ export function PairFormScreen({ route, navigation }: Props) {
     setSubmitError(null);
     if (!student.data?.groupId) return;
 
-    const selectedCourse = courses.data?.find((c) => c.id === values.courseId);
-    const bell = (bellSchedule.data ?? []).find((e) => e.pairNumber === Number(values.pairNumber));
+    const selectedCourse =
+      courses.data?.find((c) => c.id === values.courseId) ??
+      (pairCourse.data?.id === values.courseId ? pairCourse.data : undefined);
+    // No `startTime`/`endTime`: the server takes them from the same bell schedule the form shows.
     const payload: PairInput = {
       weekScheduleCycleId: cycleId,
       dayOfWeek: values.dayOfWeek as Weekday,
       weekParity: values.weekParity as WeekParity,
       pairNumber: Number(values.pairNumber),
-      // Without an entry for this number the times are left to the server, as before.
-      startTime: bell?.startTime,
-      endTime: bell?.endTime,
       courseId: values.courseId,
       teacherId: selectedCourse?.teacherId,
       room: values.room || undefined,
@@ -154,9 +176,11 @@ export function PairFormScreen({ route, navigation }: Props) {
 
     try {
       if (isEdit && pairId) {
-        // Lectures of an edited pair are left alone: the server keeps the old ones (univer#99), so
-        // generating here would only add a second set next to them.
+        // The server moves the pair's lectures itself (univer#99) — but only if it has any, so a
+        // pair saved without them gets them here. Repeating the call adds nothing; a failure leaves
+        // the button on «Расписание группы».
         await updatePair.mutateAsync({ id: pairId, pair: payload });
+        await generate.mutateAsync(cycleId).catch(() => undefined);
         navigation.goBack();
         return;
       }
@@ -247,16 +271,17 @@ export function PairFormScreen({ route, navigation }: Props) {
         name="pairNumber"
         render={({ field }) => (
           <View style={styles.field}>
-            <TextInput
+            <SelectField
               label="Номер пары"
-              value={field.value}
-              onChangeText={field.onChange}
-              keyboardType="number-pad"
+              value={field.value || null}
+              options={pairNumberOptions}
+              onChange={field.onChange}
               error={!!errors.pairNumber}
+              disabled={bellSchedule.isLoading}
+              emptyLabel={bellSchedule.isLoading ? 'Загрузка…' : 'Не удалось загрузить звонки'}
             />
-            <HelperText type={errors.pairNumber ? 'error' : 'info'} visible>
-              {errors.pairNumber?.message ??
-                (timePreview ? `Время по звонкам: ${timePreview}` : 'Время подставится по звонкам университета')}
+            <HelperText type="error" visible={!!errors.pairNumber}>
+              {errors.pairNumber?.message}
             </HelperText>
           </View>
         )}
@@ -268,17 +293,23 @@ export function PairFormScreen({ route, navigation }: Props) {
         render={({ field }) => (
           <View style={styles.field}>
             <SelectField
-              label="Курс"
+              label="Предмет"
               value={field.value || null}
               options={courseOptions}
-              onChange={field.onChange}
+              onChange={(value) => {
+                setCourseNote(null);
+                field.onChange(value);
+              }}
               error={!!errors.courseId}
               disabled={courses.isLoading}
-              emptyLabel={courses.isLoading ? 'Загрузка…' : 'Нет доступных курсов'}
+              emptyLabel={courses.isLoading ? 'Загрузка…' : 'Предметов пока нет'}
             />
-            <HelperText type="error" visible={!!errors.courseId}>
-              {errors.courseId?.message}
+            <HelperText type={errors.courseId ? 'error' : 'info'} visible={!!errors.courseId || !!courseNote}>
+              {errors.courseId?.message ?? courseNote}
             </HelperText>
+            <Button mode="text" compact style={styles.addCourse} onPress={() => setCourseDialog(true)}>
+              Добавить свой предмет
+            </Button>
           </View>
         )}
       />
@@ -297,7 +328,7 @@ export function PairFormScreen({ route, navigation }: Props) {
       <Hint
         id="pair-form"
         stage={2}
-        text="Выберите день, номер пары и предмет. После сохранения пара появится в расписании на весь семестр."
+        text="Выберите день, номер пары и предмет — если предмета нет в списке, добавьте свой. После сохранения пара появится в расписании на весь семестр."
         active={!isEdit && newcomer.kind === 'newcomer' && newcomer.missing === 'pair'}
         style={styles.submit}
       >
@@ -305,6 +336,16 @@ export function PairFormScreen({ route, navigation }: Props) {
           Сохранить
         </Button>
       </Hint>
+
+      <NewCourseDialog
+        visible={courseDialog}
+        onDismiss={() => setCourseDialog(false)}
+        onPicked={(course, existed) => {
+          setAddedCourses((current) => [...current, course]);
+          setValue('courseId', course.id, { shouldValidate: true });
+          setCourseNote(existed ? 'Такой предмет на факультете уже есть — выбран он.' : null);
+        }}
+      />
     </ScrollView>
   );
 }
@@ -333,6 +374,9 @@ const styles = StyleSheet.create({
   },
   field: {
     marginBottom: 4,
+  },
+  addCourse: {
+    alignSelf: 'flex-start',
   },
   submit: {
     marginTop: 16,

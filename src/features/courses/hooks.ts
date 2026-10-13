@@ -1,12 +1,32 @@
-import { useQuery } from '@tanstack/react-query';
-import { getCourse, getCourses } from '../../api/endpoints/courses';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getCourse, getCourses, getCoursesByFaculty } from '../../api/endpoints/courses';
+import { createOwnCourse } from '../../api/endpoints/students';
 import { fetchAllPages } from '../../api/pagination';
 import { useOwnUserId } from '../profile/hooks';
 
-export function useCourseQuery(courseId: string) {
+export function useCourseQuery(courseId: string | undefined) {
   return useQuery({
     queryKey: ['courses', courseId],
-    queryFn: () => getCourse(courseId),
+    queryFn: () => getCourse(courseId as string),
+    enabled: courseId !== undefined,
+  });
+}
+
+/** The subjects of the student's faculty — what the pair form offers (PLAN.md, M26). */
+export function useFacultyCoursesQuery(facultyId: string | undefined) {
+  return useQuery({
+    queryKey: ['courses', 'faculty', facultyId],
+    queryFn: () => fetchAllPages((page) => getCoursesByFaculty(facultyId as string, page)),
+    enabled: facultyId !== undefined,
+  });
+}
+
+/** `POST /students/me/course` — every course list is refetched, the new subject belongs in them. */
+export function useCreateOwnCourseMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (title: string) => createOwnCourse(title),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['courses'] }),
   });
 }
 

@@ -98,6 +98,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/students/me/week-schedule-cycle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Получить цикл расписания своего семестра, создав его при отсутствии
+         * @description Цикл расписания семестра, в котором учится группа студента. Если цикла ещё нет, он создаётся в статусе DRAFT — администратор для этого не нужен. Существующий цикл возвращается как есть, в том числе AGREED. Повторные и одновременные вызовы дают один цикл.
+         */
+        put: operations["getOrCreateMyWeekScheduleCycle"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/students/me/university-request": {
         parameters: {
             query?: never;
@@ -200,13 +220,13 @@ export interface paths {
         get: operations["getPairById"];
         /**
          * Обновить пару
-         * @description ADMIN — без ограничений. STUDENT — только для своей группы и только пока цикл расписания в статусе DRAFT (проверяется и для текущего, и для нового цикла/группы).
+         * @description ADMIN — без ограничений. STUDENT — только для своей группы и только пока цикл расписания в статусе DRAFT (проверяется и для текущего, и для нового цикла/группы). Если из пары уже генерировались лекции, они пересоздаются под новое состояние пары; лекции с отмеченной посещаемостью не меняются.
          */
         put: operations["updatePair"];
         post?: never;
         /**
          * Удалить пару
-         * @description ADMIN — без ограничений. STUDENT — только для своей группы и только пока цикл расписания в статусе DRAFT.
+         * @description ADMIN — без ограничений. STUDENT — только для своей группы и только пока цикл расписания в статусе DRAFT. Вместе с парой удаляются сгенерированные из неё лекции, кроме тех, по которым уже отмечена посещаемость.
          */
         delete: operations["deletePair"];
         options?: never;
@@ -496,6 +516,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/students/me/course": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Создать свой предмет
+         * @description Для случая, когда нужного предмета нет в GET /courses?facultyId=. Предмет привязывается к факультету из профиля студента и сразу виден в списке предметов этого факультета. Профиль студента не меняется.
+         */
+        post: operations["createMyCourse"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/semesters": {
         parameters: {
             query?: never;
@@ -584,7 +624,7 @@ export interface paths {
         put?: never;
         /**
          * Сгенерировать лекции на весь семестр из пар цикла расписания
-         * @description Для каждой подходящей Pair цикла перебираются все подходящие по дню недели и чётности недели даты в границах [Semester.startDate, Semester.endDate]; уже сгенерированные пара+дата пропускаются без ошибки — операцию безопасно вызывать повторно. ADMIN/TEACHER — по всем Pair цикла, как раньше; STUDENT — только по Pair своей группы, остальные Pair цикла пропускаются молча.
+         * @description Для каждой подходящей Pair цикла перебираются все подходящие по дню недели и чётности недели даты в границах [Semester.startDate, Semester.endDate]; уже сгенерированные пара+дата пропускаются без ошибки — операцию безопасно вызывать повторно. После изменения или удаления Pair вызывать её не нужно: лекции пары сервер приводит в соответствие сам. ADMIN/TEACHER — по всем Pair цикла, как раньше; STUDENT — только по Pair своей группы, остальные Pair цикла пропускаются молча.
          */
         post: operations["generateSemesterLectures"];
         delete?: never;
@@ -692,10 +732,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Получить курсы с пагинацией */
+        /**
+         * Получить курсы с пагинацией
+         * @description С параметром facultyId — только предметы этого факультета, отсортированные по названию: привязанные к факультету напрямую (в том числе созданные студентами) и привязанные через его кафедры. Без параметра — все курсы.
+         */
         get: operations["getCourses"];
         put?: never;
-        /** Создать курс */
+        /**
+         * Создать курс
+         * @description Если указан facultyId, название должно быть свободно среди предметов этого факультета. Студент создаёт предмет через POST /students/me/course.
+         */
         post: operations["createCourse"];
         delete?: never;
         options?: never;
@@ -1112,6 +1158,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bell-schedule-entries/university/{universityId}/effective": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Получить звонки, действующие для университета
+         * @description По одной записи на номер пары, отсортированы по номеру: собственная запись университета, а если её на этот номер нет — запись по умолчанию (universityId = null). По этому же правилу сервер подставляет время пары, созданной без startTime/endTime.
+         */
+        get: operations["getEffectiveEntries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/attendance/student/{studentId}": {
         parameters: {
             query?: never;
@@ -1494,7 +1560,11 @@ export interface components {
             /** Format: uuid */
             departmentId?: string;
             /** Format: uuid */
+            facultyId?: string;
+            /** Format: uuid */
             teacherId?: string;
+            /** Format: uuid */
+            createdByStudentId?: string;
         };
         BellScheduleEntryDto: {
             /** Format: uuid */
@@ -1540,6 +1610,9 @@ export interface components {
             /** Format: uuid */
             universityId?: string;
         };
+        CreateStudentCourseRequest: {
+            title: string;
+        };
         GenerateLectureRequest: {
             /** Format: uuid */
             pairId: string;
@@ -1582,15 +1655,15 @@ export interface components {
             empty?: boolean;
         };
         PageableObject: {
+            paged?: boolean;
+            unpaged?: boolean;
             /** Format: int64 */
             offset?: number;
             sort?: components["schemas"]["SortObject"][];
             /** Format: int32 */
-            pageNumber?: number;
-            /** Format: int32 */
             pageSize?: number;
-            paged?: boolean;
-            unpaged?: boolean;
+            /** Format: int32 */
+            pageNumber?: number;
         };
         SortObject: {
             direction?: string;
@@ -1660,23 +1733,76 @@ export interface components {
              * @deprecated
              */
             readDate?: string;
-            inline?: boolean;
             attachment?: boolean;
             formData?: boolean;
+            inline?: boolean;
         };
         ErrorResponse: {
+            detailMessageArguments?: Record<string, never>[];
+            titleMessageCode?: string;
+            detailMessageCode?: string;
+            typeMessageCode?: string;
             headers?: {
+                cacheControl?: string;
+                etag?: string;
                 connection?: string[];
+                accept?: components["schemas"]["MediaType"][];
+                acceptPatch?: components["schemas"]["MediaType"][];
+                accessControlAllowOrigin?: string;
+                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
+                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
+                accessControlAllowHeaders?: string[];
+                accessControlExposeHeaders?: string[];
+                accessControlAllowCredentials?: boolean;
+                /** Format: int64 */
+                accessControlMaxAge?: number;
+                accessControlRequestHeaders?: string[];
+                acceptLanguageAsLocales?: {
+                    language?: string;
+                    displayName?: string;
+                    country?: string;
+                    variant?: string;
+                    script?: string;
+                    unicodeLocaleAttributes?: string[];
+                    unicodeLocaleKeys?: string[];
+                    displayLanguage?: string;
+                    displayScript?: string;
+                    displayCountry?: string;
+                    displayVariant?: string;
+                    extensionKeys?: string[];
+                    iso3Language?: string;
+                    iso3Country?: string;
+                }[];
+                contentDisposition?: components["schemas"]["ContentDisposition"];
+                /** Format: int64 */
+                ifUnmodifiedSince?: number;
+                basicAuth?: string;
+                acceptLanguage?: {
+                    range?: string;
+                    /** Format: double */
+                    weight?: number;
+                }[];
+                allow?: components["schemas"]["HttpMethod"][];
+                /** Format: int64 */
+                expires?: number;
+                ifMatch?: string[];
+                bearerAuth?: string;
+                acceptCharset?: string[];
+                ifNoneMatch?: string[];
+                upgrade?: string;
+                pragma?: string;
+                vary?: string[];
+                range?: components["schemas"]["HttpRange"][];
+                origin?: string;
+                contentType?: components["schemas"]["MediaType"];
                 /** Format: int64 */
                 ifModifiedSince?: number;
-                contentType?: components["schemas"]["MediaType"];
                 /** Format: int64 */
                 contentLength?: number;
                 empty?: boolean;
                 /** Format: uri */
                 location?: string;
                 host?: {
-                    hostString?: string;
                     address?: {
                         hostAddress?: string;
                         /** Format: byte */
@@ -1698,6 +1824,7 @@ export interface components {
                     port?: number;
                     unresolved?: boolean;
                     hostName?: string;
+                    hostString?: string;
                 };
                 all?: {
                     [key: string]: string;
@@ -1706,9 +1833,6 @@ export interface components {
                 lastModified?: number;
                 /** Format: int64 */
                 date?: number;
-                range?: components["schemas"]["HttpRange"][];
-                contentDisposition?: components["schemas"]["ContentDisposition"];
-                acceptCharset?: string[];
                 contentLanguage?: {
                     language?: string;
                     displayName?: string;
@@ -1725,72 +1849,21 @@ export interface components {
                     iso3Language?: string;
                     iso3Country?: string;
                 };
-                allow?: components["schemas"]["HttpMethod"][];
-                cacheControl?: string;
-                etag?: string;
-                accept?: components["schemas"]["MediaType"][];
-                accessControlRequestHeaders?: string[];
-                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
-                /** Format: int64 */
-                accessControlMaxAge?: number;
-                accessControlAllowCredentials?: boolean;
-                accessControlAllowOrigin?: string;
-                accessControlExposeHeaders?: string[];
-                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
-                accessControlAllowHeaders?: string[];
-                /** Format: int64 */
-                ifUnmodifiedSince?: number;
-                acceptLanguageAsLocales?: {
-                    language?: string;
-                    displayName?: string;
-                    country?: string;
-                    variant?: string;
-                    script?: string;
-                    unicodeLocaleAttributes?: string[];
-                    unicodeLocaleKeys?: string[];
-                    displayLanguage?: string;
-                    displayScript?: string;
-                    displayCountry?: string;
-                    displayVariant?: string;
-                    extensionKeys?: string[];
-                    iso3Language?: string;
-                    iso3Country?: string;
-                }[];
-                acceptPatch?: components["schemas"]["MediaType"][];
-                acceptLanguage?: {
-                    range?: string;
-                    /** Format: double */
-                    weight?: number;
-                }[];
-                basicAuth?: string;
-                ifNoneMatch?: string[];
-                upgrade?: string;
-                /** Format: int64 */
-                expires?: number;
-                bearerAuth?: string;
-                origin?: string;
-                vary?: string[];
-                pragma?: string;
-                ifMatch?: string[];
             } & {
                 [key: string]: string[];
             };
             body?: components["schemas"]["ProblemDetail"];
             statusCode?: components["schemas"]["HttpStatusCode"];
-            titleMessageCode?: string;
-            detailMessageCode?: string;
-            detailMessageArguments?: Record<string, never>[];
-            typeMessageCode?: string;
         };
         HttpMethod: Record<string, never>;
         HttpRange: Record<string, never>;
         HttpStatusCode: {
-            error?: boolean;
             is4xxClientError?: boolean;
             is5xxServerError?: boolean;
-            is2xxSuccessful?: boolean;
             is1xxInformational?: boolean;
+            is2xxSuccessful?: boolean;
             is3xxRedirection?: boolean;
+            error?: boolean;
         };
         MediaType: {
             type?: string;
@@ -1802,8 +1875,8 @@ export interface components {
             qualityValue?: number;
             charset?: string;
             concrete?: boolean;
-            wildcardType?: boolean;
             wildcardSubtype?: boolean;
+            wildcardType?: boolean;
             subtypeSuffix?: string;
         };
         ProblemDetail: {
@@ -2393,6 +2466,35 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    getOrCreateMyWeekScheduleCycle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Цикл расписания семестра группы студента */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["WeekScheduleCycleDto"];
+                };
+            };
+            /** @description У студента не выбрана группа */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["WeekScheduleCycleDto"];
+                };
             };
         };
     };
@@ -3151,8 +3253,26 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description Курс обновлён */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CourseDto"];
+                };
+            };
+            /** @description Другой предмет с таким названием на этом факультете уже есть; в теле — field: "title" и id существующего предмета */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CourseDto"];
+                };
+            };
+            /** @description Кафедра не относится к указанному факультету */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3614,6 +3734,48 @@ export interface operations {
             };
         };
     };
+    createMyCourse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStudentCourseRequest"];
+            };
+        };
+        responses: {
+            /** @description Предмет создан */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CourseDto"];
+                };
+            };
+            /** @description Предмет с таким названием на этом факультете уже есть; в теле — field: "title" и id существующего предмета */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CourseDto"];
+                };
+            };
+            /** @description В профиле не выбран факультет либо студент уже создал максимум предметов */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CourseDto"];
+                };
+            };
+        };
+    };
     getSemesters: {
         parameters: {
             query?: {
@@ -3948,6 +4110,7 @@ export interface operations {
     getCourses: {
         parameters: {
             query?: {
+                facultyId?: string;
                 page?: number;
                 size?: number;
             };
@@ -3981,8 +4144,26 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Курс создан */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CourseDto"];
+                };
+            };
+            /** @description Предмет с таким названием на этом факультете уже есть; в теле — field: "title" и id существующего предмета */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CourseDto"];
+                };
+            };
+            /** @description Кафедра не относится к указанному факультету */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4625,6 +4806,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageBellScheduleEntryDto"];
+                };
+            };
+        };
+    };
+    getEffectiveEntries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                universityId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BellScheduleEntryDto"][];
                 };
             };
         };
