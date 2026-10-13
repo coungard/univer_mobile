@@ -12,7 +12,7 @@ import { firstUnfilledSetupStep, useSaveSetupStep } from './studentSetup';
 const SEARCH_THRESHOLD = 8;
 
 /**
- * Step 6 of student registration (PLAN.md): pick a group of the saved faculty on the saved year.
+ * Step 6 of student registration (PLAN_FINISHED_01.MD): pick a group of the saved faculty on the saved year.
  * The student joins it right away, no administrator involved. A group that isn't there — the
  * list is empty or just doesn't have it — is created by the student on `SetupNewGroup`.
  */

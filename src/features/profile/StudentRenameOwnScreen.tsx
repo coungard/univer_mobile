@@ -15,7 +15,7 @@ const GROUP_NAME_MAX_LENGTH = 64;
 const GROUP_FULL_NAME_MAX_LENGTH = 255;
 
 /**
- * Fixing a typo in the faculty or the group the student created themselves (PLAN.md, M19) —
+ * Fixing a typo in the faculty or the group the student created themselves (PLAN_FINISHED_01.MD, M19) —
  * `PUT /students/me/faculty` / `PUT /students/me/group`. The profile offers this only for entities
  * with the student's `createdByStudentId`; whether anyone else has picked the entity since is known
  * only to the server, which then answers `422` with the reason.

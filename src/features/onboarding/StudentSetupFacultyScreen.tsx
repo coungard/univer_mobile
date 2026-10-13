@@ -12,7 +12,7 @@ import { firstUnfilledSetupStep, useSaveSetupStep } from './studentSetup';
 const SEARCH_THRESHOLD = 8;
 
 /**
- * Step 4 of student registration (PLAN.md): pick a faculty of the university saved on step 3.
+ * Step 4 of student registration (PLAN_FINISHED_01.MD): pick a faculty of the university saved on step 3.
  * Many universities have no faculties in the catalog yet, so the empty list is an ordinary outcome
  * here. A faculty that isn't there — the list is empty or just doesn't have it — is created by the
  * student on `SetupNewFaculty`.

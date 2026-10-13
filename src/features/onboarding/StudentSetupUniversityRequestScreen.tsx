@@ -23,7 +23,7 @@ interface Region {
 }
 
 /**
- * The way out of step 3 when the university isn't in the catalog (PLAN.md, сценарий 1): students
+ * The way out of step 3 when the university isn't in the catalog (PLAN_FINISHED_01.MD, сценарий 1): students
  * don't create universities, they leave a request for an administrator to add one. A request that
  * is still pending is edited rather than duplicated, so the form opens with its data.
  */

@@ -26,7 +26,7 @@ const setupOptions = { title: 'Настройка профиля' };
  * pushes a details screen over the tab bar — «переход из ячейки расписания в детали лекции и в
  * карточку курса за 1 тап» — instead of replacing the tabs entirely. Also hosts «Расписание
  * группы»/заполнение занятий (`UI_UX.md`), reachable from `ScheduleScreen`'s empty state, and the
- * profile setup wizard (`Setup*`, PLAN.md), opened from `StudentProfileScreen`.
+ * profile setup wizard (`Setup*`, PLAN_FINISHED_01.MD), opened from `StudentProfileScreen`.
  */
 export function StudentStack() {
   return (

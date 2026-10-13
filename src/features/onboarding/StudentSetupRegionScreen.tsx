@@ -10,7 +10,7 @@ import { useRegionsQuery } from './hooks';
 import { OptionRow, StepHeader, StepSearchInput, stepStyles } from './RegistrationStep';
 
 /**
- * Step 2 of student registration (PLAN.md): pick a region to narrow the university list. The
+ * Step 2 of student registration (PLAN_FINISHED_01.MD): pick a region to narrow the university list. The
  * region is only a filter, so "not in the list" — and a failed load — still lead on to the
  * university step, just unfiltered, instead of dead-ending the wizard here. Nothing is saved on
  * this step: the region isn't part of the student's profile.

@@ -13,7 +13,7 @@ import { firstUnfilledSetupStep } from './studentSetup';
 const NAME_MAX_LENGTH = 255;
 
 /**
- * Step Y of student registration (PLAN.md, раздел 9.1): the student's faculty isn't in the list of
+ * Step Y of student registration (PLAN_FINISHED_01.MD, раздел 9.1): the student's faculty isn't in the list of
  * step 4, so they create it themselves and it is saved in their profile right away — no
  * administrator involved. The university comes from the saved profile and can only be changed by
  * going back.

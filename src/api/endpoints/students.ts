@@ -16,7 +16,7 @@ import {
  * `POST /students/register` — the only public (no JWT) student-creation endpoint. Creates the
  * Keycloak user + assigns the `STUDENT` role + creates the local `Student` row in one call.
  * `universityId` is optional: the account is created first, and the student then fills in
- * university → faculty → year → group through `updateOwnStudent` (PLAN.md).
+ * university → faculty → year → group through `updateOwnStudent` (PLAN_FINISHED_01.MD).
  */
 export async function registerStudent(request: RegisterStudentRequest): Promise<StudentDto> {
   const { data } = await apiClient.post<StudentDto>('/students/register', request);

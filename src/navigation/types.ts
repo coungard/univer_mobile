@@ -5,7 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 export type AuthStackParamList = {
   Login: undefined;
   RegisterRoleChoice: undefined;
-  /** Step 1 of student registration (PLAN.md) — creates the account; steps 2–6 are `Setup*` below. */
+  /** Step 1 of student registration (PLAN_FINISHED_01.MD) — creates the account; steps 2–6 are `Setup*` below. */
   RegisterStudent: undefined;
   RegisterTeacher: undefined;
 };
@@ -34,7 +34,7 @@ export type StudentStackParamList = {
   LectureDetails: { lectureId: string };
   CourseDetails: { courseId: string };
   /**
-   * Steps 2–6 of student registration (PLAN.md), done under the new account's token: each choice
+   * Steps 2–6 of student registration (PLAN_FINISHED_01.MD), done under the new account's token: each choice
    * is saved with `PATCH /students/me`, so the wizard can be left and resumed at any step.
    */
   SetupRegion: undefined;
@@ -44,17 +44,17 @@ export type StudentStackParamList = {
    * for a missing university.
    */
   SetupUniversity: { regionId?: string; regionName?: string; allRegions?: boolean } | undefined;
-  /** Request to add a university missing from the catalog (PLAN.md, сценарий 1). */
+  /** Request to add a university missing from the catalog (PLAN_FINISHED_01.MD, сценарий 1). */
   SetupUniversityRequest: { name?: string; regionId?: string; regionName?: string } | undefined;
   SetupFaculty: undefined;
   SetupYear: undefined;
   SetupGroup: undefined;
-  /** Step Y (PLAN.md, 9.1): create a faculty missing from the list. `name` prefills the form. */
+  /** Step Y (PLAN_FINISHED_01.MD, 9.1): create a faculty missing from the list. `name` prefills the form. */
   SetupNewFaculty: { name?: string } | undefined;
-  /** Step X (PLAN.md, 9.1): create a group missing from the list. `name` prefills the form. */
+  /** Step X (PLAN_FINISHED_01.MD, 9.1): create a group missing from the list. `name` prefills the form. */
   SetupNewGroup: { name?: string } | undefined;
   /** Final screen of the wizard — says how far the profile got and what is still missing. */
-  /** Fixing the name of the faculty or the group the student created themselves (PLAN.md, M19). */
+  /** Fixing the name of the faculty or the group the student created themselves (PLAN_FINISHED_01.MD, M19). */
   RenameOwn: { kind: 'faculty' | 'group' };
   /** `requestedUniversity` — the name from a request just sent: the screen confirms it. */
   SetupDone: { requestedUniversity?: string } | undefined;

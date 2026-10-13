@@ -42,7 +42,7 @@ interface ChoiceStepProps {
 }
 
 /**
- * One "pick from a list" step of the student setup wizard (PLAN.md): header with progress, optional
+ * One "pick from a list" step of the student setup wizard (PLAN_FINISHED_01.MD): header with progress, optional
  * search, the list in its loading/error/empty/loaded state, and a footer with «Далее» plus the
  * skip link that keeps a missing entity from being a dead end.
  */

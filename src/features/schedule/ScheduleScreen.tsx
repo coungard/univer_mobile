@@ -77,7 +77,7 @@ export function ScheduleScreen({ navigation }: Props) {
     const hasGroup = student.data?.groupId != null;
 
     // Без группы вообще нет смысла смотреть на цикл/пары — этот кейс не меняется «студенческой
-    // генерацией расписания» из UI_UX.md. Группу студент выбирает сам в мастере настройки (PLAN.md).
+    // генерацией расписания» из UI_UX.md. Группу студент выбирает сам в мастере настройки (PLAN_FINISHED_01.MD).
     if (!hasGroup) {
       const setupStep = student.data ? firstUnfilledSetupStep(student.data) : null;
       return (

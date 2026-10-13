@@ -9,7 +9,7 @@ import { useUniversitiesQuery } from './hooks';
 import { useSaveSetupStep } from './studentSetup';
 
 /**
- * Step 3 of student registration (PLAN.md): pick a university — within the region chosen on step
+ * Step 3 of student registration (PLAN_FINISHED_01.MD): pick a university — within the region chosen on step
  * 2, or country-wide when there is none. A university missing from the region's list leads to the
  * country-wide search first (it may be filed under another region), and only then to the request
  * for an administrator to add it.

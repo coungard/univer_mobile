@@ -5,7 +5,7 @@ import { StudentDto, UpdateStudentProfileRequest } from '../../api/types';
 import { StudentStackParamList } from '../../navigation/types';
 import { useUpdateOwnStudentMutation } from './hooks';
 
-/** Years offered on the year step (PLAN.md: «курс 1–6» — the range the server accepts). */
+/** Years offered on the year step (PLAN_FINISHED_01.MD: «курс 1–6» — the range the server accepts). */
 export const SETUP_YEARS = [1, 2, 3, 4, 5, 6] as const;
 
 export type SetupStepRoute = Extract<
@@ -30,7 +30,7 @@ const SETUP_CHAIN = ['SetupRegion', 'SetupUniversity', 'SetupFaculty', 'SetupYea
 
 /**
  * Opens the wizard on `step` with every step above it already in the back stack, so «Назад» leads
- * one step up — not out to the profile — when the wizard starts mid-way (PLAN.md, M17). The
+ * one step up — not out to the profile — when the wizard starts mid-way (PLAN_FINISHED_01.MD, M17). The
  * university step comes without a region filter and with the saved university selected.
  */
 export function openSetupAt(step: SetupStepRoute, navigate: (route: (typeof SETUP_CHAIN)[number]) => void) {
@@ -53,7 +53,7 @@ interface SetupPromptState {
 
 /**
  * The wizard opens by itself once per app session for a student with an unfinished profile
- * (PLAN.md, раздел 3). Kept in memory on purpose: skipping the wizard should not bring it back
+ * (PLAN_FINISHED_01.MD, раздел 3). Kept in memory on purpose: skipping the wizard should not bring it back
  * until the next launch, and after that the profile card is the way in.
  */
 export const useSetupPromptStore = create<SetupPromptState>((set) => ({

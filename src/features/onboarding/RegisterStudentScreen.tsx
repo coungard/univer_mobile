@@ -59,7 +59,7 @@ const isFormField = (field: string | undefined): field is keyof StudentRegistrat
   field !== undefined && FORM_FIELDS.includes(field);
 
 /**
- * Step 1 of student registration (PLAN.md): personal data. The account is created right here,
+ * Step 1 of student registration (PLAN_FINISHED_01.MD): personal data. The account is created right here,
  * without a university, and the app signs in with the credentials just typed — steps 2–6 then run
  * under that session (`StudentSetup*Screen`), so a taken login or email shows up on this screen
  * and a missing university, faculty or group never blocks the registration itself.

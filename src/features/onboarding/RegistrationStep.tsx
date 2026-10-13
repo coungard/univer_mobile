@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { HelperText, TextInput } from 'react-native-paper';
 import { libraryColors, libraryFonts, librarySpineColors } from '../../theme/library';
 
-/** Steps of student registration, in order (PLAN.md). The progress indicator derives from this. */
+/** Steps of student registration, in order (PLAN_FINISHED_01.MD). The progress indicator derives from this. */
 export const STUDENT_REGISTRATION_STEPS = [
   'Личные данные',
   'Регион',

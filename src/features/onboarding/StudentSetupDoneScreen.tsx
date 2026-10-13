@@ -12,7 +12,7 @@ import { stepStyles } from './RegistrationStep';
 const RESUME_HINT = 'Продолжить можно в любой момент — в профиле появилась карточка «Завершить настройку».';
 
 /**
- * Final-screen wording by how far the profile got (PLAN.md, раздел 4.4). `requestedUniversity` is
+ * Final-screen wording by how far the profile got (PLAN_FINISHED_01.MD, раздел 4.4). `requestedUniversity` is
  * the name from a request for a missing university sent just now, `pendingRequest` — the name from
  * one sent earlier and still waiting for an administrator.
  */
@@ -58,7 +58,7 @@ function describeOutcome(
 }
 
 /**
- * Final screen of the student setup wizard (PLAN.md): reached both by finishing step 6 and by
+ * Final screen of the student setup wizard (PLAN_FINISHED_01.MD): reached both by finishing step 6 and by
  * leaving any step early, so it reads the saved profile and says what is done and what is missing.
  */
 export function StudentSetupDoneScreen({ navigation, route }: StudentStackScreenProps<'SetupDone'>) {

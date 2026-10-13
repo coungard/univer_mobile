@@ -5,7 +5,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const today = () => new Date().toISOString().slice(0, 10);
 
 /**
- * Step 1 of student registration (PLAN.md) — the personal-data part of `RegisterStudentRequest`
+ * Step 1 of student registration (PLAN_FINISHED_01.MD) — the personal-data part of `RegisterStudentRequest`
  * in API.md. `universityId` isn't sent at all: it is saved on the later university step.
  */
 export const studentRegistrationSchema = z.object({

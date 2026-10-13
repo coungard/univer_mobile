@@ -14,7 +14,7 @@ const NAME_MAX_LENGTH = 64;
 const FULL_NAME_MAX_LENGTH = 255;
 
 /**
- * Step X of student registration (PLAN.md, раздел 9.1): the student's group isn't in the list of
+ * Step X of student registration (PLAN_FINISHED_01.MD, раздел 9.1): the student's group isn't in the list of
  * step 6, so they create it themselves and join it right away — no administrator involved. The
  * faculty and the year come from the saved profile and can only be changed by going back.
  */

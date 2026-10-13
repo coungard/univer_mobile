@@ -6,7 +6,7 @@ import { useGroupCountsByYear } from './hooks';
 import { firstUnfilledSetupStep, SETUP_YEARS, useSaveSetupStep } from './studentSetup';
 
 /**
- * Step 5 of student registration (PLAN.md): pick a year. Always offered from the fixed 1–6 range,
+ * Step 5 of student registration (PLAN_FINISHED_01.MD): pick a year. Always offered from the fixed 1–6 range,
  * whatever study years the faculty has in the catalog — the year is something the student knows,
  * and it is saved even when no group exists for it yet. Each year carries a hint with the number
  * of groups; a year with none leads straight to the form of a new group, past the empty step 6.

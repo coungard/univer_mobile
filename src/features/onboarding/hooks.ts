@@ -46,7 +46,7 @@ export function useUniversitiesQuery(search: string, regionId?: string) {
       label: u.name ?? 'Без названия',
       value: u.id,
       // A university without faculties isn't a dead end (the student creates one on the next
-      // step), but it's worth knowing before picking it — PLAN.md, сценарий 2.
+      // step), but it's worth knowing before picking it — PLAN_FINISHED_01.MD, сценарий 2.
       sublabel:
         [u.address?.city, u.facultyCount === 0 ? 'Факультетов пока нет' : undefined].filter(Boolean).join(' · ') ||
         undefined,
