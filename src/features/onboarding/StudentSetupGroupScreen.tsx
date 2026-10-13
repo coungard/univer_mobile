@@ -3,10 +3,18 @@ import { Button } from 'react-native-paper';
 import { EmptyState } from '../../components/EmptyState';
 import { StudentStackScreenProps } from '../../navigation/types';
 import { libraryColors } from '../../theme/library';
+import { Hint } from '../hints/Hint';
+import { useNewcomer } from '../hints/useNewcomer';
 import { useFacultyQuery, useOwnStudentQuery } from '../profile/hooks';
 import { ChoiceStep } from './ChoiceStep';
 import { useGroupsQuery } from './hooks';
 import { firstUnfilledSetupStep, useSaveSetupStep } from './studentSetup';
+
+const HINT = {
+  id: 'setup-group',
+  stage: 1,
+  text: 'Нет вашей группы? Создайте её — одногруппники потом найдут её в списке.',
+};
 
 /** Below this many groups a search field is just clutter. */
 const SEARCH_THRESHOLD = 8;
@@ -29,6 +37,7 @@ export function StudentSetupGroupScreen({ navigation }: StudentStackScreenProps<
     setPickedId(null);
     groups.refetch();
   });
+  const isNewcomer = useNewcomer().kind === 'newcomer';
 
   // This step needs a faculty and a year — without them the wizard resumes further up the chain.
   useEffect(() => {
@@ -76,13 +85,15 @@ export function StudentSetupGroupScreen({ navigation }: StudentStackScreenProps<
               title={`На ${yearNumber} курсе пока нет групп`}
               description="Добавьте свою группу — её сразу увидят однокурсники."
             />
-            <Button
-              mode="outlined"
-              onPress={() => navigation.navigate('SetupNewGroup')}
-              textColor={libraryColors.terracottaButton}
-            >
-              Создать группу
-            </Button>
+            <Hint {...HINT} active={isNewcomer}>
+              <Button
+                mode="outlined"
+                onPress={() => navigation.navigate('SetupNewGroup')}
+                textColor={libraryColors.terracottaButton}
+              >
+                Создать группу
+              </Button>
+            </Hint>
           </>
         ) : (
           <EmptyState title="Ничего не найдено" description="Проверьте название." />
@@ -94,7 +105,18 @@ export function StudentSetupGroupScreen({ navigation }: StudentStackScreenProps<
       submitting={saving}
       submitError={error}
       onDismissSubmitError={clearError}
-      skipLabel={all.length === 0 ? 'Завершить без группы' : 'Моей группы нет в списке'}
+      skipLabel={all.length === 0 ? 'Завершить без группы' : 'Создать свою группу'}
+      // With an empty list the hint sits on the «Создать группу» button above instead.
+      hint={
+        all.length === 0
+          ? undefined
+          : {
+              ...HINT,
+              text: 'Нет вашей группы? Нажмите «Создать свою группу» внизу — одногруппники потом найдут её в списке.',
+              active: isNewcomer,
+              target: 'skip',
+            }
+      }
       onSkip={() =>
         all.length === 0
           ? navigation.navigate('SetupDone')

@@ -5,6 +5,8 @@ import { ApiError } from '../../api/errors';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { StudentStackScreenProps } from '../../navigation/types';
 import { libraryColors, libraryFonts } from '../../theme/library';
+import { Hint } from '../hints/Hint';
+import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnStudentQuery, useUniversityQuery } from '../profile/hooks';
 import { useCreateOwnFacultyMutation, useUpdateOwnStudentMutation } from './hooks';
 import { StepHeader, StepTextField, stepStyles } from './RegistrationStep';
@@ -30,6 +32,7 @@ export function StudentSetupNewFacultyScreen({ navigation, route }: StudentStack
   const create = useCreateOwnFacultyMutation();
   const update = useUpdateOwnStudentMutation();
   const busy = create.isPending || update.isPending;
+  const newcomer = useNewcomer();
 
   // The form needs a university — without one the wizard resumes further up the chain.
   useEffect(() => {
@@ -98,15 +101,23 @@ export function StudentSetupNewFacultyScreen({ navigation, route }: StudentStack
           </View>
         ) : null}
 
-        <StepTextField
-          label="Название факультета"
-          value={name}
-          onChangeText={onChangeName}
-          placeholder="Факультет информатики и управления"
-          maxLength={NAME_MAX_LENGTH}
-          autoCapitalize="sentences"
-          errorText={existingId ? 'Такой факультет уже есть' : undefined}
-        />
+        {/* Hidden once a duplicate is found: the bubble would cover «Выбрать его» right below. */}
+        <Hint
+          id="setup-new-faculty"
+          stage={0}
+          text="Напишите название так, как его называют в вашем вузе. Потом его можно исправить в профиле."
+          active={newcomer.kind === 'newcomer' && !existingId}
+        >
+          <StepTextField
+            label="Название факультета"
+            value={name}
+            onChangeText={onChangeName}
+            placeholder="Факультет информатики и управления"
+            maxLength={NAME_MAX_LENGTH}
+            autoCapitalize="sentences"
+            errorText={existingId ? 'Такой факультет уже есть' : undefined}
+          />
+        </Hint>
         {existingId ? (
           <Button
             mode="outlined"

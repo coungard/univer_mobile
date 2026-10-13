@@ -3,6 +3,7 @@ import { Button } from 'react-native-paper';
 import { EmptyState } from '../../components/EmptyState';
 import { StudentStackScreenProps } from '../../navigation/types';
 import { libraryColors } from '../../theme/library';
+import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnStudentQuery, useUniversityQuery } from '../profile/hooks';
 import { ChoiceItem, ChoiceStep } from './ChoiceStep';
 import { useUniversitiesQuery } from './hooks';
@@ -49,6 +50,7 @@ export function StudentSetupUniversityScreen({ navigation, route }: StudentStack
   };
 
   const hasSearch = search.trim().length > 0;
+  const newcomer = useNewcomer();
 
   return (
     <ChoiceStep
@@ -97,6 +99,15 @@ export function StudentSetupUniversityScreen({ navigation, route }: StudentStack
       onDismissSubmitError={clearError}
       skipLabel={regionId ? 'Нет в списке — искать по всем регионам' : 'Моего университета нет в списке'}
       onSkip={regionId ? searchAllRegions : requestUniversity}
+      hint={{
+        id: 'setup-university',
+        stage: 0,
+        text: regionId
+          ? 'Найдите свой университет. Если его нет в списке — поищите по всем регионам, ссылка внизу.'
+          : 'Найдите свой университет. Если его нет в списке — оставьте заявку, ссылка внизу.',
+        active: newcomer.kind === 'newcomer',
+        target: 'skip',
+      }}
     />
   );
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StudentStackScreenProps } from '../../navigation/types';
+import { useNewcomer } from '../hints/useNewcomer';
 import { useFacultyQuery, useOwnStudentQuery } from '../profile/hooks';
 import { ChoiceStep } from './ChoiceStep';
 import { useGroupCountsByYear } from './hooks';
@@ -18,6 +19,7 @@ export function StudentSetupYearScreen({ navigation }: StudentStackScreenProps<'
   const groupCounts = useGroupCountsByYear(facultyId, SETUP_YEARS);
 
   const [pickedYear, setPickedYear] = useState<number | null>(null);
+  const newcomer = useNewcomer();
   const { save, saving, error, clearError } = useSaveSetupStep(() => setPickedYear(null));
 
   // This step needs a faculty — without one the wizard resumes further up the chain.
@@ -65,6 +67,13 @@ export function StudentSetupYearScreen({ navigation }: StudentStackScreenProps<'
       onDismissSubmitError={clearError}
       skipLabel="Выберу позже"
       onSkip={() => navigation.navigate('SetupDone')}
+      hint={{
+        id: 'setup-year',
+        stage: 1,
+        text: 'Выберите свой курс. Если групп на нём пока нет — создадите свою на следующем шаге.',
+        active: newcomer.kind === 'newcomer',
+        target: 'submit',
+      }}
     />
   );
 }

@@ -5,6 +5,8 @@ import { Button, Card, Text } from 'react-native-paper';
 import { useAuth } from '../../auth/useAuth';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentTabScreenProps } from '../../navigation/types';
+import { Hint } from '../hints/Hint';
+import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnUniversityRequestQuery } from '../onboarding/hooks';
 import {
   firstUnfilledSetupStep,
@@ -44,6 +46,7 @@ export function StudentProfileScreen() {
       : null;
 
   const setupStep = student.data ? firstUnfilledSetupStep(student.data) : null;
+  const newcomer = useNewcomer();
   const promptedFor = useSetupPromptStore((state) => state.promptedFor);
   const markPrompted = useSetupPromptStore((state) => state.markPrompted);
 
@@ -172,9 +175,17 @@ export function StudentProfileScreen() {
             )}
           </Card.Content>
           <Card.Actions>
-            <Button mode="contained" onPress={() => openSetupAt(setupStep, (route) => navigation.navigate(route))}>
-              Продолжить
-            </Button>
+            {/* Same id as on the schedule tab: closed in one place, it is closed in both. */}
+            <Hint
+              id="setup-start"
+              stage={newcomer.kind === 'newcomer' ? newcomer.stage : 0}
+              text="До расписания три шага: факультет, группа и первая пара. Начнём?"
+              active={newcomer.kind === 'newcomer'}
+            >
+              <Button mode="contained" onPress={() => openSetupAt(setupStep, (route) => navigation.navigate(route))}>
+                Продолжить
+              </Button>
+            </Hint>
           </Card.Actions>
         </Card>
       ) : null}

@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { libraryColors, libraryFonts } from '../../theme/library';
+import { Hint } from '../hints/Hint';
 import { OptionRow, StepHeader, StepSearchInput, stepStyles } from './RegistrationStep';
 
 export interface ChoiceItem {
@@ -39,6 +40,9 @@ interface ChoiceStepProps {
   /** The way out when the needed entity isn't there or the student doesn't know it yet. */
   skipLabel: string;
   onSkip: () => void;
+
+  /** A newcomer hint (PLAN.md, section 3.1) pointing at «Далее» or at the way-out link. */
+  hint?: { id: string; stage: number; text: string; active: boolean; target: 'submit' | 'skip' };
 }
 
 /**
@@ -66,7 +70,25 @@ export function ChoiceStep({
   onDismissSubmitError,
   skipLabel,
   onSkip,
+  hint,
 }: ChoiceStepProps) {
+  // The way-out link sits under «Далее»: its hint keeps clear of everything above it in the footer.
+  const [skipTop, setSkipTop] = useState(0);
+  const withHint = (target: 'submit' | 'skip', button: React.ReactElement) =>
+    !hint || hint.target !== target ? (
+      button
+    ) : target === 'submit' ? (
+      <Hint id={hint.id} stage={hint.stage} text={hint.text} active={hint.active}>
+        {button}
+      </Hint>
+    ) : (
+      <View style={styles.skipHint} onLayout={(event) => setSkipTop(event.nativeEvent.layout.y)}>
+        <Hint id={hint.id} stage={hint.stage} text={hint.text} active={hint.active} clearance={skipTop}>
+          {button}
+        </Hint>
+      </View>
+    );
+
   return (
     <View style={stepStyles.screen}>
       <ErrorBanner message={submitError} onDismiss={onDismissSubmitError} />
@@ -112,34 +134,43 @@ export function ChoiceStep({
             Выбрано: {selected.title}
           </Text>
         ) : null}
-        <Button
-          mode="contained"
-          onPress={onSubmit}
-          loading={submitting}
-          disabled={!selected || submitting}
-          buttonColor={libraryColors.terracottaButton}
-          textColor={libraryColors.cream}
-          style={stepStyles.primaryButton}
-          contentStyle={stepStyles.primaryButtonContent}
-          labelStyle={stepStyles.primaryButtonLabel}
-        >
-          Далее
-        </Button>
-        <Button
-          mode="text"
-          onPress={onSkip}
-          disabled={submitting}
-          textColor={libraryColors.terracottaButton}
-          labelStyle={stepStyles.footerLinkLabel}
-        >
-          {skipLabel}
-        </Button>
+        {withHint(
+          'submit',
+          <Button
+            mode="contained"
+            onPress={onSubmit}
+            loading={submitting}
+            disabled={!selected || submitting}
+            buttonColor={libraryColors.terracottaButton}
+            textColor={libraryColors.cream}
+            style={stepStyles.primaryButton}
+            contentStyle={stepStyles.primaryButtonContent}
+            labelStyle={stepStyles.primaryButtonLabel}
+          >
+            Далее
+          </Button>,
+        )}
+        {withHint(
+          'skip',
+          <Button
+            mode="text"
+            onPress={onSkip}
+            disabled={submitting}
+            textColor={libraryColors.terracottaButton}
+            labelStyle={stepStyles.footerLinkLabel}
+          >
+            {skipLabel}
+          </Button>,
+        )}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  skipHint: {
+    alignSelf: 'center',
+  },
   selectedLabel: {
     fontFamily: libraryFonts.bodyRegular,
     fontSize: 12.5,

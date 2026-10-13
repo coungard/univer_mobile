@@ -16,6 +16,12 @@ interface HintProps {
   text: string;
   /** Whether this is the hint to show now (PLAN.md, section 3.3 — decided from server data). */
   active?: boolean;
+  /**
+   * Extra distance between the target and the bubble, for a target with something right next to it
+   * that the bubble must not cover (a link under the primary button). The arrow is dropped then —
+   * it would point at that neighbour; the frame and the text name the target instead.
+   */
+  clearance?: number;
   /** Style of the wrapper around the target, e.g. `alignSelf` to keep the target's own layout. */
   style?: StyleProp<ViewStyle>;
   /** The element the hint points at. */
@@ -53,7 +59,7 @@ function sameRect(a: Rect | null, b: Rect): boolean {
  * Android doesn't deliver touches to a child drawn outside its parent's bounds, so its buttons
  * wouldn't work there. It doesn't block the screen: everything around stays tappable.
  */
-export function Hint({ id, stage, text, active = true, style, children }: HintProps) {
+export function Hint({ id, stage, text, active = true, clearance = 0, style, children }: HintProps) {
   const hints = useHints();
   const focused = useIsFocused();
   const shown = active && focused && hints.ready && !hints.disabled && !hints.isDismissed(id);
@@ -104,10 +110,14 @@ export function Hint({ id, stage, text, active = true, style, children }: HintPr
                 accessibilityRole="alert"
                 style={[
                   styles.bubble,
-                  below ? { top: top + target.height + GAP } : { bottom: host.height - top + GAP },
+                  below
+                    ? { top: top + target.height + GAP + clearance }
+                    : { bottom: host.height - top + GAP + clearance },
                 ]}
               >
-                <View style={[styles.arrow, below ? styles.arrowUp : styles.arrowDown, { left: arrowLeft }]} />
+                {clearance === 0 ? (
+                  <View style={[styles.arrow, below ? styles.arrowUp : styles.arrowDown, { left: arrowLeft }]} />
+                ) : null}
                 <View style={styles.headerRow}>
                   <Text style={styles.path}>
                     {HINT_STAGES.map((name, index) => (

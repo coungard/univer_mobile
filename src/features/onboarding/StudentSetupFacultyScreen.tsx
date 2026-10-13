@@ -3,10 +3,14 @@ import { Button } from 'react-native-paper';
 import { EmptyState } from '../../components/EmptyState';
 import { StudentStackScreenProps } from '../../navigation/types';
 import { libraryColors } from '../../theme/library';
+import { Hint } from '../hints/Hint';
+import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnStudentQuery, useUniversityQuery } from '../profile/hooks';
 import { ChoiceStep } from './ChoiceStep';
 import { useFacultiesQuery } from './hooks';
 import { firstUnfilledSetupStep, useSaveSetupStep } from './studentSetup';
+
+const HINT = { id: 'setup-faculty', stage: 0, text: 'Нет вашего факультета? Создайте его — нужно только название.' };
 
 /** Below this many faculties a search field is just clutter. */
 const SEARCH_THRESHOLD = 8;
@@ -15,7 +19,7 @@ const SEARCH_THRESHOLD = 8;
  * Step 4 of student registration (PLAN_FINISHED_01.MD): pick a faculty of the university saved on step 3.
  * Many universities have no faculties in the catalog yet, so the empty list is an ordinary outcome
  * here. A faculty that isn't there — the list is empty or just doesn't have it — is created by the
- * student on `SetupNewFaculty`.
+ * student on `SetupNewFaculty`; a newcomer gets a hint pointing at the way there (PLAN.md, M23).
  */
 export function StudentSetupFacultyScreen({ navigation }: StudentStackScreenProps<'SetupFaculty'>) {
   const student = useOwnStudentQuery();
@@ -29,6 +33,7 @@ export function StudentSetupFacultyScreen({ navigation }: StudentStackScreenProp
     setPickedId(null);
     faculties.refetch();
   });
+  const isNewcomer = useNewcomer().kind === 'newcomer';
 
   // This step needs a university — without one the wizard resumes further up the chain.
   useEffect(() => {
@@ -75,13 +80,15 @@ export function StudentSetupFacultyScreen({ navigation }: StudentStackScreenProp
               title="В этом университете пока нет факультетов"
               description="Добавьте свой факультет — его сразу увидят другие студенты университета."
             />
-            <Button
-              mode="outlined"
-              onPress={() => navigation.navigate('SetupNewFaculty')}
-              textColor={libraryColors.terracottaButton}
-            >
-              Создать факультет
-            </Button>
+            <Hint {...HINT} active={isNewcomer}>
+              <Button
+                mode="outlined"
+                onPress={() => navigation.navigate('SetupNewFaculty')}
+                textColor={libraryColors.terracottaButton}
+              >
+                Создать факультет
+              </Button>
+            </Hint>
           </>
         ) : (
           <EmptyState title="Ничего не найдено" description="Проверьте название." />
@@ -93,7 +100,18 @@ export function StudentSetupFacultyScreen({ navigation }: StudentStackScreenProp
       submitting={saving}
       submitError={error}
       onDismissSubmitError={clearError}
-      skipLabel={all.length === 0 ? 'Завершить без факультета' : 'Моего факультета нет в списке'}
+      skipLabel={all.length === 0 ? 'Завершить без факультета' : 'Создать свой факультет'}
+      // With an empty list the hint sits on the «Создать факультет» button above instead.
+      hint={
+        all.length === 0
+          ? undefined
+          : {
+              ...HINT,
+              text: 'Нет вашего факультета? Нажмите «Создать свой факультет» внизу — нужно только название.',
+              active: isNewcomer,
+              target: 'skip',
+            }
+      }
       onSkip={() =>
         all.length === 0
           ? navigation.navigate('SetupDone')
