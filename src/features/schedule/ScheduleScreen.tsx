@@ -7,6 +7,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentTabScreenProps } from '../../navigation/types';
 import { Hint } from '../hints/Hint';
+import { useNewcomer } from '../hints/useNewcomer';
 import { firstUnfilledSetupStep, openSetupAt } from '../onboarding/studentSetup';
 import { useGroupAcademicPathQuery, useOwnStudentQuery } from '../profile/hooks';
 import { dayName, formatDayDate, formatTime, formatWeekRangeLabel, getWeek, isSameDay } from './dateUtils';
@@ -26,6 +27,7 @@ export function ScheduleScreen({ navigation }: Props) {
   const student = useOwnStudentQuery();
   const lectures = useMyLecturesQuery();
   const [weekOffset, setWeekOffset] = useState(0);
+  const newcomer = useNewcomer();
 
   // Only actually used once the schedule turns out empty (see the empty-state branch below), but
   // called unconditionally — same reasoning as `StudentProfileScreen`'s `useGroupAcademicPathQuery`
@@ -90,7 +92,8 @@ export function ScheduleScreen({ navigation }: Props) {
           {setupStep ? (
             <Hint
               id="setup-start"
-              stage={student.data?.facultyId ? 1 : 0}
+              active={newcomer.kind === 'newcomer'}
+              stage={newcomer.kind === 'newcomer' ? newcomer.stage : 0}
               text="До расписания три шага: факультет, группа и первая пара. Начнём?"
             >
               <Button mode="contained" onPress={() => openSetupAt(setupStep, (route) => navigation.navigate(route))}>
