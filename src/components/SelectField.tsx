@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, TextInput } from 'react-native-paper';
+import { Divider, Menu, TextInput, useTheme } from 'react-native-paper';
 import { libraryColors, libraryFonts } from '../theme/library';
 
 export interface SelectOption {
@@ -20,6 +20,11 @@ interface Props {
   disabled?: boolean;
   /** Shown instead of the option list when `options` is empty (e.g. still loading). */
   emptyLabel?: string;
+  /**
+   * An action offered as the last item of the menu, after the options — e.g. «Добавить свой
+   * предмет» (issue #57). Stays there with an empty list too, in place of `emptyLabel`.
+   */
+  action?: { label: string; onPress: () => void };
   /** Per-instance color override for the closed field, mirroring `SearchableSelectField`'s `inputTheme`. */
   inputTheme?: PaperThemeProp;
   /** Renders the closed field as a plain outlined box with no floating label — `label` is still used as the menu's accessible title. */
@@ -42,11 +47,14 @@ export function SelectField({
   error,
   disabled,
   emptyLabel = 'Нет доступных вариантов',
+  action,
   inputTheme,
   hideInlineLabel,
   libraryStyle,
 }: Props) {
   const [visible, setVisible] = useState(false);
+  const theme = useTheme();
+  const actionColor = libraryStyle ? libraryColors.terracotta : theme.colors.primary;
   const selectedLabel = options.find((option) => option.value === value)?.label ?? '';
 
   return (
@@ -77,7 +85,9 @@ export function SelectField({
       }
     >
       {options.length === 0 ? (
-        <Menu.Item title={emptyLabel} disabled titleStyle={libraryStyle && styles.itemTitleLibrary} />
+        action ? null : (
+          <Menu.Item title={emptyLabel} disabled titleStyle={libraryStyle && styles.itemTitleLibrary} />
+        )
       ) : (
         options.map((option) => (
           <Menu.Item
@@ -91,6 +101,19 @@ export function SelectField({
           />
         ))
       )}
+      {action && options.length > 0 ? <Divider /> : null}
+      {action ? (
+        <Menu.Item
+          title={action.label}
+          leadingIcon="plus"
+          theme={{ colors: { onSurfaceVariant: actionColor } }}
+          titleStyle={[libraryStyle && styles.itemTitleLibrary, { color: actionColor }]}
+          onPress={() => {
+            setVisible(false);
+            action.onPress();
+          }}
+        />
+      ) : null}
     </Menu>
   );
 }

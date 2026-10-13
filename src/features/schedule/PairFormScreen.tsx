@@ -46,7 +46,7 @@ export const PARITY_OPTIONS = [
 /**
  * Форма заполнения одного `Pair` — студент своей группы, пока цикл в `DRAFT` (`UI_UX.md` раздел 4).
  * Предмет — из предметов факультета студента (`GET /courses?facultyId=`), недостающий студент
- * добавляет сам («Добавить свой предмет», `PLAN.md`, M26). Время начала/окончания не запрашивается и
+ * добавляет сам — последним пунктом списка («Добавить свой предмет», `PLAN.md`, M26; issue #57). Время начала/окончания не запрашивается и
  * не передаётся: номер пары выбирается из звонков, действующих для университета студента, и по ним же
  * время подставляет сервер (M27). Новая пара сразу превращается в занятия на семестр, и открывается
  * расписание с первым из них (M28); кафедра/преподаватель/группы — не поля формы: `teacherId` берётся
@@ -302,14 +302,11 @@ export function PairFormScreen({ route, navigation }: Props) {
               }}
               error={!!errors.courseId}
               disabled={courses.isLoading}
-              emptyLabel={courses.isLoading ? 'Загрузка…' : 'Предметов пока нет'}
+              action={{ label: 'Добавить свой предмет', onPress: () => setCourseDialog(true) }}
             />
             <HelperText type={errors.courseId ? 'error' : 'info'} visible={!!errors.courseId || !!courseNote}>
               {errors.courseId?.message ?? courseNote}
             </HelperText>
-            <Button mode="text" compact style={styles.addCourse} onPress={() => setCourseDialog(true)}>
-              Добавить свой предмет
-            </Button>
           </View>
         )}
       />
@@ -328,7 +325,7 @@ export function PairFormScreen({ route, navigation }: Props) {
       <Hint
         id="pair-form"
         stage={2}
-        text="Выберите день, номер пары и предмет — если предмета нет в списке, добавьте свой. После сохранения пара появится в расписании на весь семестр."
+        text="Выберите день, номер пары и предмет — если предмета нет, добавьте свой прямо в списке. После сохранения пара появится в расписании на весь семестр."
         active={!isEdit && newcomer.kind === 'newcomer' && newcomer.missing === 'pair'}
         style={styles.submit}
       >
@@ -374,9 +371,6 @@ const styles = StyleSheet.create({
   },
   field: {
     marginBottom: 4,
-  },
-  addCourse: {
-    alignSelf: 'flex-start',
   },
   submit: {
     marginTop: 16,
