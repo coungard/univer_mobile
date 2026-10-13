@@ -104,9 +104,17 @@ export type CourseDto = WithRequiredId<components['schemas']['CourseDto']>;
  * from these (`POST /lectures/generate*`). See `UI_UX.md` "генерация расписания/лекций «на ходу»":
  * a `STUDENT` can create/edit/delete `Pair`s for their own group while the cycle is `DRAFT`.
  */
-export type PairDto = WithRequiredId<components['schemas']['PairDto']>;
+export type PairDto = WithRequiredId<PairShape>;
 /** `POST`/`PUT /pairs` body — `id` is server-assigned, never sent by the client. */
-export type PairInput = Omit<components['schemas']['PairDto'], 'id'>;
+export type PairInput = Omit<PairShape, 'id'>;
+/**
+ * `startTime`/`endTime` narrowed to the `"09:00:00"` strings the backend really sends and accepts —
+ * the generated schema describes `LocalTime` as an object (see `BellScheduleEntryDto` below).
+ */
+type PairShape = Omit<components['schemas']['PairDto'], 'startTime' | 'endTime'> & {
+  startTime?: string;
+  endTime?: string;
+};
 /** Days offered by the pair form. The backend also accepts `SATURDAY`/`SUNDAY` (API.md) — the form doesn't offer them yet. */
 export type Weekday = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY';
 export type WeekParity = components['schemas']['PairDto']['weekParity'];

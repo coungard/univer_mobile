@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +10,8 @@ import { Hint } from '../hints/Hint';
 import { useNewcomer } from '../hints/useNewcomer';
 import { firstUnfilledSetupStep, openSetupAt } from '../onboarding/studentSetup';
 import { useGroupAcademicPathQuery, useOwnStudentQuery } from '../profile/hooks';
-import { dayName, formatDayDate, formatTime, formatWeekRangeLabel, getWeek, isSameDay } from './dateUtils';
+import { libraryHintColors } from '../../theme/library';
+import { dayName, formatDayDate, formatTime, formatWeekRangeLabel, getWeek, isSameDay, weekOffsetOf } from './dateUtils';
 import { useGroupPairsQuery, useMyLecturesQuery, useWeekScheduleCycleQuery } from './hooks';
 
 const TODAY = new Date();
@@ -23,7 +24,7 @@ type Props = StudentTabScreenProps<'Schedule'>;
  * и пустое состояние — как для случая «нет группы» (Фаза 2), так и для «группа есть, но лекций
  * ещё не сгенерировали». Тап по занятию открывает `LectureDetailsScreen` (Фаза 4).
  */
-export function ScheduleScreen({ navigation }: Props) {
+export function ScheduleScreen({ navigation, route }: Props) {
   const student = useOwnStudentQuery();
   const lectures = useMyLecturesQuery();
   const [weekOffset, setWeekOffset] = useState(0);
@@ -46,6 +47,14 @@ export function ScheduleScreen({ navigation }: Props) {
   const week = useMemo(() => getWeek(weekOffset, TODAY), [weekOffset]);
 
   const lectureData = lectures.data;
+
+  // Coming back from saving a pair: jump to the week of the lecture it produced (PLAN.md, M28).
+  const showLectureId = route.params?.showLectureId;
+  const shownLecture = showLectureId ? lectureData?.find((lecture) => lecture.id === showLectureId) : undefined;
+  const shownLectureTime = shownLecture?.scheduledTime;
+  useEffect(() => {
+    if (shownLectureTime) setWeekOffset(weekOffsetOf(new Date(shownLectureTime), TODAY));
+  }, [shownLectureTime]);
   const lecturesByDay = useMemo(() => {
     const map = new Map<number, LectureDto[]>();
     for (const day of week.days) map.set(day.getTime(), []);
@@ -96,7 +105,7 @@ export function ScheduleScreen({ navigation }: Props) {
               stage={newcomer.kind === 'newcomer' ? newcomer.stage : 0}
               text="До расписания три шага: факультет, группа и первая пара. Начнём?"
             >
-              <Button mode="contained" onPress={() => openSetupAt(setupStep, (route) => navigation.navigate(route))}>
+              <Button mode="contained" onPress={() => openSetupAt(setupStep, (step) => navigation.navigate(step))}>
                 Завершить настройку
               </Button>
             </Hint>
@@ -149,13 +158,20 @@ export function ScheduleScreen({ navigation }: Props) {
           title="Расписание пока пусто"
           description={
             hasOwnPairs
-              ? 'Занятия по вашему расписанию ещё не сгенерированы.'
-              : 'Заполните расписание своей группы, и по нему можно будет сгенерировать занятия.'
+              ? 'Пары вашей группы сохранены, но занятия по ним ещё не созданы.'
+              : 'Заполните расписание своей группы — занятия появятся здесь сразу.'
           }
         />
-        <Button mode="contained" onPress={() => navigation.navigate('GroupSchedule')}>
-          {hasOwnPairs ? 'Перейти к генерации занятий' : 'Заполнить расписание группы'}
-        </Button>
+        <Hint
+          id="schedule-fill"
+          stage={2}
+          text="У вашей группы ещё нет расписания. Добавьте первую пару — это минута."
+          active={newcomer.kind === 'newcomer' && newcomer.missing === 'pair'}
+        >
+          <Button mode="contained" onPress={() => navigation.navigate('GroupSchedule')}>
+            {hasOwnPairs ? 'Показать пары в расписании' : 'Заполнить расписание группы'}
+          </Button>
+        </Hint>
       </View>
     );
   }
@@ -195,19 +211,33 @@ export function ScheduleScreen({ navigation }: Props) {
               {dayLectures.length === 0 ? (
                 <Text style={styles.emptyDay}>Нет занятий</Text>
               ) : (
-                dayLectures.map((lecture) => (
-                  <Pressable
-                    key={lecture.id}
-                    style={styles.lectureRow}
-                    onPress={() => navigation.navigate('LectureDetails', { lectureId: lecture.id })}
-                  >
-                    <Text style={styles.lectureTime}>{formatTime(new Date(lecture.scheduledTime))}</Text>
-                    <View style={styles.lectureInfo}>
-                      <Text variant="bodyMedium">{lecture.title}</Text>
-                      {lecture.room ? <Text style={styles.lectureRoom}>ауд. {lecture.room}</Text> : null}
-                    </View>
-                  </Pressable>
-                ))
+                dayLectures.map((lecture) => {
+                  const row = (
+                    <Pressable
+                      style={[styles.lectureRow, lecture.id === showLectureId && styles.lectureShown]}
+                      onPress={() => navigation.navigate('LectureDetails', { lectureId: lecture.id })}
+                    >
+                      <Text style={styles.lectureTime}>{formatTime(new Date(lecture.scheduledTime))}</Text>
+                      <View style={styles.lectureInfo}>
+                        <Text variant="bodyMedium">{lecture.title}</Text>
+                        {lecture.room ? <Text style={styles.lectureRoom}>ауд. {lecture.room}</Text> : null}
+                      </View>
+                    </Pressable>
+                  );
+                  // The newcomer's path ends here: the group has a pair now, so no other hint follows.
+                  return lecture.id === showLectureId && route.params?.firstPair ? (
+                    <Hint
+                      key={lecture.id}
+                      id="first-pair-done"
+                      stage={2}
+                      text="Готово — это ваша первая пара, она стоит в расписании на весь семестр. Остальные добавляются так же: «Расписание группы» вверху."
+                    >
+                      {row}
+                    </Hint>
+                  ) : (
+                    <React.Fragment key={lecture.id}>{row}</React.Fragment>
+                  );
+                })
               )}
             </View>
           );
@@ -260,6 +290,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     paddingVertical: 4,
+  },
+  lectureShown: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    marginHorizontal: -8,
+    backgroundColor: libraryHintColors.shown,
   },
   lectureTime: {
     width: 48,

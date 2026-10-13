@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
 import { PairInput, Weekday, WeekParity } from '../../api/types';
@@ -9,10 +9,14 @@ import { ErrorBanner } from '../../components/ErrorBanner';
 import { SelectField } from '../../components/SelectField';
 import { StudentStackScreenProps } from '../../navigation/types';
 import { useAllCoursesQuery } from '../courses/hooks';
+import { Hint } from '../hints/Hint';
+import { useNewcomer } from '../hints/useNewcomer';
 import { useGroupAcademicPathQuery, useOwnStudentQuery } from '../profile/hooks';
 import {
   useBellScheduleEntriesQuery,
   useCreatePairMutation,
+  useGenerateSemesterLecturesMutation,
+  useGroupPairsQuery,
   usePairQuery,
   useUpdatePairMutation,
   useWeekScheduleCycleQuery,
@@ -39,8 +43,10 @@ export const PARITY_OPTIONS = [
 
 /**
  * Форма заполнения одного `Pair` — студент своей группы, пока цикл в `DRAFT` (`UI_UX.md` раздел 4).
- * Курс — из полного каталога (`GET /courses`); время начала/окончания не запрашивается вообще —
- * подставится на бэкенде из `BellScheduleEntry` по `pairNumber`, здесь только предпросмотр; кафедра/
+ * Курс — из полного каталога (`GET /courses`); время начала/окончания не запрашивается — форма берёт
+ * его из звонков университета студента по `pairNumber` и передаёт сама: сервер ищет звонки по кафедре
+ * предмета и для предмета без кафедры отвечает `422` (univer#98). Новая пара сразу превращается в
+ * занятия на семестр, и открывается расписание с первым из них (`PLAN.md`, M28); кафедра/
  * преподаватель/группы — не поля формы: `teacherId` берётся из выбранного курса, `groupIds` всегда
  * `[student.groupId]` (см. вопросы в `UI_UX.md` разделе 7 — оба зафиксированы для этой реализации).
  */
@@ -57,6 +63,9 @@ export function PairFormScreen({ route, navigation }: Props) {
 
   const createPair = useCreatePairMutation(student.data?.groupId ?? undefined);
   const updatePair = useUpdatePairMutation(student.data?.groupId ?? undefined);
+  const generate = useGenerateSemesterLecturesMutation();
+  const groupPairs = useGroupPairsQuery(student.data?.groupId ?? undefined);
+  const newcomer = useNewcomer();
 
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -69,7 +78,8 @@ export function PairFormScreen({ route, navigation }: Props) {
     formState: { errors, isSubmitting },
   } = useForm<PairForm>({
     resolver: zodResolver(pairFormSchema),
-    defaultValues: { dayOfWeek: '', weekParity: '', pairNumber: '', courseId: '', room: '' },
+    // «Каждую неделю» is what most pairs are, so a new one starts with it.
+    defaultValues: { dayOfWeek: '', weekParity: isEdit ? '' : 'BOTH', pairNumber: '', courseId: '', room: '' },
   });
 
   useEffect(() => {
@@ -127,11 +137,15 @@ export function PairFormScreen({ route, navigation }: Props) {
     if (!student.data?.groupId) return;
 
     const selectedCourse = courses.data?.find((c) => c.id === values.courseId);
+    const bell = (bellSchedule.data ?? []).find((e) => e.pairNumber === Number(values.pairNumber));
     const payload: PairInput = {
       weekScheduleCycleId: cycleId,
       dayOfWeek: values.dayOfWeek as Weekday,
       weekParity: values.weekParity as WeekParity,
       pairNumber: Number(values.pairNumber),
+      // Without an entry for this number the times are left to the server, as before.
+      startTime: bell?.startTime,
+      endTime: bell?.endTime,
       courseId: values.courseId,
       teacherId: selectedCourse?.teacherId,
       room: values.room || undefined,
@@ -140,11 +154,33 @@ export function PairFormScreen({ route, navigation }: Props) {
 
     try {
       if (isEdit && pairId) {
+        // Lectures of an edited pair are left alone: the server keeps the old ones (univer#99), so
+        // generating here would only add a second set next to them.
         await updatePair.mutateAsync({ id: pairId, pair: payload });
-      } else {
-        await createPair.mutateAsync(payload);
+        navigation.goBack();
+        return;
       }
-      navigation.goBack();
+      const firstPair = (groupPairs.data ?? []).length === 0;
+      const pair = await createPair.mutateAsync(payload);
+      let created;
+      try {
+        created = await generate.mutateAsync(cycleId);
+      } catch {
+        // The pair is saved; «Расписание группы» still has the button that creates the lectures.
+        Alert.alert(
+          'Пара сохранена',
+          'Занятия по ней создать не удалось. Нажмите «Сгенерировать занятия на семестр» в расписании группы.',
+        );
+        navigation.goBack();
+        return;
+      }
+      const own = created
+        .filter((lecture) => lecture.sourcePairId === pair.id)
+        .sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime));
+      // The nearest lecture still ahead; a semester that is over only has past ones.
+      const now = new Date();
+      const shown = own.find((lecture) => new Date(lecture.scheduledTime) >= now) ?? own[own.length - 1];
+      navigation.popTo('Tabs', { screen: 'Schedule', params: { showLectureId: shown?.id, firstPair } });
     } catch (error) {
       if (error instanceof ApiError && error.status === 400 && error.fieldErrors) {
         Object.entries(error.fieldErrors).forEach(([field, message]) => {
@@ -257,9 +293,18 @@ export function PairFormScreen({ route, navigation }: Props) {
         )}
       />
 
-      <Button mode="contained" onPress={onSubmit} loading={isSubmitting} disabled={isSubmitting} style={styles.submit}>
-        Сохранить
-      </Button>
+      {/* On the button, not on a field: the bubble opens under it, where it covers nothing. */}
+      <Hint
+        id="pair-form"
+        stage={2}
+        text="Выберите день, номер пары и предмет. После сохранения пара появится в расписании на весь семестр."
+        active={!isEdit && newcomer.kind === 'newcomer' && newcomer.missing === 'pair'}
+        style={styles.submit}
+      >
+        <Button mode="contained" onPress={onSubmit} loading={isSubmitting} disabled={isSubmitting}>
+          Сохранить
+        </Button>
+      </Hint>
     </ScrollView>
   );
 }

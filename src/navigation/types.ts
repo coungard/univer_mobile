@@ -22,7 +22,11 @@ export type AppStackParamList = {
 /** Bottom tabs for the student experience (ROADMAP.md "Фаза 3"/"Фаза 4"). */
 export type StudentTabParamList = {
   Profile: undefined;
-  Schedule: undefined;
+  /**
+   * `showLectureId` opens the week of that lecture and marks it — the way back from saving a pair
+   * (PLAN.md, M28); `firstPair` adds the newcomer's closing hint to it.
+   */
+  Schedule: { showLectureId?: string; firstPair?: boolean } | undefined;
 };
 
 /**

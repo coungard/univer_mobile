@@ -7,6 +7,8 @@ import { EmptyState } from '../../components/EmptyState';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentStackScreenProps } from '../../navigation/types';
 import { useAllCoursesQuery } from '../courses/hooks';
+import { Hint } from '../hints/Hint';
+import { useNewcomer } from '../hints/useNewcomer';
 import { useGroupAcademicPathQuery, useOwnStudentQuery, useSemesterQuery } from '../profile/hooks';
 import { DAY_OPTIONS, PARITY_OPTIONS } from './PairFormScreen';
 import {
@@ -42,6 +44,7 @@ export function GroupScheduleScreen({ navigation }: Props) {
 
   const deletePair = useDeletePairMutation(student.data?.groupId ?? undefined);
   const generate = useGenerateSemesterLecturesMutation();
+  const newcomer = useNewcomer();
 
   const courseTitleById = useMemo(() => {
     const map = new Map<string, string>();
@@ -150,9 +153,16 @@ export function GroupScheduleScreen({ navigation }: Props) {
       <View style={styles.header}>
         <Chip>{isDraft ? 'Черновик' : 'Согласовано'}</Chip>
         {isDraft ? (
-          <Button mode="contained-tonal" compact onPress={() => navigation.navigate('PairForm')}>
-            + Добавить
-          </Button>
+          <Hint
+            id="group-schedule-add"
+            stage={2}
+            text="Начните с любой пары, которую помните: день, номер пары и предмет."
+            active={newcomer.kind === 'newcomer' && newcomer.missing === 'pair'}
+          >
+            <Button mode="contained-tonal" compact onPress={() => navigation.navigate('PairForm')}>
+              + Добавить
+            </Button>
+          </Hint>
         ) : null}
       </View>
 

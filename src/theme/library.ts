@@ -46,6 +46,8 @@ export const libraryHintColors = {
   muted: '#B9AEA2',
   accent: '#E3B866',
   frame: libraryColors.gold,
+  /** Fill of the schedule row a hint has just led to. */
+  shown: 'rgba(197, 149, 59, 0.18)',
 } as const;
 
 /** The book-spine stripe's 5 repeating colors, in the order the design uses them. */

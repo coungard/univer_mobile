@@ -45,6 +45,12 @@ export function getWeek(offsetWeeks: number, today: Date = new Date()): Week {
   return { start, end: addDays(start, 7), days };
 }
 
+/** Which `getWeek` offset holds `date` (0 = the week of `today`). */
+export function weekOffsetOf(date: Date, today: Date = new Date()): number {
+  // Rounded: the two Mondays can be an hour off a whole number of weeks across a DST change.
+  return Math.round((mondayOf(date).getTime() - mondayOf(today).getTime()) / (7 * 24 * 60 * 60 * 1000));
+}
+
 export function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
