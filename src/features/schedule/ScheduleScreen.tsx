@@ -11,6 +11,7 @@ import { useNewcomer } from '../hints/useNewcomer';
 import { firstUnfilledSetupStep, openSetupAt } from '../onboarding/studentSetup';
 import { useOwnStudentQuery } from '../profile/hooks';
 import { libraryHintColors } from '../../theme/library';
+import { GroupCaption } from './GroupCaption';
 import { dayName, formatDayDate, formatTime, formatWeekRangeLabel, getWeek, isSameDay, weekOffsetOf } from './dateUtils';
 import { useGroupPairsQuery, useMyLecturesQuery, useOwnWeekScheduleCycleQuery } from './hooks';
 
@@ -138,6 +139,7 @@ export function ScheduleScreen({ navigation, route }: Props) {
     if (!hasOwnPairs && cycle.data.status === 'AGREED') {
       return (
         <View style={styles.center}>
+          <GroupCaption groupId={student.data?.groupId} centered />
           <EmptyState
             title="Расписание пока пусто"
             description="Расписание группы не заполнено и уже согласовано — обратитесь к администратору."
@@ -151,6 +153,7 @@ export function ScheduleScreen({ navigation, route }: Props) {
     // заполнения, и кнопка «Сгенерировать занятия на семестр» (UI_UX.md раздел 4).
     return (
       <View style={styles.center}>
+        <GroupCaption groupId={student.data?.groupId} centered />
         <EmptyState
           title="Расписание пока пусто"
           description={
@@ -188,9 +191,12 @@ export function ScheduleScreen({ navigation, route }: Props) {
       {/* Постоянная, а не только «пока пусто», точка входа — расписание группы можно донабрать и
           позже (например, добавить пару на вторую половину семестра), не только при первом заходе
           с чистого листа (UI_UX.md раздел 4). */}
-      <Button compact style={styles.manageLink} onPress={() => navigation.navigate('GroupSchedule')}>
-        Расписание группы →
-      </Button>
+      <View style={styles.subHeader}>
+        <GroupCaption groupId={student.data?.groupId} style={styles.caption} />
+        <Button compact onPress={() => navigation.navigate('GroupSchedule')}>
+          Расписание группы →
+        </Button>
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.days}
@@ -262,9 +268,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingTop: 8,
   },
-  manageLink: {
-    alignSelf: 'flex-end',
-    marginRight: 4,
+  subHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
+    paddingLeft: 16,
+    paddingRight: 4,
+  },
+  caption: {
+    flex: 1,
   },
   days: {
     padding: 16,

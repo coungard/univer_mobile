@@ -10,6 +10,7 @@ import { useAllCoursesQuery } from '../courses/hooks';
 import { Hint } from '../hints/Hint';
 import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnStudentQuery, useSemesterQuery } from '../profile/hooks';
+import { GroupCaption } from './GroupCaption';
 import { DAY_OPTIONS, PARITY_OPTIONS } from './PairFormScreen';
 import {
   useDeletePairMutation,
@@ -164,6 +165,7 @@ export function GroupScheduleScreen({ navigation }: Props) {
           </Hint>
         ) : null}
       </View>
+      <GroupCaption groupId={student.data?.groupId} style={styles.caption} />
 
       <FlatList
         contentContainerStyle={styles.list}
@@ -244,6 +246,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  caption: {
     paddingHorizontal: 16,
     paddingTop: 8,
   },
