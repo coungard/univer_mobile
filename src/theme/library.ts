@@ -36,6 +36,18 @@ export const libraryTabBarColors = {
   courses: '#7FB4CF',
 } as const;
 
+/**
+ * Newcomer hints (PLAN.md M20, «Ярлык»): a dark bubble like the tab bar, with a lightened gold for
+ * the current stage and the button, and the spine gold for the frame around the target.
+ */
+export const libraryHintColors = {
+  background: libraryColors.ink,
+  text: libraryColors.cream,
+  muted: '#B9AEA2',
+  accent: '#E3B866',
+  frame: libraryColors.gold,
+} as const;
+
 /** The book-spine stripe's 5 repeating colors, in the order the design uses them. */
 export const librarySpineColors = [
   libraryColors.terracotta,

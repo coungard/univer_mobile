@@ -10,6 +10,7 @@ import { StatusBar, StyleSheet, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { HintProvider } from './src/features/hints/HintProvider';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { paperDarkTheme, paperLightTheme } from './src/theme/paperTheme';
 
@@ -32,7 +33,9 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <PaperProvider theme={theme}>
             <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-            <RootNavigator />
+            <HintProvider>
+              <RootNavigator />
+            </HintProvider>
           </PaperProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
