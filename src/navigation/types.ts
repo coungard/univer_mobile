@@ -23,7 +23,6 @@ export type AppStackParamList = {
 export type StudentTabParamList = {
   Profile: undefined;
   Schedule: undefined;
-  Courses: undefined;
 };
 
 /**

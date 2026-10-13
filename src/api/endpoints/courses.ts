@@ -11,18 +11,6 @@ export async function getCourses(page = 0, size = 100): Promise<Page<CourseDto>>
   return data;
 }
 
-/** `GET /courses/department/{departmentId}` — used to filter the course list by department. */
-export async function getCoursesByDepartment(
-  departmentId: string,
-  page = 0,
-  size = 100,
-): Promise<Page<CourseDto>> {
-  const { data } = await apiClient.get<Page<CourseDto>>(`/courses/department/${departmentId}`, {
-    params: { page, size },
-  });
-  return data;
-}
-
 /** `GET /courses/{id}` — course details screen. */
 export async function getCourse(id: string): Promise<CourseDto> {
   const { data } = await apiClient.get<CourseDto>(`/courses/${id}`);

@@ -23,8 +23,7 @@ import { useOwnUserId } from '../profile/hooks';
  * the backend's own `?search=` filter (case-insensitive substring on name) rather than a client-side
  * filter — with the university count this large, fetching every page up front no longer scales.
  * `search` is debounced locally so typing doesn't fire a request per keystroke; results page in via
- * `useInfiniteQuery`, same incremental-loading pattern as `useCoursesQuery`
- * (`features/courses/hooks.ts`).
+ * `useInfiniteQuery`.
  */
 export function useUniversitiesQuery(search: string, regionId?: string) {
   const [debouncedSearch, setDebouncedSearch] = useState(search);

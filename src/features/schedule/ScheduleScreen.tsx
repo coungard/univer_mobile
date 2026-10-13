@@ -37,7 +37,7 @@ export function ScheduleScreen({ navigation }: Props) {
   // This tab's `Tab.Navigator` renders with `headerShown: false`, so nothing else accounts for the
   // status bar — without this, the week-navigation buttons render partly underneath it, where taps
   // land on the system status bar instead of the app (confirmed on-device, not just a visual
-  // overlap; same root cause as `features/courses/CoursesScreen`'s department filter).
+  // overlap).
   const insets = useSafeAreaInsets();
 
   const week = useMemo(() => getWeek(weekOffset, TODAY), [weekOffset]);

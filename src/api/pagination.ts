@@ -8,8 +8,9 @@ import { Page } from './types';
  * Fetching just the first "reasonably large" page there isn't an incomplete *display* the user could
  * shrug off — it silently drops real matches once a dataset outgrows one page (a course roster past
  * a couple hundred students, a lecture history past a couple of semesters), which is a correctness
- * bug, not a UX nicety. Screens that genuinely just browse a growing list (`CoursesScreen`'s catalog)
- * use real infinite-scroll pagination instead — see `features/courses/hooks.ts`.
+ * bug, not a UX nicety. Screens that genuinely just browse a growing list (the university
+ * step of the setup wizard) use real infinite-scroll pagination instead — see `useUniversitiesQuery`
+ * in `features/onboarding/hooks.ts`.
  */
 export async function fetchAllPages<T>(fetchPage: (page: number) => Promise<Page<T>>): Promise<T[]> {
   const items: T[] = [];
