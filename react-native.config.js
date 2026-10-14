@@ -1,5 +1,6 @@
 /**
- * Custom fonts: the "Library" visual identity (issue #37/#38, Libre Baskerville + Lato) plus
+ * Custom fonts: the "Library" visual identity (issue #37/#38; Lora + Lato 2 since issue #61, both
+ * with Cyrillic, licenses in `assets/fonts/OFL-*.txt`) plus
  * react-native-vector-icons' MaterialCommunityIcons, which react-native-paper's icon props
  * (e.g. TextInput.Icon) render through — without it, icons show as a missing-glyph box.
  * `assets/fonts/*.ttf` is the source of truth; the files are also copied into

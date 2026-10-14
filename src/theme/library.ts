@@ -74,10 +74,14 @@ export const librarySpineColors = [
  * Font family names to pass to `fontFamily` in a `StyleSheet`. These match both the bundled
  * files' names (how Android resolves a custom font) and each file's embedded PostScript name
  * (how iOS resolves one) — verified against the actual .ttf files, not assumed.
+ *
+ * Both families cover Cyrillic (issue #61): Lora 3.021 for headings, picked on the canvas
+ * https://claude.ai/artifact/4JDLXxBy7uQovYDDmwWt2Z in place of Libre Baskerville, and Lato
+ * 2.015 for body text — Google Fonts' Lato 1 had Latin only, so Russian text fell back to Roboto.
  */
 export const libraryFonts = {
-  headingRegular: 'LibreBaskerville-Regular',
-  headingBold: 'LibreBaskerville-Bold',
+  headingRegular: 'Lora-Regular',
+  headingBold: 'Lora-Bold',
   bodyRegular: 'Lato-Regular',
   bodyBold: 'Lato-Bold',
 } as const;
