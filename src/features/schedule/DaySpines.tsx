@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Text } from 'react-native-paper';
-import { libraryColors, libraryFonts, librarySpineColors } from '../../theme/library';
+import { Text, useTheme } from 'react-native-paper';
+import { libraryColors, libraryDarkColors, libraryFonts, librarySpineColors } from '../../theme/library';
 import { dayName, formatDayDate, isSameDay, Week } from './dateUtils';
 
 const SHORT_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
@@ -21,6 +21,8 @@ interface Props {
  * The chosen spine sticks out further than the rest; today's spine carries a dot under its number.
  */
 export function DaySpines({ week, selected, today, onPickWeek, onPickDay }: Props) {
+  // The ink spine would vanish against the dark screen (issue #60).
+  const weekSpine = useTheme().dark ? { backgroundColor: libraryDarkColors.raisedInk } : styles.weekSpine;
   return (
     <View accessibilityRole="tablist" accessibilityLabel="День недели" style={styles.column}>
       <Pressable
@@ -28,7 +30,7 @@ export function DaySpines({ week, selected, today, onPickWeek, onPickDay }: Prop
         accessibilityState={{ selected: selected === null }}
         accessibilityLabel="Вся неделя"
         onPress={onPickWeek}
-        style={[styles.spine, styles.weekSpine, selected === null && styles.spineSelected]}
+        style={[styles.spine, weekSpine, selected === null && styles.spineSelected]}
       >
         <Text style={[styles.weekLabel, { color: libraryColors.cream }]}>{'Вся\nнеделя'}</Text>
       </Pressable>

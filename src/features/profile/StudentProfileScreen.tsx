@@ -2,11 +2,10 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useEffect } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Card, Text } from 'react-native-paper';
-import { useAuth } from '../../auth/useAuth';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentTabScreenProps } from '../../navigation/types';
 import { Hint } from '../hints/Hint';
-import { useHints } from '../hints/HintProvider';
 import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnUniversityRequestQuery } from '../onboarding/hooks';
 import {
@@ -31,8 +30,9 @@ import {
  * незаполненного профиля открывается сам — так сразу после регистрации студент попадает на шаг 2.
  */
 export function StudentProfileScreen() {
-  const { logout } = useAuth();
   const navigation = useNavigation<StudentTabScreenProps<'Profile'>['navigation']>();
+  // The tabs render without a header, so nothing else keeps the name off the status bar.
+  const insets = useSafeAreaInsets();
   const userId = useOwnUserId();
   const student = useOwnStudentQuery();
   const university = useUniversityQuery(student.data?.universityId ?? undefined);
@@ -48,7 +48,6 @@ export function StudentProfileScreen() {
 
   const setupStep = student.data ? firstUnfilledSetupStep(student.data) : null;
   const newcomer = useNewcomer();
-  const hints = useHints();
   const promptedFor = useSetupPromptStore((state) => state.promptedFor);
   const markPrompted = useSetupPromptStore((state) => state.markPrompted);
 
@@ -84,7 +83,7 @@ export function StudentProfileScreen() {
   const canRenameGroup = !!academicPath.group && academicPath.group.createdByStudentId === student.data.id;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + 24 }]}>
       <Text variant="headlineSmall">{student.data.fullname || student.data.username}</Text>
       <Text variant="bodyMedium" style={styles.email}>
         {student.data.email}
@@ -200,15 +199,9 @@ export function StudentProfileScreen() {
         </Button>
       ) : null}
 
-      {/* Only while there is a path to lead along and something on it was hidden (PLAN.md, M29). */}
-      {newcomer.kind === 'newcomer' && hints.anyHidden ? (
-        <Button mode="text" onPress={hints.reset}>
-          Показать подсказки снова
-        </Button>
-      ) : null}
-
-      <Button mode="outlined" onPress={() => logout()} style={styles.logout}>
-        Выйти
+      {/* The hints, the theme and signing out live there (issue #60): this tab is about the student. */}
+      <Button mode="outlined" icon="cog-outline" onPress={() => navigation.navigate('Settings')} style={styles.settings}>
+        Настройки
       </Button>
     </ScrollView>
   );
@@ -245,7 +238,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     marginTop: 4,
   },
-  logout: {
+  settings: {
     marginTop: 24,
   },
 });

@@ -2,12 +2,14 @@ import { BottomTabNavigationOptions } from '@react-navigation/bottom-tabs';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Icon } from 'react-native-paper';
-import { libraryFonts, libraryTabBarColors } from '../theme/library';
+import { libraryDarkColors, libraryFonts, libraryTabBarColors } from '../theme/library';
 
 const styles = StyleSheet.create({
   bar: {
     backgroundColor: libraryTabBarColors.background,
-    borderTopWidth: 0,
+    // Unseen against the light screen; in the dark theme it keeps the bar apart from the screen.
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: libraryDarkColors.tabBarEdge,
   },
   label: {
     fontFamily: libraryFonts.bodyBold,

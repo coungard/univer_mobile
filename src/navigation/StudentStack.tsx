@@ -14,6 +14,7 @@ import { GroupScheduleScreen } from '../features/schedule/GroupScheduleScreen';
 import { StudentRenameOwnScreen } from '../features/profile/StudentRenameOwnScreen';
 import { LectureDetailsScreen } from '../features/schedule/LectureDetailsScreen';
 import { PairFormScreen } from '../features/schedule/PairFormScreen';
+import { SettingsScreen } from '../features/settings/SettingsScreen';
 import { StudentTabs } from './StudentTabs';
 import { StudentStackParamList } from './types';
 
@@ -26,7 +27,8 @@ const setupOptions = { title: 'Настройка профиля' };
  * pushes a details screen over the tab bar — «переход из ячейки расписания в детали лекции и в
  * карточку курса за 1 тап» — instead of replacing the tabs entirely. Also hosts «Расписание
  * группы»/заполнение занятий (`UI_UX.md`), reachable from `ScheduleScreen`'s empty state, and the
- * profile setup wizard (`Setup*`, PLAN_FINISHED_01.MD), opened from `StudentProfileScreen`.
+ * profile setup wizard (`Setup*`, PLAN_FINISHED_01.MD) and «Настройки» (issue #60), both opened
+ * from `StudentProfileScreen`.
  */
 export function StudentStack() {
   return (
@@ -50,6 +52,7 @@ export function StudentStack() {
       <Stack.Screen name="SetupNewGroup" component={StudentSetupNewGroupScreen} options={setupOptions} />
       <Stack.Screen name="RenameOwn" component={StudentRenameOwnScreen} options={{ title: 'Изменить название' }} />
       <Stack.Screen name="SetupDone" component={StudentSetupDoneScreen} options={setupOptions} />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Настройки' }} />
     </Stack.Navigator>
   );
 }

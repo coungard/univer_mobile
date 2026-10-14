@@ -60,6 +60,8 @@ export type StudentStackParamList = {
   /** Final screen of the wizard — says how far the profile got and what is still missing. */
   /** Fixing the name of the faculty or the group the student created themselves (PLAN_FINISHED_01.MD, M19). */
   RenameOwn: { kind: 'faculty' | 'group' };
+  /** «Настройки» — everything about the app rather than the student, opened from the profile (issue #60). */
+  Settings: undefined;
   /** `requestedUniversity` — the name from a request just sent: the screen confirms it. */
   SetupDone: { requestedUniversity?: string } | undefined;
   /** «Расписание группы» — заполнение `Pair` и генерация `Lecture` (`UI_UX.md` раздел 4). */

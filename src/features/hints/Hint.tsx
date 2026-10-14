@@ -1,8 +1,8 @@
 import { useIsFocused } from '@react-navigation/native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
-import { Icon, Portal } from 'react-native-paper';
-import { libraryFonts, libraryHintColors } from '../../theme/library';
+import { Icon, Portal, useTheme } from 'react-native-paper';
+import { libraryDarkColors, libraryFonts, libraryHintColors } from '../../theme/library';
 import { useHints } from './HintProvider';
 
 /** The newcomer's path to the first pair; every hint shows where on it the student is. */
@@ -62,6 +62,8 @@ function sameRect(a: Rect | null, b: Rect): boolean {
 export function Hint({ id, stage, text, active = true, clearance = 0, style, children }: HintProps) {
   const hints = useHints();
   const focused = useIsFocused();
+  // On the dark screen the ink bubble would vanish (issue #60).
+  const raised = useTheme().dark ? { backgroundColor: libraryDarkColors.raisedInk } : null;
   const shown = active && focused && hints.ready && !hints.disabled && !hints.isDismissed(id);
 
   const targetRef = useRef<View>(null);
@@ -110,13 +112,14 @@ export function Hint({ id, stage, text, active = true, clearance = 0, style, chi
                 accessibilityRole="alert"
                 style={[
                   styles.bubble,
+                  raised,
                   below
                     ? { top: top + target.height + GAP + clearance }
                     : { bottom: host.height - top + GAP + clearance },
                 ]}
               >
                 {clearance === 0 ? (
-                  <View style={[styles.arrow, below ? styles.arrowUp : styles.arrowDown, { left: arrowLeft }]} />
+                  <View style={[styles.arrow, raised, below ? styles.arrowUp : styles.arrowDown, { left: arrowLeft }]} />
                 ) : null}
                 <View style={styles.headerRow}>
                   <Text style={styles.path}>

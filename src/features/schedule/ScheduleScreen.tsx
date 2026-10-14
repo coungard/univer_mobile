@@ -25,7 +25,7 @@ import {
   weekOffsetOf,
 } from './dateUtils';
 import { useGroupPairsQuery, useMyLecturesQuery, useOwnWeekScheduleCycleQuery } from './hooks';
-import { useScheduleViewMode } from './scheduleViewStorage';
+import { useScheduleViewMode } from '../settings/settingsStore';
 
 const TODAY = new Date();
 

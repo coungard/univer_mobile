@@ -50,6 +50,17 @@ export const libraryHintColors = {
   shown: 'rgba(197, 149, 59, 0.18)',
 } as const;
 
+/**
+ * Dark theme (issue #60): the ink the dark pieces are drawn in nearly matches the dark screen
+ * background, so there they take a lighter warm brown — still dark enough for cream text.
+ */
+export const libraryDarkColors = {
+  /** «Вся неделя» spine and the hint bubble, in place of `ink`. */
+  raisedInk: '#4A3B31',
+  /** Top edge of the tab bar, which otherwise runs into the screen. */
+  tabBarEdge: 'rgba(250, 244, 238, 0.12)',
+} as const;
+
 /** The book-spine stripe's 5 repeating colors, in the order the design uses them. */
 export const librarySpineColors = [
   libraryColors.terracotta,
