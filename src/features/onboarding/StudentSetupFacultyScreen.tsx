@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from 'react-native-paper';
 import { EmptyState } from '../../components/EmptyState';
 import { StudentStackScreenProps } from '../../navigation/types';
-import { libraryColors } from '../../theme/library';
+import { useLibraryColors } from '../../theme/library';
 import { Hint } from '../hints/Hint';
 import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnStudentQuery, useUniversityQuery } from '../profile/hooks';
@@ -22,6 +22,7 @@ const SEARCH_THRESHOLD = 8;
  * student on `SetupNewFaculty`; a newcomer gets a hint pointing at the way there (PLAN.md, M23).
  */
 export function StudentSetupFacultyScreen({ navigation }: StudentStackScreenProps<'SetupFaculty'>) {
+  const c = useLibraryColors();
   const student = useOwnStudentQuery();
   const universityId = student.data?.universityId;
   const university = useUniversityQuery(universityId ?? undefined);
@@ -84,7 +85,7 @@ export function StudentSetupFacultyScreen({ navigation }: StudentStackScreenProp
               <Button
                 mode="outlined"
                 onPress={() => navigation.navigate('SetupNewFaculty')}
-                textColor={libraryColors.terracottaButton}
+                textColor={c.terracottaButton}
               >
                 Создать факультет
               </Button>

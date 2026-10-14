@@ -1,6 +1,6 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { libraryColors } from '../theme/library';
+import { View } from 'react-native';
+import { libraryStyles } from '../theme/library';
 
 /**
  * View-based approximation of the "Library" identity's book+pencil glyph (a stacked pair of books
@@ -9,6 +9,7 @@ import { libraryColors } from '../theme/library';
  * `LoginScreen` and `RegisterRoleChoiceScreen` (issue #41).
  */
 export function BookIcon() {
+  const styles = useStyles();
   return (
     <View style={styles.bookIcon}>
       <View style={styles.bookIconPencil} />
@@ -19,7 +20,7 @@ export function BookIcon() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = libraryStyles((c) => ({
   bookIcon: {
     width: 64,
     height: 56,
@@ -31,7 +32,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 8,
     borderRadius: 2,
-    backgroundColor: libraryColors.terracotta,
+    backgroundColor: c.spines[0],
   },
   bookIconLeftBook: {
     position: 'absolute',
@@ -39,9 +40,9 @@ const styles = StyleSheet.create({
     top: 20,
     width: 20,
     height: 16,
-    backgroundColor: libraryColors.gold,
+    backgroundColor: c.spines[1],
     borderWidth: 1,
-    borderColor: libraryColors.ink,
+    borderColor: c.bookStroke,
   },
   bookIconRightBook: {
     position: 'absolute',
@@ -49,9 +50,9 @@ const styles = StyleSheet.create({
     top: 14,
     width: 24,
     height: 22,
-    backgroundColor: libraryColors.surface,
+    backgroundColor: c.bookPage,
     borderWidth: 1,
-    borderColor: libraryColors.ink,
+    borderColor: c.bookStroke,
   },
   bookIconPencil: {
     position: 'absolute',
@@ -59,9 +60,9 @@ const styles = StyleSheet.create({
     top: 2,
     width: 28,
     height: 12,
-    backgroundColor: libraryColors.sage,
+    backgroundColor: c.spines[2],
     borderWidth: 1,
-    borderColor: libraryColors.ink,
+    borderColor: c.bookStroke,
     transform: [{ rotate: '8deg' }],
   },
-});
+}));

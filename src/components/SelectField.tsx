@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Divider, Menu, TextInput, useTheme } from 'react-native-paper';
-import { libraryColors, libraryFonts } from '../theme/library';
+import { libraryFonts, libraryStyles, useLibraryColors } from '../theme/library';
 
 export interface SelectOption {
   label: string;
@@ -52,9 +52,11 @@ export function SelectField({
   hideInlineLabel,
   libraryStyle,
 }: Props) {
+  const c = useLibraryColors();
+  const styles = useStyles();
   const [visible, setVisible] = useState(false);
   const theme = useTheme();
-  const actionColor = libraryStyle ? libraryColors.terracotta : theme.colors.primary;
+  const actionColor = libraryStyle ? c.terracotta : theme.colors.primary;
   const selectedLabel = options.find((option) => option.value === value)?.label ?? '';
 
   return (
@@ -76,7 +78,7 @@ export function SelectField({
           right={
             <TextInput.Icon
               icon="menu-down"
-              color={libraryStyle ? libraryColors.terracotta : undefined}
+              color={libraryStyle ? c.terracotta : undefined}
               onPress={() => setVisible(true)}
             />
           }
@@ -118,22 +120,22 @@ export function SelectField({
   );
 }
 
-const styles = {
+const useStyles = libraryStyles((c) => ({
   fieldOutlineLibrary: {
     borderRadius: 10,
   },
   fieldInputLibrary: {
-    backgroundColor: libraryColors.surface,
+    backgroundColor: c.surface,
     fontFamily: libraryFonts.bodyRegular,
   },
   menuContentLibrary: {
-    backgroundColor: libraryColors.background,
+    backgroundColor: c.background,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: libraryColors.border,
+    borderColor: c.border,
   },
   itemTitleLibrary: {
     fontFamily: libraryFonts.bodyRegular,
-    color: libraryColors.ink,
+    color: c.ink,
   },
-} as const;
+}));

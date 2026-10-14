@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from 'react-native-paper';
 import { EmptyState } from '../../components/EmptyState';
 import { StudentStackScreenProps } from '../../navigation/types';
-import { libraryColors } from '../../theme/library';
+import { useLibraryColors } from '../../theme/library';
 import { Hint } from '../hints/Hint';
 import { useNewcomer } from '../hints/useNewcomer';
 import { useFacultyQuery, useOwnStudentQuery } from '../profile/hooks';
@@ -25,6 +25,7 @@ const SEARCH_THRESHOLD = 8;
  * list is empty or just doesn't have it — is created by the student on `SetupNewGroup`.
  */
 export function StudentSetupGroupScreen({ navigation }: StudentStackScreenProps<'SetupGroup'>) {
+  const c = useLibraryColors();
   const student = useOwnStudentQuery();
   const facultyId = student.data?.facultyId;
   const yearNumber = student.data?.yearNumber;
@@ -89,7 +90,7 @@ export function StudentSetupGroupScreen({ navigation }: StudentStackScreenProps<
               <Button
                 mode="outlined"
                 onPress={() => navigation.navigate('SetupNewGroup')}
-                textColor={libraryColors.terracottaButton}
+                textColor={c.terracottaButton}
               >
                 Создать группу
               </Button>

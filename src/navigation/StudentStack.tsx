@@ -15,12 +15,11 @@ import { StudentRenameOwnScreen } from '../features/profile/StudentRenameOwnScre
 import { LectureDetailsScreen } from '../features/schedule/LectureDetailsScreen';
 import { PairFormScreen } from '../features/schedule/PairFormScreen';
 import { SettingsScreen } from '../features/settings/SettingsScreen';
+import { useLibraryHeaderOptions } from './libraryHeader';
 import { StudentTabs } from './StudentTabs';
 import { StudentStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<StudentStackParamList>();
-
-const setupOptions = { title: 'Настройка профиля' };
 
 /**
  * Wraps `StudentTabs` in a native stack so tapping into a lecture or a course (ROADMAP.md "Фаза 4")
@@ -31,6 +30,9 @@ const setupOptions = { title: 'Настройка профиля' };
  * from `StudentProfileScreen`.
  */
 export function StudentStack() {
+  // The wizard and «Изменить название» are Library screens (issue #62).
+  const libraryHeader = useLibraryHeaderOptions();
+  const setupOptions = { title: 'Настройка профиля', ...libraryHeader };
   return (
     <Stack.Navigator>
       <Stack.Screen name="Tabs" component={StudentTabs} options={{ headerShown: false }} />
@@ -50,7 +52,7 @@ export function StudentStack() {
       <Stack.Screen name="SetupGroup" component={StudentSetupGroupScreen} options={setupOptions} />
       <Stack.Screen name="SetupNewFaculty" component={StudentSetupNewFacultyScreen} options={setupOptions} />
       <Stack.Screen name="SetupNewGroup" component={StudentSetupNewGroupScreen} options={setupOptions} />
-      <Stack.Screen name="RenameOwn" component={StudentRenameOwnScreen} options={{ title: 'Изменить название' }} />
+      <Stack.Screen name="RenameOwn" component={StudentRenameOwnScreen} options={{ title: 'Изменить название', ...libraryHeader }} />
       <Stack.Screen name="SetupDone" component={StudentSetupDoneScreen} options={setupOptions} />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Настройки' }} />
     </Stack.Navigator>

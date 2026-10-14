@@ -2,13 +2,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
 import { useAuth } from '../../auth/useAuth';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { AuthStackParamList } from '../../navigation/types';
-import { libraryColors, libraryFonts } from '../../theme/library';
+import { libraryFonts, libraryStyles, useLibraryColors, useLibraryFieldTheme } from '../../theme/library';
 import { formatDateInput } from './formatDateInput';
 import { useRegisterStudentMutation } from './hooks';
 import { StepProgress } from './RegistrationStep';
@@ -17,18 +17,6 @@ import { StudentIdCard } from './StudentIdCard';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'RegisterStudent'>;
 
-type PaperThemeProp = React.ComponentProps<typeof TextInput>['theme'];
-
-/** Per-field color override so the boxed "Library" look doesn't need touching Paper's global theme. */
-const fieldTheme: PaperThemeProp = {
-  colors: {
-    primary: libraryColors.terracottaButton,
-    outline: libraryColors.border,
-    background: libraryColors.surface,
-    onSurfaceVariant: libraryColors.inkMuted,
-    onSurface: libraryColors.ink,
-  },
-};
 
 interface FieldBoxProps {
   label: string;
@@ -40,12 +28,15 @@ interface FieldBoxProps {
 }
 
 function FieldBox({ label, error, helperText, validated = true, children }: FieldBoxProps) {
+  // Per-field color override, so the boxed "Library" look doesn't need touching Paper's global theme.
+  const fieldTheme = useLibraryFieldTheme();
+  const styles = useStyles();
   return (
     <View style={styles.fieldBox}>
       <Text style={styles.fieldLabel}>{label}</Text>
       {children}
       {validated && (
-        <HelperText type="error" visible={!!error} style={styles.helperText}>
+        <HelperText type="error" visible={!!error} theme={fieldTheme} style={styles.helperText}>
           {helperText}
         </HelperText>
       )}
@@ -65,6 +56,9 @@ const isFormField = (field: string | undefined): field is keyof StudentRegistrat
  * and a missing university, faculty or group never blocks the registration itself.
  */
 export function RegisterStudentScreen({ navigation }: Props) {
+  const c = useLibraryColors();
+  const fieldTheme = useLibraryFieldTheme();
+  const styles = useStyles();
   const register = useRegisterStudentMutation();
   const { loginWithPassword } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -267,7 +261,7 @@ export function RegisterStudentScreen({ navigation }: Props) {
               right={
                 <TextInput.Icon
                   icon={showPassword ? 'eye-off' : 'eye'}
-                  color={libraryColors.inkMuted}
+                  color={c.inkMuted}
                   onPress={() => setShowPassword((value) => !value)}
                   forceTextInputFocus={false}
                 />
@@ -307,8 +301,8 @@ export function RegisterStudentScreen({ navigation }: Props) {
         onPress={onSubmit}
         loading={submitting}
         disabled={submitting}
-        buttonColor={libraryColors.terracottaButton}
-        textColor={libraryColors.cream}
+        buttonColor={c.terracottaButton}
+        textColor={c.onButton}
         style={styles.submitButton}
         contentStyle={styles.submitButtonContent}
         labelStyle={styles.submitButtonLabel}
@@ -319,7 +313,7 @@ export function RegisterStudentScreen({ navigation }: Props) {
       <Button
         mode="text"
         onPress={() => navigation.navigate('Login')}
-        textColor={libraryColors.terracottaButton}
+        textColor={c.terracottaButton}
         labelStyle={styles.footerLinkLabel}
       >
         Уже есть аккаунт? Войти
@@ -328,9 +322,9 @@ export function RegisterStudentScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = libraryStyles((c) => ({
   screen: {
-    backgroundColor: libraryColors.background,
+    backgroundColor: c.background,
   },
   container: {
     padding: 20,
@@ -343,12 +337,12 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: libraryFonts.headingBold,
     fontSize: 22,
-    color: libraryColors.ink,
+    color: c.ink,
   },
   subtitle: {
     fontFamily: libraryFonts.bodyRegular,
     fontSize: 12.5,
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
   },
   row: {
     flexDirection: 'row',
@@ -365,13 +359,13 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     letterSpacing: 0.4,
     textTransform: 'uppercase',
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
   },
   fieldOutline: {
     borderRadius: 10,
   },
   fieldInput: {
-    backgroundColor: libraryColors.surface,
+    backgroundColor: c.surface,
     fontFamily: libraryFonts.bodyRegular,
   },
   helperText: {
@@ -405,4 +399,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     opacity: 0.8,
   },
-});
+}));

@@ -1,15 +1,16 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { BookIcon } from '../../components/BookIcon';
 import { SpineBand } from '../../components/SpineBand';
 import { AuthStackParamList } from '../../navigation/types';
-import { libraryColors, libraryFonts } from '../../theme/library';
+import { libraryFonts, libraryStyles, useLibraryColors } from '../../theme/library';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'RegisterRoleChoice'>;
 
 /** View-based lectern glyph for the teacher role card, drawn the same way as `BookIcon`. */
 function TeacherIcon() {
+  const styles = useStyles();
   return (
     <View style={styles.teacherIcon}>
       <View style={styles.teacherIconBase} />
@@ -29,6 +30,7 @@ interface RoleCardProps {
 }
 
 function RoleCard({ accent, accentTint, icon, title, subtitle, onPress }: RoleCardProps) {
+  const styles = useStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -49,6 +51,8 @@ function RoleCard({ accent, accentTint, icon, title, subtitle, onPress }: RoleCa
 }
 
 export function RegisterRoleChoiceScreen({ navigation }: Props) {
+  const c = useLibraryColors();
+  const styles = useStyles();
   return (
     <View style={styles.container}>
       <SpineBand />
@@ -62,16 +66,16 @@ export function RegisterRoleChoiceScreen({ navigation }: Props) {
 
         <View style={styles.cards}>
           <RoleCard
-            accent={libraryColors.terracotta}
-            accentTint="rgba(116, 47, 37, 0.07)"
+            accent={c.terracotta}
+            accentTint={c.accentTint}
             icon={<BookIcon />}
             title="Я студент"
             subtitle="Смотрю расписание и лекции"
             onPress={() => navigation.navigate('RegisterStudent')}
           />
           <RoleCard
-            accent={libraryColors.navy}
-            accentTint="rgba(17, 64, 84, 0.05)"
+            accent={c.navy}
+            accentTint={c.navyTint}
             icon={<TeacherIcon />}
             title="Я преподаватель"
             subtitle="Веду занятия и группы"
@@ -83,10 +87,10 @@ export function RegisterRoleChoiceScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = libraryStyles((c) => ({
   container: {
     flex: 1,
-    backgroundColor: libraryColors.background,
+    backgroundColor: c.background,
   },
   content: {
     flex: 1,
@@ -103,13 +107,13 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: libraryFonts.headingBold,
     fontSize: 25,
-    color: libraryColors.ink,
+    color: c.ink,
   },
   subtitle: {
     fontFamily: libraryFonts.bodyRegular,
     fontSize: 13,
     textAlign: 'center',
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
     maxWidth: 230,
     lineHeight: 19,
   },
@@ -131,12 +135,12 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontFamily: libraryFonts.headingBold,
     fontSize: 16,
-    color: libraryColors.ink,
+    color: c.ink,
   },
   cardSubtitle: {
     fontFamily: libraryFonts.bodyRegular,
     fontSize: 12,
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
     marginTop: 2,
   },
   chevron: {
@@ -155,7 +159,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 5,
     borderRadius: 2,
-    backgroundColor: libraryColors.navy,
+    backgroundColor: c.navy,
   },
   teacherIconStand: {
     position: 'absolute',
@@ -164,7 +168,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 30,
     borderRadius: 2,
-    backgroundColor: libraryColors.navy,
+    backgroundColor: c.navy,
   },
   teacherIconBoard: {
     position: 'absolute',
@@ -173,8 +177,8 @@ const styles = StyleSheet.create({
     width: 34,
     height: 26,
     borderRadius: 999,
-    backgroundColor: libraryColors.surface,
+    backgroundColor: c.surface,
     borderWidth: 2,
-    borderColor: libraryColors.navy,
+    borderColor: c.navy,
   },
-});
+}));

@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, ScrollView, Text, View } from 'react-native';
 import { Button, IconButton, Modal, Portal } from 'react-native-paper';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentStackScreenProps } from '../../navigation/types';
-import { libraryColors, libraryFonts } from '../../theme/library';
+import { libraryFonts, libraryStyles, useLibraryColors } from '../../theme/library';
 import { useOwnStudentQuery } from '../profile/hooks';
 import {
   useOwnUniversityRequestQuery,
@@ -13,7 +13,7 @@ import {
   useSubmitUniversityRequestMutation,
   useUpdateOwnStudentMutation,
 } from './hooks';
-import { OptionRow, StepHeader, StepSearchInput, StepTextField, stepStyles } from './RegistrationStep';
+import { OptionRow, StepHeader, StepSearchInput, StepTextField, useStepStyles } from './RegistrationStep';
 
 const NAME_MAX_LENGTH = 255;
 
@@ -31,13 +31,15 @@ export function StudentSetupUniversityRequestScreen({
   navigation,
   route,
 }: StudentStackScreenProps<'SetupUniversityRequest'>) {
+  const c = useLibraryColors();
+  const stepStyles = useStepStyles();
   const student = useOwnStudentQuery();
   const request = useOwnUniversityRequestQuery();
 
   if (student.isPending || request.isPending) {
     return (
       <View style={[stepStyles.screen, stepStyles.centered]}>
-        <ActivityIndicator color={libraryColors.terracotta} />
+        <ActivityIndicator color={c.terracotta} />
       </View>
     );
   }
@@ -89,6 +91,9 @@ interface RequestFormProps {
 }
 
 function RequestForm({ initialName, initialRegion, isUpdate, hasUniversity, onSubmitted, onSkip }: RequestFormProps) {
+  const c = useLibraryColors();
+  const stepStyles = useStepStyles();
+  const styles = useStyles();
   const [name, setName] = useState(initialName);
   const [region, setRegion] = useState<Region | null>(initialRegion);
   const [pickingRegion, setPickingRegion] = useState(false);
@@ -158,7 +163,7 @@ function RequestForm({ initialName, initialRegion, isUpdate, hasUniversity, onSu
               compact
               onPress={() => setPickingRegion(true)}
               disabled={busy}
-              textColor={libraryColors.terracottaButton}
+              textColor={c.terracottaButton}
             >
               {region ? 'Изменить' : 'Выбрать'}
             </Button>
@@ -168,7 +173,7 @@ function RequestForm({ initialName, initialRegion, isUpdate, hasUniversity, onSu
                 compact
                 onPress={() => setRegion(null)}
                 disabled={busy}
-                textColor={libraryColors.inkMuted}
+                textColor={c.inkMuted}
               >
                 Убрать
               </Button>
@@ -183,8 +188,8 @@ function RequestForm({ initialName, initialRegion, isUpdate, hasUniversity, onSu
           onPress={onSubmit}
           loading={busy}
           disabled={!trimmedName || busy}
-          buttonColor={libraryColors.terracottaButton}
-          textColor={libraryColors.cream}
+          buttonColor={c.terracottaButton}
+          textColor={c.onButton}
           style={stepStyles.primaryButton}
           contentStyle={stepStyles.primaryButtonContent}
           labelStyle={stepStyles.primaryButtonLabel}
@@ -195,7 +200,7 @@ function RequestForm({ initialName, initialRegion, isUpdate, hasUniversity, onSu
           mode="text"
           onPress={onSkip}
           disabled={busy}
-          textColor={libraryColors.terracottaButton}
+          textColor={c.terracottaButton}
           labelStyle={stepStyles.footerLinkLabel}
         >
           {isUpdate ? 'Оставить как есть' : 'Завершить без заявки'}
@@ -222,6 +227,9 @@ interface RegionPickerProps {
 
 /** The region list of step 2 in a modal — for a student who reached the form without a region. */
 function RegionPicker({ visible, onDismiss, onPick }: RegionPickerProps) {
+  const c = useLibraryColors();
+  const stepStyles = useStepStyles();
+  const styles = useStyles();
   const regions = useRegionsQuery();
   const [search, setSearch] = useState('');
 
@@ -240,11 +248,11 @@ function RegionPicker({ visible, onDismiss, onPick }: RegionPickerProps) {
       <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modal}>
         <View style={styles.modalHeader}>
           <Text style={styles.modalTitle}>Регион</Text>
-          <IconButton icon="close" iconColor={libraryColors.terracotta} onPress={onDismiss} />
+          <IconButton icon="close" iconColor={c.terracotta} onPress={onDismiss} />
         </View>
         {regions.isPending ? (
           <View style={stepStyles.centered}>
-            <ActivityIndicator color={libraryColors.terracotta} />
+            <ActivityIndicator color={c.terracotta} />
           </View>
         ) : regions.isError ? (
           <View style={stepStyles.centered}>
@@ -276,7 +284,7 @@ function RegionPicker({ visible, onDismiss, onPick }: RegionPickerProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = libraryStyles((c) => ({
   content: {
     paddingHorizontal: 20,
     paddingTop: 16,
@@ -291,7 +299,7 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     letterSpacing: 0.4,
     textTransform: 'uppercase',
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
   },
   regionBox: {
     flexDirection: 'row',
@@ -302,17 +310,17 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: libraryColors.border,
-    backgroundColor: libraryColors.surface,
+    borderColor: c.border,
+    backgroundColor: c.surface,
   },
   regionText: {
     flex: 1,
     fontFamily: libraryFonts.bodyRegular,
     fontSize: 14,
-    color: libraryColors.ink,
+    color: c.ink,
   },
   regionTextEmpty: {
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
   },
   modal: {
     flex: 1,
@@ -320,7 +328,7 @@ const styles = StyleSheet.create({
     marginVertical: 48,
     borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: libraryColors.background,
+    backgroundColor: c.background,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -332,10 +340,10 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontFamily: libraryFonts.headingBold,
     fontSize: 18,
-    color: libraryColors.ink,
+    color: c.ink,
   },
   modalSearch: {
     paddingHorizontal: 20,
     paddingBottom: 8,
   },
-});
+}));

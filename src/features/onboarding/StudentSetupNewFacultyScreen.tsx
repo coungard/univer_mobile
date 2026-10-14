@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { Button } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { StudentStackScreenProps } from '../../navigation/types';
-import { libraryColors, libraryFonts } from '../../theme/library';
+import { libraryFonts, libraryStyles, useLibraryColors } from '../../theme/library';
 import { Hint } from '../hints/Hint';
 import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnStudentQuery, useUniversityQuery } from '../profile/hooks';
 import { useCreateOwnFacultyMutation, useUpdateOwnStudentMutation } from './hooks';
-import { StepHeader, StepTextField, stepStyles } from './RegistrationStep';
+import { StepHeader, StepTextField, useStepStyles } from './RegistrationStep';
 import { firstUnfilledSetupStep } from './studentSetup';
 
 const NAME_MAX_LENGTH = 255;
@@ -21,6 +21,9 @@ const NAME_MAX_LENGTH = 255;
  * going back.
  */
 export function StudentSetupNewFacultyScreen({ navigation, route }: StudentStackScreenProps<'SetupNewFaculty'>) {
+  const c = useLibraryColors();
+  const stepStyles = useStepStyles();
+  const styles = useStyles();
   const student = useOwnStudentQuery();
   const university = useUniversityQuery(student.data?.universityId ?? undefined);
 
@@ -124,7 +127,7 @@ export function StudentSetupNewFacultyScreen({ navigation, route }: StudentStack
             onPress={onPickExisting}
             loading={update.isPending}
             disabled={busy}
-            textColor={libraryColors.terracottaButton}
+            textColor={c.terracottaButton}
             style={styles.pickExisting}
           >
             Выбрать его
@@ -138,8 +141,8 @@ export function StudentSetupNewFacultyScreen({ navigation, route }: StudentStack
           onPress={onSubmit}
           loading={create.isPending}
           disabled={!trimmedName || busy}
-          buttonColor={libraryColors.terracottaButton}
-          textColor={libraryColors.cream}
+          buttonColor={c.terracottaButton}
+          textColor={c.onButton}
           style={stepStyles.primaryButton}
           contentStyle={stepStyles.primaryButtonContent}
           labelStyle={stepStyles.primaryButtonLabel}
@@ -150,7 +153,7 @@ export function StudentSetupNewFacultyScreen({ navigation, route }: StudentStack
           mode="text"
           onPress={() => navigation.navigate('SetupDone')}
           disabled={busy}
-          textColor={libraryColors.terracottaButton}
+          textColor={c.terracottaButton}
           labelStyle={stepStyles.footerLinkLabel}
         >
           Завершить без факультета
@@ -160,7 +163,7 @@ export function StudentSetupNewFacultyScreen({ navigation, route }: StudentStack
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = libraryStyles((c) => ({
   content: {
     paddingHorizontal: 20,
     paddingTop: 16,
@@ -172,16 +175,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: libraryColors.border,
+    borderColor: c.border,
   },
   contextLine: {
     fontFamily: libraryFonts.bodyRegular,
     fontSize: 12.5,
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
   },
   pickExisting: {
     alignSelf: 'flex-start',
     borderRadius: 10,
     marginTop: -4,
   },
-});
+}));

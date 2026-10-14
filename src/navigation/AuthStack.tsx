@@ -4,13 +4,16 @@ import { LoginScreen } from '../features/onboarding/LoginScreen';
 import { RegisterRoleChoiceScreen } from '../features/onboarding/RegisterRoleChoiceScreen';
 import { RegisterStudentScreen } from '../features/onboarding/RegisterStudentScreen';
 import { RegisterTeacherScreen } from '../features/onboarding/RegisterTeacherScreen';
+import { useLibraryHeaderOptions } from './libraryHeader';
 import { AuthStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export function AuthStack() {
+  // Every screen here is a Library one.
+  const libraryHeader = useLibraryHeaderOptions();
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false, ...libraryHeader }}>
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen
         name="RegisterRoleChoice"

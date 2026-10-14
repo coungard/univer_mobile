@@ -1,15 +1,15 @@
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { Button } from 'react-native-paper';
 import { StudentDto } from '../../api/types';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentStackScreenProps } from '../../navigation/types';
-import { libraryColors, libraryFonts } from '../../theme/library';
+import { libraryFonts, libraryStyles, useLibraryColors } from '../../theme/library';
 import { NewcomerState } from '../hints/newcomerState';
 import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnStudentQuery } from '../profile/hooks';
 import { useOwnUniversityRequestQuery } from './hooks';
-import { stepStyles } from './RegistrationStep';
+import { useStepStyles } from './RegistrationStep';
 
 const RESUME_HINT = 'Продолжить можно в любой момент — в профиле появилась карточка «Завершить настройку».';
 
@@ -83,6 +83,9 @@ function describeOutcome(
  * leaving any step early, so it reads the saved profile and says what is done and what is missing.
  */
 export function StudentSetupDoneScreen({ navigation, route }: StudentStackScreenProps<'SetupDone'>) {
+  const c = useLibraryColors();
+  const stepStyles = useStepStyles();
+  const styles = useStyles();
   const student = useOwnStudentQuery();
   const request = useOwnUniversityRequestQuery(!!student.data && !student.data.universityId);
   const newcomer = useNewcomer();
@@ -90,7 +93,7 @@ export function StudentSetupDoneScreen({ navigation, route }: StudentStackScreen
   if (student.isPending) {
     return (
       <View style={[stepStyles.screen, stepStyles.centered]}>
-        <ActivityIndicator color={libraryColors.terracotta} />
+        <ActivityIndicator color={c.terracotta} />
       </View>
     );
   }
@@ -128,8 +131,8 @@ export function StudentSetupDoneScreen({ navigation, route }: StudentStackScreen
       <Button
         mode="contained"
         onPress={onPrimary}
-        buttonColor={libraryColors.terracottaButton}
-        textColor={libraryColors.cream}
+        buttonColor={c.terracottaButton}
+        textColor={c.onButton}
         style={[stepStyles.primaryButton, styles.button]}
         contentStyle={stepStyles.primaryButtonContent}
         labelStyle={stepStyles.primaryButtonLabel}
@@ -140,7 +143,7 @@ export function StudentSetupDoneScreen({ navigation, route }: StudentStackScreen
         <Button
           mode="text"
           onPress={() => navigation.popTo('Tabs', { screen: 'Profile' })}
-          textColor={libraryColors.terracottaButton}
+          textColor={c.terracottaButton}
           labelStyle={stepStyles.footerLinkLabel}
         >
           Перейти в профиль
@@ -150,7 +153,7 @@ export function StudentSetupDoneScreen({ navigation, route }: StudentStackScreen
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = libraryStyles((c) => ({
   container: {
     justifyContent: 'center',
     paddingHorizontal: 24,
@@ -159,17 +162,17 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: libraryFonts.headingBold,
     fontSize: 26,
-    color: libraryColors.ink,
+    color: c.ink,
     textAlign: 'center',
   },
   text: {
     fontFamily: libraryFonts.bodyRegular,
     fontSize: 14,
     lineHeight: 20,
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
     textAlign: 'center',
   },
   button: {
     marginTop: 12,
   },
-});
+}));

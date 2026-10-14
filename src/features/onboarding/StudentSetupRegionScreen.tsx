@@ -5,9 +5,9 @@ import { RegionDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentStackScreenProps } from '../../navigation/types';
-import { libraryColors } from '../../theme/library';
+import { useLibraryColors } from '../../theme/library';
 import { useRegionsQuery } from './hooks';
-import { OptionRow, StepHeader, StepSearchInput, stepStyles } from './RegistrationStep';
+import { OptionRow, StepHeader, StepSearchInput, useStepStyles } from './RegistrationStep';
 
 /**
  * Step 2 of student registration (PLAN_FINISHED_01.MD): pick a region to narrow the university list. The
@@ -16,6 +16,8 @@ import { OptionRow, StepHeader, StepSearchInput, stepStyles } from './Registrati
  * this step: the region isn't part of the student's profile.
  */
 export function StudentSetupRegionScreen({ navigation }: StudentStackScreenProps<'SetupRegion'>) {
+  const c = useLibraryColors();
+  const stepStyles = useStepStyles();
   const regions = useRegionsQuery();
   const [search, setSearch] = useState('');
 
@@ -46,7 +48,7 @@ export function StudentSetupRegionScreen({ navigation }: StudentStackScreenProps
 
       {regions.isPending ? (
         <View style={stepStyles.centered}>
-          <ActivityIndicator color={libraryColors.terracotta} />
+          <ActivityIndicator color={c.terracotta} />
         </View>
       ) : regions.isError ? (
         <View style={stepStyles.centered}>
@@ -75,7 +77,7 @@ export function StudentSetupRegionScreen({ navigation }: StudentStackScreenProps
         <Button
           mode="text"
           onPress={() => goToUniversities()}
-          textColor={libraryColors.terracottaButton}
+          textColor={c.terracottaButton}
           labelStyle={stepStyles.footerLinkLabel}
         >
           {regions.isError ? 'Искать университет по всем регионам' : 'Моего региона нет в списке'}
@@ -83,7 +85,7 @@ export function StudentSetupRegionScreen({ navigation }: StudentStackScreenProps
         <Button
           mode="text"
           onPress={() => navigation.navigate('SetupDone')}
-          textColor={libraryColors.inkMuted}
+          textColor={c.inkMuted}
           labelStyle={stepStyles.footerLinkLabel}
         >
           Выберу университет позже

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import { ActivityIndicator, Divider, IconButton, List, Modal, Portal, Searchbar, Text, TextInput, useTheme } from 'react-native-paper';
-import { libraryColors, libraryFonts } from '../theme/library';
+import { libraryFonts, libraryStyles, useLibraryColors } from '../theme/library';
 import { SelectOption } from './SelectField';
 
 type PaperThemeProp = React.ComponentProps<typeof TextInput>['theme'];
@@ -67,6 +67,8 @@ export function SearchableSelectField({
   hideInlineLabel,
   libraryStyle,
 }: Props) {
+  const c = useLibraryColors();
+  const styles = useStyles();
   const theme = useTheme();
   const [visible, setVisible] = useState(false);
   // Kept independently of `options` so the closed field still shows the chosen university once
@@ -101,7 +103,7 @@ export function SearchableSelectField({
         right={
           <TextInput.Icon
             icon="magnify"
-            color={libraryStyle ? libraryColors.terracotta : undefined}
+            color={libraryStyle ? c.terracotta : undefined}
             onPress={open}
           />
         }
@@ -114,7 +116,7 @@ export function SearchableSelectField({
           onDismiss={() => setVisible(false)}
           contentContainerStyle={[
             styles.modal,
-            { backgroundColor: libraryStyle ? libraryColors.background : theme.colors.background },
+            { backgroundColor: libraryStyle ? c.background : theme.colors.background },
             libraryStyle && styles.modalLibrary,
           ]}
         >
@@ -127,7 +129,7 @@ export function SearchableSelectField({
             </Text>
             <IconButton
               icon="close"
-              iconColor={libraryStyle ? libraryColors.terracotta : undefined}
+              iconColor={libraryStyle ? c.terracotta : undefined}
               onPress={() => setVisible(false)}
             />
           </View>
@@ -138,8 +140,8 @@ export function SearchableSelectField({
             autoFocus
             style={[styles.searchbar, libraryStyle && styles.searchbarLibrary]}
             inputStyle={libraryStyle && styles.searchbarInputLibrary}
-            iconColor={libraryStyle ? libraryColors.terracotta : undefined}
-            placeholderTextColor={libraryStyle ? libraryColors.inkFaint : undefined}
+            iconColor={libraryStyle ? c.terracotta : undefined}
+            placeholderTextColor={libraryStyle ? c.inkFaint : undefined}
             theme={inputTheme}
           />
           <FlatList
@@ -156,7 +158,7 @@ export function SearchableSelectField({
               loading ? (
                 <ActivityIndicator
                   style={styles.stateIndicator}
-                  color={libraryStyle ? libraryColors.terracotta : undefined}
+                  color={libraryStyle ? c.terracotta : undefined}
                 />
               ) : (
                 <Text style={[styles.emptyText, libraryStyle && styles.emptyTextLibrary]}>{emptyLabel}</Text>
@@ -166,7 +168,7 @@ export function SearchableSelectField({
               loadingMore ? (
                 <ActivityIndicator
                   style={styles.stateIndicator}
-                  color={libraryStyle ? libraryColors.terracotta : undefined}
+                  color={libraryStyle ? c.terracotta : undefined}
                 />
               ) : null
             }
@@ -186,12 +188,12 @@ export function SearchableSelectField({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = libraryStyles((c) => ({
   fieldOutlineLibrary: {
     borderRadius: 10,
   },
   fieldInputLibrary: {
-    backgroundColor: libraryColors.surface,
+    backgroundColor: c.surface,
     fontFamily: libraryFonts.bodyRegular,
   },
   modal: {
@@ -218,26 +220,26 @@ const styles = StyleSheet.create({
   headerTitleLibrary: {
     fontFamily: libraryFonts.headingBold,
     fontSize: 18,
-    color: libraryColors.ink,
+    color: c.ink,
   },
   searchbar: {
     marginHorizontal: 16,
     marginBottom: 8,
   },
   searchbarLibrary: {
-    backgroundColor: libraryColors.surface,
+    backgroundColor: c.surface,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: libraryColors.border,
+    borderColor: c.border,
     elevation: 0,
     shadowOpacity: 0,
   },
   searchbarInputLibrary: {
     fontFamily: libraryFonts.bodyRegular,
-    color: libraryColors.ink,
+    color: c.ink,
   },
   dividerLibrary: {
-    backgroundColor: libraryColors.border,
+    backgroundColor: c.border,
   },
   stateIndicator: {
     marginVertical: 24,
@@ -249,15 +251,15 @@ const styles = StyleSheet.create({
   },
   emptyTextLibrary: {
     fontFamily: libraryFonts.bodyRegular,
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
     opacity: 1,
   },
   itemTitleLibrary: {
     fontFamily: libraryFonts.bodyBold,
-    color: libraryColors.ink,
+    color: c.ink,
   },
   itemDescriptionLibrary: {
     fontFamily: libraryFonts.bodyRegular,
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
   },
-});
+}));

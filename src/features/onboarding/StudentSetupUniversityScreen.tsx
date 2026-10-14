@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from 'react-native-paper';
 import { EmptyState } from '../../components/EmptyState';
 import { StudentStackScreenProps } from '../../navigation/types';
-import { libraryColors } from '../../theme/library';
+import { useLibraryColors } from '../../theme/library';
 import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnStudentQuery, useUniversityQuery } from '../profile/hooks';
 import { ChoiceItem, ChoiceStep } from './ChoiceStep';
@@ -16,6 +16,7 @@ import { useSaveSetupStep } from './studentSetup';
  * for an administrator to add it.
  */
 export function StudentSetupUniversityScreen({ navigation, route }: StudentStackScreenProps<'SetupUniversity'>) {
+  const c = useLibraryColors();
   // The region of step 2 outlives the filter: the request form is prefilled with it.
   const regionId = route.params?.allRegions ? undefined : route.params?.regionId;
   const regionName = route.params?.allRegions ? undefined : route.params?.regionName;
@@ -85,7 +86,7 @@ export function StudentSetupUniversityScreen({ navigation, route }: StudentStack
             }
           />
           {regionId ? (
-            <Button mode="outlined" onPress={searchAllRegions} textColor={libraryColors.terracottaButton}>
+            <Button mode="outlined" onPress={searchAllRegions} textColor={c.terracottaButton}>
               Искать по всем регионам
             </Button>
           ) : null}

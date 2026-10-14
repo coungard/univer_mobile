@@ -1,28 +1,28 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React from 'react';
-import { StatusBar, StyleSheet, View } from 'react-native';
-import { Button, Text } from 'react-native-paper';
+import { StatusBar, View } from 'react-native';
+import { Button, Text, useTheme } from 'react-native-paper';
 import { BookIcon } from '../../components/BookIcon';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { SpineBand } from '../../components/SpineBand';
 import { useAuth } from '../../auth/useAuth';
 import { AuthStackParamList } from '../../navigation/types';
-import { libraryColors, libraryFonts } from '../../theme/library';
+import { libraryFonts, libraryStyles, useLibraryColors } from '../../theme/library';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 export function LoginScreen({ navigation }: Props) {
+  const c = useLibraryColors();
+  const styles = useStyles();
+  const { dark } = useTheme();
   const { isLoggingIn, loginError, login } = useAuth();
 
   return (
     <View style={styles.container}>
-      {/* This screen keeps the "Library" brand identity's warm light palette regardless of the
-          system color scheme (a fixed-light welcome/brand screen, same idea as a splash screen) —
-          force a dark status bar here so its icons stay legible over the cream/colored background
-          even when the rest of the app is in dark mode (App.tsx sets the global one from
-          `useColorScheme()`; RN stacks `StatusBar` overrides and restores the one below on
-          unmount). */}
-      <StatusBar barStyle="dark-content" />
+      {/* The status bar sits over the spine band: dark icons over the light theme's spines, light
+          ones over the dark theme's «Переплёт» (issue #62). RN stacks `StatusBar` overrides and
+          restores the one below (App.tsx's) on unmount. */}
+      <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
       <SpineBand />
 
       <ErrorBanner message={loginError} onDismiss={() => {}} />
@@ -39,8 +39,8 @@ export function LoginScreen({ navigation }: Props) {
           onPress={() => login()}
           loading={isLoggingIn}
           disabled={isLoggingIn}
-          buttonColor={libraryColors.terracottaButton}
-          textColor={libraryColors.cream}
+          buttonColor={c.terracottaButton}
+          textColor={c.onButton}
           style={styles.primaryButton}
           contentStyle={styles.primaryButtonContent}
           labelStyle={styles.primaryButtonLabel}
@@ -52,7 +52,7 @@ export function LoginScreen({ navigation }: Props) {
           mode="outlined"
           onPress={() => navigation.navigate('RegisterRoleChoice')}
           disabled={isLoggingIn}
-          textColor={libraryColors.terracottaButton}
+          textColor={c.terracottaButton}
           style={styles.secondaryButton}
           contentStyle={styles.secondaryButtonContent}
           labelStyle={styles.secondaryButtonLabel}
@@ -64,10 +64,10 @@ export function LoginScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = libraryStyles((c) => ({
   container: {
     flex: 1,
-    backgroundColor: libraryColors.background,
+    backgroundColor: c.background,
   },
   content: {
     flex: 1,
@@ -79,13 +79,13 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: libraryFonts.headingBold,
     fontSize: 38,
-    color: libraryColors.ink,
+    color: c.ink,
   },
   subtitle: {
     fontFamily: libraryFonts.bodyRegular,
     fontSize: 14.5,
     textAlign: 'center',
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
     maxWidth: 240,
     lineHeight: 21,
   },
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   secondaryButton: {
     borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: libraryColors.terracottaButton,
+    borderColor: c.terracottaButton,
   },
   secondaryButtonContent: {
     height: 50,
@@ -116,4 +116,4 @@ const styles = StyleSheet.create({
     fontFamily: libraryFonts.bodyBold,
     fontSize: 15,
   },
-});
+}));

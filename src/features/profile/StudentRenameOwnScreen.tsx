@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { Button } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentStackScreenProps } from '../../navigation/types';
-import { libraryColors, libraryFonts } from '../../theme/library';
+import { libraryFonts, libraryStyles, useLibraryColors } from '../../theme/library';
 import { useRenameOwnFacultyMutation, useRenameOwnGroupMutation } from '../onboarding/hooks';
-import { StepTextField, stepStyles } from '../onboarding/RegistrationStep';
+import { StepTextField, useStepStyles } from '../onboarding/RegistrationStep';
 import { useFacultyQuery, useGroupAcademicPathQuery, useOwnStudentQuery } from './hooks';
 
 const FACULTY_NAME_MAX_LENGTH = 255;
@@ -21,6 +21,8 @@ const GROUP_FULL_NAME_MAX_LENGTH = 255;
  * only to the server, which then answers `422` with the reason.
  */
 export function StudentRenameOwnScreen({ navigation, route }: StudentStackScreenProps<'RenameOwn'>) {
+  const c = useLibraryColors();
+  const stepStyles = useStepStyles();
   const { kind } = route.params;
   const student = useOwnStudentQuery();
   const faculty = useFacultyQuery(kind === 'faculty' ? (student.data?.facultyId ?? undefined) : undefined);
@@ -43,7 +45,7 @@ export function StudentRenameOwnScreen({ navigation, route }: StudentStackScreen
   if (!current) {
     return (
       <View style={[stepStyles.screen, stepStyles.centered]}>
-        <ActivityIndicator color={libraryColors.terracotta} />
+        <ActivityIndicator color={c.terracotta} />
       </View>
     );
   }
@@ -58,6 +60,9 @@ interface RenameFormProps {
 }
 
 function RenameForm({ kind, initial, onDone }: RenameFormProps) {
+  const c = useLibraryColors();
+  const stepStyles = useStepStyles();
+  const styles = useStyles();
   const [name, setName] = useState(initial.name);
   const [fullName, setFullName] = useState(initial.fullName);
   const [error, setError] = useState<string | null>(null);
@@ -131,8 +136,8 @@ function RenameForm({ kind, initial, onDone }: RenameFormProps) {
           onPress={onSubmit}
           loading={busy}
           disabled={!trimmedName || unchanged || busy}
-          buttonColor={libraryColors.terracottaButton}
-          textColor={libraryColors.cream}
+          buttonColor={c.terracottaButton}
+          textColor={c.onButton}
           style={stepStyles.primaryButton}
           contentStyle={stepStyles.primaryButtonContent}
           labelStyle={stepStyles.primaryButtonLabel}
@@ -144,7 +149,7 @@ function RenameForm({ kind, initial, onDone }: RenameFormProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = libraryStyles((c) => ({
   content: {
     paddingHorizontal: 20,
     paddingTop: 20,
@@ -154,12 +159,12 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: libraryFonts.headingBold,
     fontSize: 22,
-    color: libraryColors.ink,
+    color: c.ink,
   },
   subtitle: {
     fontFamily: libraryFonts.bodyRegular,
     fontSize: 13,
     lineHeight: 18,
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
   },
-});
+}));

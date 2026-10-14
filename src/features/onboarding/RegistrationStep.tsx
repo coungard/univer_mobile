@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { HelperText, TextInput } from 'react-native-paper';
-import { libraryColors, libraryFonts, librarySpineColors } from '../../theme/library';
+import { libraryFonts, libraryStyles, useLibraryColors, useLibraryFieldTheme } from '../../theme/library';
 
 /** Steps of student registration, in order (PLAN_FINISHED_01.MD). The progress indicator derives from this. */
 export const STUDENT_REGISTRATION_STEPS = [
@@ -20,6 +20,8 @@ interface StepProgressProps {
 
 /** "Шаг N из M" with one book-spine-colored segment per step, filled up to the current one. */
 export function StepProgress({ step }: StepProgressProps) {
+  const styles = useStyles();
+  const { spines } = useLibraryColors();
   const total = STUDENT_REGISTRATION_STEPS.length;
   return (
     <View style={styles.progress} accessibilityLabel={`Шаг ${step} из ${total}`}>
@@ -29,7 +31,7 @@ export function StepProgress({ step }: StepProgressProps) {
             key={name}
             style={[
               styles.progressSegment,
-              index < step && { backgroundColor: librarySpineColors[index % librarySpineColors.length] },
+              index < step && { backgroundColor: spines[index % spines.length] },
             ]}
           />
         ))}
@@ -47,6 +49,7 @@ interface StepHeaderProps extends StepProgressProps {
 }
 
 export function StepHeader({ step, title, subtitle }: StepHeaderProps) {
+  const styles = useStyles();
   return (
     <View style={styles.header}>
       <StepProgress step={step} />
@@ -63,6 +66,9 @@ interface StepSearchInputProps {
 }
 
 export function StepSearchInput({ value, onChangeText, placeholder }: StepSearchInputProps) {
+  const styles = useStyles();
+  const c = useLibraryColors();
+  const fieldTheme = useLibraryFieldTheme();
   return (
     <TextInput
       value={value}
@@ -71,16 +77,8 @@ export function StepSearchInput({ value, onChangeText, placeholder }: StepSearch
       autoCapitalize="none"
       autoCorrect={false}
       mode="outlined"
-      left={<TextInput.Icon icon="magnify" color={libraryColors.inkMuted} />}
-      theme={{
-        colors: {
-          primary: libraryColors.terracottaButton,
-          outline: libraryColors.border,
-          background: libraryColors.surface,
-          onSurfaceVariant: libraryColors.inkMuted,
-          onSurface: libraryColors.ink,
-        },
-      }}
+      left={<TextInput.Icon icon="magnify" color={c.inkMuted} />}
+      theme={fieldTheme}
       outlineStyle={styles.searchOutline}
       style={styles.searchInput}
     />
@@ -108,6 +106,8 @@ export function StepTextField({
   autoCapitalize,
   errorText,
 }: StepTextFieldProps) {
+  const styles = useStyles();
+  const fieldTheme = useLibraryFieldTheme();
   return (
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -120,20 +120,12 @@ export function StepTextField({
         autoCorrect={false}
         mode="outlined"
         error={!!errorText}
-        theme={{
-          colors: {
-            primary: libraryColors.terracottaButton,
-            outline: libraryColors.border,
-            background: libraryColors.surface,
-            onSurfaceVariant: libraryColors.inkMuted,
-            onSurface: libraryColors.ink,
-          },
-        }}
+        theme={fieldTheme}
         outlineStyle={styles.searchOutline}
         style={styles.searchInput}
       />
       {errorText ? (
-        <HelperText type="error" visible style={styles.fieldError}>
+        <HelperText type="error" visible theme={fieldTheme} style={styles.fieldError}>
           {errorText}
         </HelperText>
       ) : null}
@@ -150,6 +142,7 @@ interface OptionRowProps {
 
 /** One tappable choice in the list of a step. */
 export function OptionRow({ title, subtitle, selected = false, onPress }: OptionRowProps) {
+  const styles = useStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -166,11 +159,11 @@ export function OptionRow({ title, subtitle, selected = false, onPress }: Option
   );
 }
 
-/** Layout shared by the step screens (everything around the step-specific list). */
-export const stepStyles = StyleSheet.create({
+/** Layout shared by the step screens (everything around the step-specific list), for the current theme. */
+export const useStepStyles = libraryStyles((c) => ({
   screen: {
     flex: 1,
-    backgroundColor: libraryColors.background,
+    backgroundColor: c.background,
   },
   top: {
     paddingHorizontal: 20,
@@ -199,7 +192,7 @@ export const stepStyles = StyleSheet.create({
     paddingBottom: 16,
     gap: 4,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: libraryColors.border,
+    borderTopColor: c.border,
   },
   footerLinkLabel: {
     fontFamily: libraryFonts.bodyBold,
@@ -215,9 +208,9 @@ export const stepStyles = StyleSheet.create({
     fontFamily: libraryFonts.bodyBold,
     fontSize: 15,
   },
-});
+}));
 
-const styles = StyleSheet.create({
+const useStyles = libraryStyles((c) => ({
   progress: {
     gap: 6,
   },
@@ -229,14 +222,14 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 5,
     borderRadius: 3,
-    backgroundColor: libraryColors.border,
+    backgroundColor: c.border,
   },
   progressLabel: {
     fontFamily: libraryFonts.bodyBold,
     fontSize: 9.5,
     letterSpacing: 0.4,
     textTransform: 'uppercase',
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
   },
   header: {
     gap: 4,
@@ -244,19 +237,19 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: libraryFonts.headingBold,
     fontSize: 22,
-    color: libraryColors.ink,
+    color: c.ink,
     marginTop: 8,
   },
   subtitle: {
     fontFamily: libraryFonts.bodyRegular,
     fontSize: 12.5,
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
   },
   searchOutline: {
     borderRadius: 10,
   },
   searchInput: {
-    backgroundColor: libraryColors.surface,
+    backgroundColor: c.surface,
     fontFamily: libraryFonts.bodyRegular,
   },
   field: {
@@ -267,7 +260,7 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     letterSpacing: 0.4,
     textTransform: 'uppercase',
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
   },
   fieldError: {
     marginTop: -6,
@@ -281,12 +274,12 @@ const styles = StyleSheet.create({
     minHeight: 52,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: libraryColors.border,
-    backgroundColor: libraryColors.surface,
+    borderColor: c.border,
+    backgroundColor: c.surface,
   },
   optionSelected: {
-    borderColor: libraryColors.terracotta,
-    backgroundColor: 'rgba(116, 47, 37, 0.07)',
+    borderColor: c.terracotta,
+    backgroundColor: c.accentTint,
   },
   optionPressed: {
     opacity: 0.7,
@@ -298,16 +291,16 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontFamily: libraryFonts.bodyBold,
     fontSize: 14.5,
-    color: libraryColors.ink,
+    color: c.ink,
   },
   optionSubtitle: {
     fontFamily: libraryFonts.bodyRegular,
     fontSize: 12.5,
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
   },
   optionMark: {
     fontFamily: libraryFonts.bodyBold,
     fontSize: 18,
-    color: libraryColors.terracotta,
+    color: c.terracotta,
   },
-});
+}));

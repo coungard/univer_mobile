@@ -1,6 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { libraryColors, libraryFonts, librarySpineColors } from '../../theme/library';
+import { Text, View } from 'react-native';
+import { libraryFonts, libraryStyles, useLibraryColors } from '../../theme/library';
 
 interface Props {
   firstname: string;
@@ -14,13 +14,15 @@ interface Props {
  * sample data, including the empty state before the student has typed anything.
  */
 export function StudentIdCard({ firstname, lastname, username }: Props) {
+  const styles = useStyles();
   const fullName = `${firstname} ${lastname}`.trim();
   const initials = `${firstname.trim().charAt(0)}${lastname.trim().charAt(0)}`.toUpperCase();
 
+  const { spines } = useLibraryColors();
   return (
     <View style={styles.card}>
       <View style={styles.spine}>
-        {librarySpineColors.map((color) => (
+        {spines.map((color) => (
           <View key={color} style={[styles.spineSegment, { backgroundColor: color }]} />
         ))}
       </View>
@@ -49,12 +51,12 @@ export function StudentIdCard({ firstname, lastname, username }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = libraryStyles((c) => ({
   card: {
     borderRadius: 16,
-    backgroundColor: libraryColors.surface,
+    backgroundColor: c.surface,
     overflow: 'hidden',
-    shadowColor: libraryColors.ink,
+    shadowColor: c.ink,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.14,
     shadowRadius: 14,
@@ -81,12 +83,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 1.4,
     textTransform: 'uppercase',
-    color: libraryColors.terracotta,
+    color: c.terracotta,
   },
   wordmark: {
     fontFamily: libraryFonts.headingBold,
     fontSize: 12,
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
   },
   identity: {
     flexDirection: 'row',
@@ -97,14 +99,14 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: libraryColors.terracotta,
+    backgroundColor: c.spines[0],
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
     fontFamily: libraryFonts.headingBold,
     fontSize: 17,
-    color: libraryColors.cream,
+    color: c.cream,
   },
   identityText: {
     flex: 1,
@@ -113,14 +115,14 @@ const styles = StyleSheet.create({
   name: {
     fontFamily: libraryFonts.headingBold,
     fontSize: 17,
-    color: libraryColors.ink,
+    color: c.ink,
   },
   handle: {
     fontFamily: libraryFonts.bodyRegular,
     fontSize: 12,
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
   },
   placeholder: {
-    color: libraryColors.inkFaint,
+    color: c.inkFaint,
   },
-});
+}));

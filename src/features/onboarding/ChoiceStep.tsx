@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { QueryErrorState } from '../../components/QueryErrorState';
-import { libraryColors, libraryFonts } from '../../theme/library';
+import { libraryFonts, libraryStyles, useLibraryColors } from '../../theme/library';
 import { Hint } from '../hints/Hint';
-import { OptionRow, StepHeader, StepSearchInput, stepStyles } from './RegistrationStep';
+import { OptionRow, StepHeader, StepSearchInput, useStepStyles } from './RegistrationStep';
 
 export interface ChoiceItem {
   id: string;
@@ -72,6 +72,9 @@ export function ChoiceStep({
   onSkip,
   hint,
 }: ChoiceStepProps) {
+  const c = useLibraryColors();
+  const stepStyles = useStepStyles();
+  const styles = useStyles();
   // The way-out link sits under «Далее»: its hint keeps clear of everything above it in the footer.
   const [skipTop, setSkipTop] = useState(0);
   const withHint = (target: 'submit' | 'skip', button: React.ReactElement) =>
@@ -100,7 +103,7 @@ export function ChoiceStep({
 
       {isPending ? (
         <View style={stepStyles.centered}>
-          <ActivityIndicator color={libraryColors.terracotta} />
+          <ActivityIndicator color={c.terracotta} />
         </View>
       ) : loadError ? (
         <View style={stepStyles.centered}>
@@ -123,7 +126,7 @@ export function ChoiceStep({
               onPress={() => onSelect(item)}
             />
           )}
-          ListFooterComponent={isFetchingMore ? <ActivityIndicator color={libraryColors.terracotta} /> : null}
+          ListFooterComponent={isFetchingMore ? <ActivityIndicator color={c.terracotta} /> : null}
           ListEmptyComponent={<View style={stepStyles.centered}>{empty}</View>}
         />
       )}
@@ -141,8 +144,8 @@ export function ChoiceStep({
             onPress={onSubmit}
             loading={submitting}
             disabled={!selected || submitting}
-            buttonColor={libraryColors.terracottaButton}
-            textColor={libraryColors.cream}
+            buttonColor={c.terracottaButton}
+            textColor={c.onButton}
             style={stepStyles.primaryButton}
             contentStyle={stepStyles.primaryButtonContent}
             labelStyle={stepStyles.primaryButtonLabel}
@@ -156,7 +159,7 @@ export function ChoiceStep({
             mode="text"
             onPress={onSkip}
             disabled={submitting}
-            textColor={libraryColors.terracottaButton}
+            textColor={c.terracottaButton}
             labelStyle={stepStyles.footerLinkLabel}
           >
             {skipLabel}
@@ -167,14 +170,14 @@ export function ChoiceStep({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = libraryStyles((c) => ({
   skipHint: {
     alignSelf: 'center',
   },
   selectedLabel: {
     fontFamily: libraryFonts.bodyRegular,
     fontSize: 12.5,
-    color: libraryColors.inkMuted,
+    color: c.inkMuted,
     marginBottom: 4,
   },
-});
+}));

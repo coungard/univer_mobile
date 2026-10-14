@@ -1,23 +1,12 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { libraryColors } from '../theme/library';
+import { View } from 'react-native';
+import { libraryStyles, useLibraryColors } from '../theme/library';
 
 /**
- * The design's 10 book-spine segments use this exact repeating order, not just the 5 palette
- * colors laid out twice — keep it as written rather than generating it.
+ * The design's 10 book-spine segments use this exact repeating order of the 5 spine colours
+ * (indexes into the palette's `spines`), not just the 5 laid out twice — keep it as written.
  */
-const SPINE_SEQUENCE = [
-  libraryColors.terracotta,
-  libraryColors.gold,
-  libraryColors.sage,
-  libraryColors.rust,
-  libraryColors.navy,
-  libraryColors.gold,
-  libraryColors.terracotta,
-  libraryColors.sage,
-  libraryColors.navy,
-  libraryColors.rust,
-];
+const SPINE_SEQUENCE = [0, 1, 2, 3, 4, 1, 0, 2, 4, 3];
 
 const SPINE_BAND_HEIGHT = 160;
 
@@ -27,11 +16,13 @@ const SPINE_BAND_HEIGHT = 160;
  * live in one place.
  */
 export function SpineBand() {
+  const { spines } = useLibraryColors();
+  const styles = useStyles();
   return (
     <View style={styles.spineBand}>
       <View style={styles.spineRow}>
-        {SPINE_SEQUENCE.map((color, index) => (
-          <View key={index} style={[styles.spineSegment, { backgroundColor: color }]} />
+        {SPINE_SEQUENCE.map((spine, index) => (
+          <View key={index} style={[styles.spineSegment, { backgroundColor: spines[spine] }]} />
         ))}
       </View>
       <View style={styles.spineOverlay} />
@@ -39,7 +30,7 @@ export function SpineBand() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = libraryStyles((c) => ({
   spineBand: {
     height: SPINE_BAND_HEIGHT,
     width: '100%',
@@ -57,6 +48,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: SPINE_BAND_HEIGHT * 0.61,
-    backgroundColor: 'rgba(20, 15, 10, 0.18)',
+    backgroundColor: c.spineShade,
   },
-});
+}));
