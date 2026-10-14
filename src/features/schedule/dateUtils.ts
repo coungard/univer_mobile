@@ -10,13 +10,13 @@ const MONTH_NAMES = [
   'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
 ];
 
-function startOfDay(date: Date): Date {
+export function startOfDay(date: Date): Date {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
   return d;
 }
 
-function addDays(date: Date, days: number): Date {
+export function addDays(date: Date, days: number): Date {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
   return d;

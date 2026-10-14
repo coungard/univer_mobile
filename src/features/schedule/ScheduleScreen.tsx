@@ -10,10 +10,22 @@ import { Hint } from '../hints/Hint';
 import { useNewcomer } from '../hints/useNewcomer';
 import { firstUnfilledSetupStep, openSetupAt } from '../onboarding/studentSetup';
 import { useOwnStudentQuery } from '../profile/hooks';
-import { libraryHintColors } from '../../theme/library';
+import { libraryFonts, libraryHintColors } from '../../theme/library';
+import { DaySpines } from './DaySpines';
 import { GroupCaption } from './GroupCaption';
-import { dayName, formatDayDate, formatTime, formatWeekRangeLabel, getWeek, isSameDay, weekOffsetOf } from './dateUtils';
+import {
+  addDays,
+  dayName,
+  formatDayDate,
+  formatTime,
+  formatWeekRangeLabel,
+  getWeek,
+  isSameDay,
+  startOfDay,
+  weekOffsetOf,
+} from './dateUtils';
 import { useGroupPairsQuery, useMyLecturesQuery, useOwnWeekScheduleCycleQuery } from './hooks';
+import { useScheduleViewMode } from './scheduleViewStorage';
 
 const TODAY = new Date();
 
@@ -21,14 +33,18 @@ type Props = StudentTabScreenProps<'Schedule'>;
 
 /**
  * Таб «Расписание» (ROADMAP.md "Фаза 3"). Недельная сетка день × лекции на основе
- * `GET /lectures/me`: переключение недель вперёд/назад, выделение текущего дня, pull-to-refresh,
+ * `GET /lectures/me`, которую корешки дней слева (`DaySpines`, issue #59) схлопывают до одного
+ * дня и разворачивают обратно: переключение недель вперёд/назад, выделение текущего дня, pull-to-refresh,
  * и пустое состояние — как для случая «нет группы» (Фаза 2), так и для «группа есть, но лекций
  * ещё не сгенерировали». Тап по занятию открывает `LectureDetailsScreen` (Фаза 4).
  */
 export function ScheduleScreen({ navigation, route }: Props) {
   const student = useOwnStudentQuery();
   const lectures = useMyLecturesQuery();
+  // The spines always show `week`; in the day mode `day` is one of its days (`shift` keeps it so).
   const [weekOffset, setWeekOffset] = useState(0);
+  const [day, setDay] = useState(() => startOfDay(TODAY));
+  const view = useScheduleViewMode();
   const newcomer = useNewcomer();
 
   // Only actually used once the schedule turns out empty (see the empty-state branch below), but
@@ -53,23 +69,46 @@ export function ScheduleScreen({ navigation, route }: Props) {
   const shownLecture = showLectureId ? lectureData?.find((lecture) => lecture.id === showLectureId) : undefined;
   const shownLectureTime = shownLecture?.scheduledTime;
   useEffect(() => {
-    if (shownLectureTime) setWeekOffset(weekOffsetOf(new Date(shownLectureTime), TODAY));
+    if (!shownLectureTime) return;
+    const scheduledAt = new Date(shownLectureTime);
+    setWeekOffset(weekOffsetOf(scheduledAt, TODAY));
+    setDay(startOfDay(scheduledAt));
   }, [shownLectureTime]);
+
+  const shownDays = useMemo(() => (view.mode === 'day' ? [day] : week.days), [view.mode, day, week.days]);
   const lecturesByDay = useMemo(() => {
     const map = new Map<number, LectureDto[]>();
-    for (const day of week.days) map.set(day.getTime(), []);
+    for (const shown of shownDays) map.set(shown.getTime(), []);
     for (const lecture of lectureData ?? []) {
       const scheduledAt = new Date(lecture.scheduledTime);
-      const day = week.days.find((d) => isSameDay(d, scheduledAt));
-      if (day) map.get(day.getTime())!.push(lecture);
+      const shown = shownDays.find((d) => isSameDay(d, scheduledAt));
+      if (shown) map.get(shown.getTime())!.push(lecture);
     }
     for (const list of map.values()) {
       list.sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime));
     }
     return map;
-  }, [lectureData, week.days]);
+  }, [lectureData, shownDays]);
 
-  if (lectures.isLoading || student.isLoading) {
+  const openDay = (next: Date) => {
+    setDay(next);
+    view.setMode('day');
+  };
+
+  // By a week in both modes; a shown day moves to the same weekday of the next week.
+  const shift = (direction: 1 | -1) => {
+    setWeekOffset((offset) => offset + direction);
+    setDay((current) => addDays(current, 7 * direction));
+  };
+
+  const atToday = view.mode === 'day' ? isSameDay(day, TODAY) : weekOffset === 0;
+  const goToToday = () => {
+    setDay(startOfDay(TODAY));
+    setWeekOffset(0);
+  };
+
+  // `view.ready`: the remembered mode is read from the device first, so a day doesn't flash as a week.
+  if (lectures.isLoading || student.isLoading || !view.ready) {
     return (
       <View style={styles.center}>
         <Text>Загрузка расписания…</Text>
@@ -178,74 +217,104 @@ export function ScheduleScreen({ navigation, route }: Props) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.weekHeader}>
-        <Button compact onPress={() => setWeekOffset((o) => o - 1)}>
-          ← Пред.
-        </Button>
-        <Text variant="titleMedium">{formatWeekRangeLabel(week)}</Text>
-        <Button compact onPress={() => setWeekOffset((o) => o + 1)}>
-          След. →
-        </Button>
-      </View>
+      <DaySpines
+        week={week}
+        selected={view.mode === 'day' ? day : null}
+        today={TODAY}
+        onPickWeek={() => view.setMode('week')}
+        onPickDay={openDay}
+      />
 
-      {/* Постоянная, а не только «пока пусто», точка входа — расписание группы можно донабрать и
-          позже (например, добавить пару на вторую половину семестра), не только при первом заходе
-          с чистого листа (UI_UX.md раздел 4). */}
-      <View style={styles.subHeader}>
+      <View style={styles.main}>
+        <View style={styles.weekHeader}>
+          <Button compact accessibilityLabel="Предыдущая неделя" labelStyle={styles.arrow} onPress={() => shift(-1)}>
+            ‹
+          </Button>
+          <Text style={styles.weekLabel}>{formatWeekRangeLabel(week)}</Text>
+          <Button compact accessibilityLabel="Следующая неделя" labelStyle={styles.arrow} onPress={() => shift(1)}>
+            ›
+          </Button>
+        </View>
+
         <GroupCaption groupId={student.data?.groupId} style={styles.caption} />
-        <Button compact onPress={() => navigation.navigate('GroupSchedule')}>
-          Расписание группы →
-        </Button>
-      </View>
 
-      <ScrollView
-        contentContainerStyle={styles.days}
-        refreshControl={<RefreshControl refreshing={lectures.isRefetching} onRefresh={() => lectures.refetch()} />}
-      >
-        {week.days.map((day) => {
-          const dayLectures = lecturesByDay.get(day.getTime()) ?? [];
-          const today = isSameDay(day, TODAY);
-          return (
-            <View key={day.getTime()} style={[styles.daySection, today && styles.dayToday]}>
-              <Text variant="titleSmall" style={styles.dayTitle}>
-                {dayName(day)}, {formatDayDate(day)}
+        {/* Постоянная, а не только «пока пусто», точка входа — расписание группы можно донабрать и
+            позже (например, добавить пару на вторую половину семестра), не только при первом заходе
+            с чистого листа (UI_UX.md раздел 4). */}
+        <View style={styles.links}>
+          <Button compact onPress={() => navigation.navigate('GroupSchedule')}>
+            Расписание группы →
+          </Button>
+          {atToday ? null : (
+            <Button compact onPress={goToToday}>
+              Сегодня
+            </Button>
+          )}
+        </View>
+
+        <ScrollView
+          contentContainerStyle={styles.days}
+          refreshControl={<RefreshControl refreshing={lectures.isRefetching} onRefresh={() => lectures.refetch()} />}
+        >
+          {shownDays.map((shown) => {
+            const dayLectures = lecturesByDay.get(shown.getTime()) ?? [];
+            const today = isSameDay(shown, TODAY);
+            const title = (
+              <Text variant="titleSmall" style={view.mode === 'day' ? styles.dayTitleLarge : styles.dayTitle}>
+                {dayName(shown)}, {formatDayDate(shown)}
                 {today ? ' · сегодня' : ''}
               </Text>
-              {dayLectures.length === 0 ? (
-                <Text style={styles.emptyDay}>Нет занятий</Text>
-              ) : (
-                dayLectures.map((lecture) => {
-                  const row = (
-                    <Pressable
-                      style={[styles.lectureRow, lecture.id === showLectureId && styles.lectureShown]}
-                      onPress={() => navigation.navigate('LectureDetails', { lectureId: lecture.id })}
-                    >
-                      <Text style={styles.lectureTime}>{formatTime(new Date(lecture.scheduledTime))}</Text>
-                      <View style={styles.lectureInfo}>
-                        <Text variant="bodyMedium">{lecture.title}</Text>
-                        {lecture.room ? <Text style={styles.lectureRoom}>ауд. {lecture.room}</Text> : null}
-                      </View>
-                    </Pressable>
-                  );
-                  // The newcomer's path ends here: the group has a pair now, so no other hint follows.
-                  return lecture.id === showLectureId && route.params?.firstPair ? (
-                    <Hint
-                      key={lecture.id}
-                      id="first-pair-done"
-                      stage={2}
-                      text="Готово — это ваша первая пара, она стоит в расписании на весь семестр. Остальные добавляются так же: «Расписание группы» вверху."
-                    >
-                      {row}
-                    </Hint>
-                  ) : (
-                    <React.Fragment key={lecture.id}>{row}</React.Fragment>
-                  );
-                })
-              )}
-            </View>
-          );
-        })}
-      </ScrollView>
+            );
+            return (
+              <View key={shown.getTime()} style={[styles.daySection, today && styles.dayToday]}>
+                {/* In a week the title opens that day on its own. */}
+                {view.mode === 'week' ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityHint="Показать только этот день"
+                    onPress={() => openDay(shown)}
+                  >
+                    {title}
+                  </Pressable>
+                ) : (
+                  title
+                )}
+                {dayLectures.length === 0 ? (
+                  <Text style={styles.emptyDay}>Нет занятий</Text>
+                ) : (
+                  dayLectures.map((lecture) => {
+                    const row = (
+                      <Pressable
+                        style={[styles.lectureRow, lecture.id === showLectureId && styles.lectureShown]}
+                        onPress={() => navigation.navigate('LectureDetails', { lectureId: lecture.id })}
+                      >
+                        <Text style={styles.lectureTime}>{formatTime(new Date(lecture.scheduledTime))}</Text>
+                        <View style={styles.lectureInfo}>
+                          <Text variant="bodyMedium">{lecture.title}</Text>
+                          {lecture.room ? <Text style={styles.lectureRoom}>ауд. {lecture.room}</Text> : null}
+                        </View>
+                      </Pressable>
+                    );
+                    // The newcomer's path ends here: the group has a pair now, so no other hint follows.
+                    return lecture.id === showLectureId && route.params?.firstPair ? (
+                      <Hint
+                        key={lecture.id}
+                        id="first-pair-done"
+                        stage={2}
+                        text="Готово — это ваша первая пара, она стоит в расписании на весь семестр. Остальные добавляются так же: «Расписание группы» вверху."
+                      >
+                        {row}
+                      </Hint>
+                    ) : (
+                      <React.Fragment key={lecture.id}>{row}</React.Fragment>
+                    );
+                  })
+                )}
+              </View>
+            );
+          })}
+        </ScrollView>
+      </View>
     </View>
   );
 }
@@ -253,6 +322,11 @@ export function ScheduleScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    flexDirection: 'row',
+  },
+  main: {
+    flex: 1,
+    minWidth: 0,
   },
   center: {
     flex: 1,
@@ -265,22 +339,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 2,
     paddingTop: 8,
   },
-  subHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 8,
-    paddingLeft: 16,
-    paddingRight: 4,
+  arrow: {
+    fontSize: 22,
+    lineHeight: 26,
+  },
+  weekLabel: {
+    fontFamily: libraryFonts.headingBold,
+    fontSize: 17,
   },
   caption: {
-    flex: 1,
+    paddingLeft: 14,
+    paddingRight: 16,
+  },
+  links: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingRight: 4,
   },
   days: {
-    padding: 16,
+    paddingLeft: 14,
+    paddingRight: 16,
+    paddingVertical: 16,
     gap: 20,
   },
   daySection: {
@@ -291,6 +374,11 @@ const styles = StyleSheet.create({
   },
   dayTitle: {
     opacity: 0.8,
+  },
+  dayTitleLarge: {
+    fontFamily: libraryFonts.headingBold,
+    fontSize: 20,
+    lineHeight: 28,
   },
   emptyDay: {
     opacity: 0.5,

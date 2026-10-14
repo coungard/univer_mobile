@@ -1,4 +1,11 @@
-import { getWeek, weekOffsetOf } from '../src/features/schedule/dateUtils';
+import { addDays, getWeek, isSameDay, weekOffsetOf } from '../src/features/schedule/dateUtils';
+
+describe('addDays', () => {
+  test('steps over the end of a month and of a year', () => {
+    expect(isSameDay(addDays(new Date(2026, 9, 31), 1), new Date(2026, 10, 1))).toBe(true);
+    expect(isSameDay(addDays(new Date(2027, 0, 1), -1), new Date(2026, 11, 31))).toBe(true);
+  });
+});
 
 describe('weekOffsetOf', () => {
   // A Tuesday.
