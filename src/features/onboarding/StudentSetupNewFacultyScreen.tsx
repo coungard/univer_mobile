@@ -10,7 +10,7 @@ import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnStudentQuery, useUniversityQuery } from '../profile/hooks';
 import { useCreateOwnFacultyMutation, useUpdateOwnStudentMutation } from './hooks';
 import { StepHeader, StepTextField, useStepStyles } from './RegistrationStep';
-import { firstUnfilledSetupStep } from './studentSetup';
+import { firstUnfilledSetupStep, useConfirmGroupReset } from './studentSetup';
 
 const NAME_MAX_LENGTH = 255;
 
@@ -51,7 +51,14 @@ export function StudentSetupNewFacultyScreen({ navigation, route }: StudentStack
     setExistingId(null);
   };
 
-  const onSubmit = async () => {
+  // A new faculty always replaces the saved one, so a student in a group is asked first.
+  const confirmReset = useConfirmGroupReset();
+  const onSubmit = () => {
+    if (!trimmedName || busy) return;
+    confirmReset('faculty', true, submit);
+  };
+
+  const submit = async () => {
     if (!trimmedName || busy) return;
     setError(null);
     setExistingId(null);
@@ -76,7 +83,12 @@ export function StudentSetupNewFacultyScreen({ navigation, route }: StudentStack
     }
   };
 
-  const onPickExisting = async () => {
+  const onPickExisting = () => {
+    if (!existingId || busy) return;
+    confirmReset('faculty', existingId !== student.data?.facultyId, pickExisting);
+  };
+
+  const pickExisting = async () => {
     if (!existingId || busy) return;
     setError(null);
     try {

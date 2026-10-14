@@ -8,7 +8,7 @@ import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnStudentQuery, useUniversityQuery } from '../profile/hooks';
 import { ChoiceStep } from './ChoiceStep';
 import { useFacultiesQuery } from './hooks';
-import { firstUnfilledSetupStep, useSaveSetupStep } from './studentSetup';
+import { firstUnfilledSetupStep, useConfirmGroupReset, useSaveSetupStep } from './studentSetup';
 
 const HINT = { id: 'setup-faculty', stage: 0, text: 'Нет вашего факультета? Создайте его — нужно только название.' };
 
@@ -52,9 +52,12 @@ export function StudentSetupFacultyScreen({ navigation }: StudentStackScreenProp
   const selectedId = pickedId ?? student.data?.facultyId;
   const selected = all.find((item) => item.id === selectedId) ?? null;
 
-  const onSubmit = async () => {
+  const confirmReset = useConfirmGroupReset();
+  const onSubmit = () => {
     if (!selected) return;
-    if (await save({ facultyId: selected.id })) navigation.navigate('SetupYear');
+    confirmReset('faculty', selected.id !== student.data?.facultyId, async () => {
+      if (await save({ facultyId: selected.id })) navigation.navigate('SetupYear');
+    });
   };
 
   return (

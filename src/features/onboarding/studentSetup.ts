@@ -1,8 +1,12 @@
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Alert } from 'react-native';
 import { create } from 'zustand';
+import { getGroup } from '../../api/endpoints/groups';
 import { ApiError } from '../../api/errors';
 import { StudentDto, UpdateStudentProfileRequest } from '../../api/types';
 import { StudentStackParamList } from '../../navigation/types';
+import { useOwnStudentQuery } from '../profile/hooks';
 import { useUpdateOwnStudentMutation } from './hooks';
 
 /** Years offered on the year step (PLAN_FINISHED_01.MD: «курс 1–6» — the range the server accepts). */
@@ -87,4 +91,45 @@ export function useSaveSetupStep(onGone: () => void) {
   };
 
   return { save, saving: update.isPending, error, clearError: () => setError(null) };
+}
+
+/** What a changed step clears below it on the server (`PATCH /students/me`, API.md). */
+const RESET_BELOW = {
+  university: { title: 'Сменить университет?', cleared: 'Факультет, курс и группа' },
+  faculty: { title: 'Сменить факультет?', cleared: 'Курс и группа' },
+  year: { title: 'Сменить курс?', cleared: 'Группа' },
+} as const;
+
+/**
+ * Asks before a step of the wizard changes a link above a group the student is already in
+ * (issue #54): the server clears everything below the changed link at once, so a student who
+ * then leaves the wizard stays without a group and a schedule. Without a group, or when the value
+ * stays the same, `proceed` runs straight away.
+ */
+export function useConfirmGroupReset() {
+  const student = useOwnStudentQuery();
+  const groupId = student.data?.groupId ?? undefined;
+  // Same key as the profile's group query, so the name is usually cached already.
+  const group = useQuery({
+    queryKey: ['groups', groupId],
+    queryFn: () => getGroup(groupId as string),
+    enabled: !!groupId,
+  });
+
+  return (step: keyof typeof RESET_BELOW, changed: boolean, proceed: () => void) => {
+    if (!groupId || !changed) {
+      proceed();
+      return;
+    }
+    const { title, cleared } = RESET_BELOW[step];
+    const groupName = group.data?.name;
+    Alert.alert(
+      title,
+      `${cleared}${groupName ? ` «${groupName}»` : ''} будут сброшены сразу. Пока вы не выберете новую группу, расписания не будет.`,
+      [
+        { text: 'Отмена', style: 'cancel' },
+        { text: 'Сменить', style: 'destructive', onPress: proceed },
+      ],
+    );
+  };
 }

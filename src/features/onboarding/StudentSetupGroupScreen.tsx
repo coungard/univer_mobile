@@ -47,9 +47,20 @@ export function StudentSetupGroupScreen({ navigation }: StudentStackScreenProps<
     }
   }, [student.data, navigation]);
 
-  const all = useMemo(() => (groups.data ?? []).map((group) => ({ id: group.id, title: group.name })), [groups.data]);
+  // The full name as a second line tells apart groups with similar short names («У530 РПиС» and
+  // «У533 РПиС», issue #54); search looks in both.
+  const all = useMemo(
+    () =>
+      (groups.data ?? []).map((group) => {
+        const fullName = group.fullName?.trim();
+        return { id: group.id, title: group.name, subtitle: fullName && fullName !== group.name ? fullName : undefined };
+      }),
+    [groups.data],
+  );
   const needle = search.trim().toLowerCase();
-  const items = needle ? all.filter((item) => item.title.toLowerCase().includes(needle)) : all;
+  const items = needle
+    ? all.filter((item) => item.title.toLowerCase().includes(needle) || item.subtitle?.toLowerCase().includes(needle))
+    : all;
   const selectedId = pickedId ?? student.data?.groupId;
   const selected = all.find((item) => item.id === selectedId) ?? null;
 

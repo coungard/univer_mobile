@@ -4,7 +4,7 @@ import { useNewcomer } from '../hints/useNewcomer';
 import { useFacultyQuery, useOwnStudentQuery } from '../profile/hooks';
 import { ChoiceStep } from './ChoiceStep';
 import { useGroupCountsByYear } from './hooks';
-import { firstUnfilledSetupStep, SETUP_YEARS, useSaveSetupStep } from './studentSetup';
+import { firstUnfilledSetupStep, SETUP_YEARS, useConfirmGroupReset, useSaveSetupStep } from './studentSetup';
 
 /**
  * Step 5 of student registration (PLAN_FINISHED_01.MD): pick a year. Always offered from the fixed 1–6 range,
@@ -40,7 +40,13 @@ export function StudentSetupYearScreen({ navigation }: StudentStackScreenProps<'
   const selectedYear = pickedYear ?? student.data?.yearNumber;
   const selected = items.find((item) => item.id === String(selectedYear)) ?? null;
 
-  const onSubmit = async () => {
+  const confirmReset = useConfirmGroupReset();
+  const onSubmit = () => {
+    if (!selected) return;
+    confirmReset('year', Number(selected.id) !== student.data?.yearNumber, submit);
+  };
+
+  const submit = async () => {
     if (!selected) return;
     const year = Number(selected.id);
     if (!(await save({ yearNumber: year }))) return;

@@ -7,7 +7,7 @@ import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnStudentQuery, useUniversityQuery } from '../profile/hooks';
 import { ChoiceItem, ChoiceStep } from './ChoiceStep';
 import { useUniversitiesQuery } from './hooks';
-import { useSaveSetupStep } from './studentSetup';
+import { useConfirmGroupReset, useSaveSetupStep } from './studentSetup';
 
 /**
  * Step 3 of student registration (PLAN_FINISHED_01.MD): pick a university — within the region chosen on step
@@ -45,9 +45,12 @@ export function StudentSetupUniversityScreen({ navigation, route }: StudentStack
       regionName: route.params?.regionName,
     });
 
-  const onSubmit = async () => {
+  const confirmReset = useConfirmGroupReset();
+  const onSubmit = () => {
     if (!selected) return;
-    if (await save({ universityId: selected.id })) navigation.navigate('SetupFaculty');
+    confirmReset('university', selected.id !== savedId, async () => {
+      if (await save({ universityId: selected.id })) navigation.navigate('SetupFaculty');
+    });
   };
 
   const hasSearch = search.trim().length > 0;
