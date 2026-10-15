@@ -4,16 +4,9 @@ import { EMPTY_HINTS, loadHints, saveHints, StoredHints } from './hintStorage';
 interface HintsContextValue {
   /** False until the stored state is read — hints stay hidden meanwhile, so a closed one never flashes. */
   ready: boolean;
-  disabled: boolean;
-  /** Whether anything is hidden — the mode is off or some hint was closed — so there is something to bring back. */
-  anyHidden: boolean;
   isDismissed: (id: string) => boolean;
   /** Close one hint for good. */
   dismiss: (id: string) => void;
-  /** «Не показывать подсказки». */
-  disableAll: () => void;
-  /** «Показать подсказки снова»: turns the mode back on and forgets every closed hint. */
-  reset: () => void;
 }
 
 const HintsContext = createContext<HintsContextValue | null>(null);
@@ -46,15 +39,11 @@ export function HintProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<HintsContextValue>(
     () => ({
       ready,
-      disabled: hints.disabled,
-      anyHidden: hints.disabled || hints.dismissed.length > 0,
       isDismissed: id => hints.dismissed.includes(id),
       dismiss: id =>
         update(current =>
           current.dismissed.includes(id) ? current : { ...current, dismissed: [...current.dismissed, id] },
         ),
-      disableAll: () => update(current => ({ ...current, disabled: true })),
-      reset: () => update(() => EMPTY_HINTS),
     }),
     [ready, hints, update],
   );

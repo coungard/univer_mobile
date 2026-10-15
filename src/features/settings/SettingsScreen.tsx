@@ -4,17 +4,15 @@ import { Button, SegmentedButtons, Text } from 'react-native-paper';
 import { version } from '../../../package.json';
 import { useAuth } from '../../auth/useAuth';
 import { libraryFonts } from '../../theme/library';
-import { useHints } from '../hints/HintProvider';
 import { ScheduleViewMode, ThemePreference, useSettingsStore } from './settingsStore';
 
 /**
  * «Настройки» (issue #60): everything about the app rather than the student, opened from the
- * profile — the schedule's view on opening, the theme, the newcomer hints, signing out and the
+ * profile — the schedule's view on opening, the theme, signing out and the
  * app's version. Student only; the teacher gets settings of their own later.
  */
 export function SettingsScreen() {
   const { logout } = useAuth();
-  const hints = useHints();
   const theme = useSettingsStore((state) => state.theme);
   const setTheme = useSettingsStore((state) => state.setTheme);
   const scheduleView = useSettingsStore((state) => state.scheduleView);
@@ -59,18 +57,6 @@ export function SettingsScreen() {
         </Text>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.heading}>Подсказки</Text>
-        <Button mode="outlined" disabled={!hints.anyHidden} onPress={hints.reset} style={styles.hintsButton}>
-          Показать подсказки снова
-        </Button>
-        <Text variant="bodySmall" style={styles.note}>
-          {hints.anyHidden
-            ? 'Вернёт закрытые подсказки. Они появляются, пока у вашей группы нет ни одной пары.'
-            : 'Все подсказки включены. Они появляются, пока у вашей группы нет ни одной пары.'}
-        </Text>
-      </View>
-
       <Button mode="outlined" onPress={() => logout()} style={styles.logout}>
         Выйти
       </Button>
@@ -100,9 +86,6 @@ const styles = StyleSheet.create({
   },
   note: {
     opacity: 0.6,
-  },
-  hintsButton: {
-    alignSelf: 'flex-start',
   },
   logout: {
     marginTop: 8,

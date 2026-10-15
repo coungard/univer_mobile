@@ -64,7 +64,7 @@ export function Hint({ id, stage, text, active = true, clearance = 0, style, chi
   const focused = useIsFocused();
   // On the dark screen the ink bubble would vanish (issue #60).
   const raised = useTheme().dark ? { backgroundColor: libraryDarkColors.raisedInk } : null;
-  const shown = active && focused && hints.ready && !hints.disabled && !hints.isDismissed(id);
+  const shown = active && focused && hints.ready && !hints.isDismissed(id);
 
   const targetRef = useRef<View>(null);
   const hostRef = useRef<View>(null);
@@ -142,9 +142,6 @@ export function Hint({ id, stage, text, active = true, clearance = 0, style, chi
                 </View>
                 <Text style={styles.text}>{text}</Text>
                 <View style={styles.actions}>
-                  <Pressable onPress={hints.disableAll} accessibilityRole="button" style={styles.offButton}>
-                    <Text style={styles.offLabel}>Не показывать подсказки</Text>
-                  </Pressable>
                   <Pressable onPress={() => hints.dismiss(id)} accessibilityRole="button" style={styles.okButton}>
                     <Text style={styles.okLabel}>Понятно</Text>
                   </Pressable>
@@ -235,18 +232,7 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  offButton: {
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  offLabel: {
-    fontFamily: libraryFonts.bodyRegular,
-    fontSize: 13,
-    textDecorationLine: 'underline',
-    color: libraryHintColors.muted,
+    justifyContent: 'flex-end',
   },
   okButton: {
     minHeight: 44,
