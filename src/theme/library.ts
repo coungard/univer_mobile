@@ -99,6 +99,9 @@ const libraryLightPalette = {
   /** Outline and pages of the drawn books (`BookIcon`). */
   bookStroke: libraryColors.ink,
   bookPage: libraryColors.surface,
+  /** Cards with cream text on the profile (issue #65): the nearest lecture, and an unfinished profile. */
+  dayCard: libraryColors.navy,
+  setupCard: libraryColors.terracotta,
   spines: [libraryColors.terracotta, libraryColors.gold, libraryColors.sage, libraryColors.rust, libraryColors.navy],
 };
 
@@ -128,6 +131,9 @@ const libraryDarkPalette: LibraryPalette = {
   spineShade: 'rgba(0, 0, 0, 0.25)',
   bookStroke: '#1E1814',
   bookPage: '#F3EBE0',
+  // Darker than the dark spines, so cream text keeps its contrast.
+  dayCard: '#1F4F66',
+  setupCard: '#8E3E30',
   spines: ['#B4533F', '#D4A64E', '#4E8A5C', '#B56A4C', '#2F6F8C'],
 };
 
