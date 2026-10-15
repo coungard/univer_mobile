@@ -21,6 +21,8 @@ import {
   formatWeekRangeLabel,
   getWeek,
   isSameDay,
+  nearestOutside,
+  shortDayName,
   startOfDay,
   weekOffsetOf,
 } from './dateUtils';
@@ -89,6 +91,25 @@ export function ScheduleScreen({ navigation, route }: Props) {
     }
     return map;
   }, [lectureData, shownDays]);
+
+  // Nothing in the shown week or day, but lectures elsewhere (holidays, before or after the
+  // semester): a way straight to the nearest one (issue #64). A student without any lecture — a
+  // newcomer among them, who has the way to the first pair instead — gets none.
+  const nearest = useMemo(
+    () =>
+      view.mode === 'day'
+        ? nearestOutside(lectureData ?? [], day, addDays(day, 1))
+        : nearestOutside(lectureData ?? [], week.start, week.end),
+    [lectureData, view.mode, day, week],
+  );
+  const nearestAt = nearest ? new Date(nearest.item.scheduledTime) : undefined;
+  const goToNearest = () => {
+    if (!nearest || !nearestAt) return;
+    setWeekOffset(weekOffsetOf(nearestAt, TODAY));
+    setDay(startOfDay(nearestAt));
+    // Marked like a just-saved pair; no newcomer hint with it.
+    navigation.setParams({ showLectureId: nearest.item.id, firstPair: undefined });
+  };
 
   const openDay = (next: Date) => {
     setDay(next);
@@ -252,6 +273,16 @@ export function ScheduleScreen({ navigation, route }: Props) {
           )}
         </View>
 
+        {nearest && nearestAt ? (
+          <View style={styles.nearest}>
+            <Button compact onPress={goToNearest}>
+              {nearest.later
+                ? `Ближайшее занятие — ${shortDayName(nearestAt)}, ${formatDayDate(nearestAt)} →`
+                : `← Последнее занятие — ${shortDayName(nearestAt)}, ${formatDayDate(nearestAt)}`}
+            </Button>
+          </View>
+        ) : null}
+
         <ScrollView
           contentContainerStyle={styles.days}
           refreshControl={<RefreshControl refreshing={lectures.isRefetching} onRefresh={() => lectures.refetch()} />}
@@ -359,6 +390,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingRight: 4,
+  },
+  nearest: {
+    alignItems: 'flex-start',
   },
   days: {
     paddingLeft: 14,

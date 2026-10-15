@@ -75,3 +75,41 @@ export function formatWeekRangeLabel(week: Week): string {
   const from = sameMonth ? `${week.start.getDate()}` : formatDayDate(week.start);
   return `${from}–${formatDayDate(last)}`;
 }
+
+const SHORT_DAY_NAMES = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
+
+/** e.g. "вт" — for compact labels like "вт, 20 октября". */
+export function shortDayName(date: Date): string {
+  const day = date.getDay();
+  return SHORT_DAY_NAMES[day === 0 ? 6 : day - 1];
+}
+
+/**
+ * For a shown period `[from, to)` with nothing in it (issue #64): the first item after the period,
+ * or — when nothing is ahead, e.g. the semester is over — the last one before it. `null` when the
+ * period has an item of its own, or there are no items at all.
+ */
+export function nearestOutside<T extends { scheduledTime: string }>(
+  items: readonly T[],
+  from: Date,
+  to: Date,
+): { item: T; later: boolean } | null {
+  let next: T | undefined;
+  let nextAt = Infinity;
+  let prev: T | undefined;
+  let prevAt = -Infinity;
+  for (const item of items) {
+    const at = new Date(item.scheduledTime).getTime();
+    if (at >= from.getTime() && at < to.getTime()) return null;
+    if (at >= to.getTime() && at < nextAt) {
+      next = item;
+      nextAt = at;
+    } else if (at < from.getTime() && at > prevAt) {
+      prev = item;
+      prevAt = at;
+    }
+  }
+  if (next) return { item: next, later: true };
+  if (prev) return { item: prev, later: false };
+  return null;
+}
