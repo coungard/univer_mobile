@@ -10,8 +10,10 @@ import { useAllCoursesQuery } from '../courses/hooks';
 import { Hint } from '../hints/Hint';
 import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnStudentQuery, useSemesterQuery } from '../profile/hooks';
+import { useSettingsStore } from '../settings/settingsStore';
 import { GroupCaption } from './GroupCaption';
 import { DAY_OPTIONS, PARITY_OPTIONS } from './PairFormScreen';
+import { Weekday } from './scheduleDays';
 import {
   useDeletePairMutation,
   useEffectiveBellScheduleQuery,
@@ -35,6 +37,7 @@ const DAY_ORDER = DAY_OPTIONS.map((o) => o.value);
  */
 export function GroupScheduleScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const enabledDays = useSettingsStore((state) => state.scheduleDays);
   const theme = useTheme();
   const student = useOwnStudentQuery();
   const cycle = useOwnWeekScheduleCycleQuery(student.data?.groupId ?? undefined);
@@ -102,10 +105,12 @@ export function GroupScheduleScreen({ navigation }: Props) {
   const isDraft = activeCycle.status !== 'AGREED';
   const pairList = pairs.data ?? [];
 
-  const sections = DAY_ORDER.map((day) => ({
+  // A day turned off in «Настройки» (issue #67) is left out unless the group has a pair on it.
+  const sections = DAY_ORDER.map((day, index) => ({
     day,
+    shown: enabledDays.includes((index + 1) as Weekday),
     items: pairList.filter((p) => p.dayOfWeek === day).sort((a, b) => a.pairNumber - b.pairNumber),
-  }));
+  })).filter((section) => section.shown || section.items.length > 0);
 
   const handleDelete = (pair: PairDto) => {
     Alert.alert(

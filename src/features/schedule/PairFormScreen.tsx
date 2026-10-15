@@ -35,6 +35,8 @@ export const DAY_OPTIONS = [
   { label: 'Среда', value: 'WEDNESDAY' },
   { label: 'Четверг', value: 'THURSDAY' },
   { label: 'Пятница', value: 'FRIDAY' },
+  { label: 'Суббота', value: 'SATURDAY' },
+  { label: 'Воскресенье', value: 'SUNDAY' },
 ];
 
 export const PARITY_OPTIONS = [

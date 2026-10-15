@@ -2,12 +2,12 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { libraryColors, libraryDarkColors, libraryFonts, librarySpineColors } from '../../theme/library';
-import { dayName, formatDayDate, isSameDay, Week } from './dateUtils';
-
-const SHORT_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+import { dayName, formatDayDate, isSameDay } from './dateUtils';
+import { isoWeekday, WEEKDAY_SHORT_NAMES } from './scheduleDays';
 
 interface Props {
-  week: Week;
+  /** The shown week's days — only those picked in «Настройки» (issue #67). */
+  days: Date[];
   /** The shown day, or null when the whole week is shown. */
   selected: Date | null;
   today: Date;
@@ -17,10 +17,10 @@ interface Props {
 
 /**
  * «Корешки дней» (issue #59, variant 6 of the canvas https://claude.ai/artifact/Hpr2ts5Pw67LYNd5NM5WWj):
- * a column of book spines down the left edge — «Вся неделя» and the seven days of the shown week.
+ * a column of book spines down the left edge — «Вся неделя» and the days of the shown week.
  * The chosen spine sticks out further than the rest; today's spine carries a dot under its number.
  */
-export function DaySpines({ week, selected, today, onPickWeek, onPickDay }: Props) {
+export function DaySpines({ days, selected, today, onPickWeek, onPickDay }: Props) {
   // The ink spine would vanish against the dark screen (issue #60).
   const weekSpine = useTheme().dark ? { backgroundColor: libraryDarkColors.raisedInk } : styles.weekSpine;
   return (
@@ -34,7 +34,9 @@ export function DaySpines({ week, selected, today, onPickWeek, onPickDay }: Prop
       >
         <Text style={[styles.weekLabel, { color: libraryColors.cream }]}>{'Вся\nнеделя'}</Text>
       </Pressable>
-      {week.days.map((day, i) => {
+      {days.map((day) => {
+        // By the weekday, not the position, so a day keeps its colour when others are turned off.
+        const i = isoWeekday(day) - 1;
         const background = librarySpineColors[i % librarySpineColors.length];
         // Light type doesn't read on the gold spine.
         const color = background === libraryColors.gold ? libraryColors.ink : libraryColors.cream;
@@ -49,7 +51,7 @@ export function DaySpines({ week, selected, today, onPickWeek, onPickDay }: Prop
             onPress={() => onPickDay(day)}
             style={[styles.spine, { backgroundColor: background }, isSelected && styles.spineSelected]}
           >
-            <Text style={[styles.short, { color }]}>{SHORT_NAMES[i]}</Text>
+            <Text style={[styles.short, { color }]}>{WEEKDAY_SHORT_NAMES[i]}</Text>
             <Text style={[styles.number, { color }]}>{day.getDate()}</Text>
             {isToday ? <View style={[styles.todayDot, { backgroundColor: color }]} /> : null}
           </Pressable>

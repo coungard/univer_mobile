@@ -27,7 +27,8 @@ import {
   weekOffsetOf,
 } from './dateUtils';
 import { useGroupPairsQuery, useMyLecturesQuery, useOwnWeekScheduleCycleQuery } from './hooks';
-import { useScheduleViewMode } from '../settings/settingsStore';
+import { useScheduleViewMode, useSettingsStore } from '../settings/settingsStore';
+import { firstEnabledFrom, shownWeekDays } from './scheduleDays';
 
 const TODAY = new Date();
 
@@ -47,6 +48,7 @@ export function ScheduleScreen({ navigation, route }: Props) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [day, setDay] = useState(() => startOfDay(TODAY));
   const view = useScheduleViewMode();
+  const enabledDays = useSettingsStore((state) => state.scheduleDays);
   const newcomer = useNewcomer();
 
   // Only actually used once the schedule turns out empty (see the empty-state branch below), but
@@ -77,7 +79,22 @@ export function ScheduleScreen({ navigation, route }: Props) {
     setDay(startOfDay(scheduledAt));
   }, [shownLectureTime]);
 
-  const shownDays = useMemo(() => (view.mode === 'day' ? [day] : week.days), [view.mode, day, week.days]);
+  // The days picked in «Настройки» (issue #67), plus a day turned off that has a lecture anyway.
+  const lectureTimes = useMemo(() => (lectureData ?? []).map((lecture) => lecture.scheduledTime), [lectureData]);
+  const weekDays = useMemo(
+    () => shownWeekDays(week.days, enabledDays, lectureTimes),
+    [week.days, enabledDays, lectureTimes],
+  );
+  // The day view doesn't open a day turned off: on such a day it moves on to the next enabled one
+  // (today on a Sunday turned off opens Monday, the next week).
+  useEffect(() => {
+    if (view.mode !== 'day' || shownWeekDays([day], enabledDays, lectureTimes).length > 0) return;
+    const next = firstEnabledFrom(day, enabledDays);
+    setDay(next);
+    setWeekOffset(weekOffsetOf(next, TODAY));
+  }, [view.mode, day, enabledDays, lectureTimes]);
+
+  const shownDays = useMemo(() => (view.mode === 'day' ? [day] : weekDays), [view.mode, day, weekDays]);
   const lecturesByDay = useMemo(() => {
     const map = new Map<number, LectureDto[]>();
     for (const shown of shownDays) map.set(shown.getTime(), []);
@@ -122,7 +139,10 @@ export function ScheduleScreen({ navigation, route }: Props) {
     setDay((current) => addDays(current, 7 * direction));
   };
 
-  const atToday = view.mode === 'day' ? isSameDay(day, TODAY) : weekOffset === 0;
+  const atToday =
+    view.mode === 'day'
+      ? isSameDay(day, TODAY) || isSameDay(day, firstEnabledFrom(TODAY, enabledDays))
+      : weekOffset === 0;
   const goToToday = () => {
     setDay(startOfDay(TODAY));
     setWeekOffset(0);
@@ -239,7 +259,7 @@ export function ScheduleScreen({ navigation, route }: Props) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <DaySpines
-        week={week}
+        days={weekDays}
         selected={view.mode === 'day' ? day : null}
         today={TODAY}
         onPickWeek={() => view.setMode('week')}
