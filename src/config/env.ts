@@ -5,12 +5,8 @@
  * `docker-compose.yml` / `application.yml`). Override them per-environment later (e.g. via
  * `react-native-config`) instead of hardcoding a different backend here.
  *
- * IMPORTANT: `clientId` below (`univer-mobile`) is the client described in the backend's
- * `MOBILE.md` as the *target* configuration for mobile PKCE login. As of writing, that client
- * does not exist yet in the backend's Keycloak realm import (`init-keycloak/realm-config.json`) —
- * see github.com/coungard/univer_mobile issue #1. Login screens are built against this spec so
- * they are ready the moment the backend team adds the client; until then, the Authorization Code
- * exchange will fail against a local backend with a real "client not found" error from Keycloak.
+ * `clientId` (`univer-mobile`) and the redirect URIs below are the backend's public PKCE client
+ * from its `MOBILE.md`, imported from `init-keycloak/realm-config.json` (coungard/univer#49).
  */
 import { Platform } from 'react-native';
 
