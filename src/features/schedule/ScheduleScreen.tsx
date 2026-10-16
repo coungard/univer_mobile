@@ -29,6 +29,7 @@ import {
 import { useGroupPairsQuery, useMyLecturesQuery, useOwnWeekScheduleCycleQuery } from './hooks';
 import { useScheduleViewMode, useSettingsStore } from '../settings/settingsStore';
 import { firstEnabledFrom, shownWeekDays } from './scheduleDays';
+import { roomAndTeacher } from './teacherName';
 
 const TODAY = new Date();
 
@@ -334,6 +335,7 @@ export function ScheduleScreen({ navigation, route }: Props) {
                   <Text style={styles.emptyDay}>Нет занятий</Text>
                 ) : (
                   dayLectures.map((lecture) => {
+                    const meta = roomAndTeacher(lecture.room, lecture.teacherName);
                     const row = (
                       <Pressable
                         style={[styles.lectureRow, lecture.id === showLectureId && styles.lectureShown]}
@@ -342,7 +344,7 @@ export function ScheduleScreen({ navigation, route }: Props) {
                         <Text style={styles.lectureTime}>{formatTime(new Date(lecture.scheduledTime))}</Text>
                         <View style={styles.lectureInfo}>
                           <Text variant="bodyMedium">{lecture.title}</Text>
-                          {lecture.room ? <Text style={styles.lectureRoom}>ауд. {lecture.room}</Text> : null}
+                          {meta ? <Text style={styles.lectureRoom}>{meta}</Text> : null}
                         </View>
                       </Pressable>
                     );

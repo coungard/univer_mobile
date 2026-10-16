@@ -452,7 +452,7 @@ export interface paths {
         };
         /**
          * Получить всех преподавателей
-         * @description Поддерживает поиск по имени, университету
+         * @description Необязательный отбор по факультету (facultyId) или университету (universityId) — например, чтобы предложить преподавателей факультета в форме пары. При обоих параметрах отбор идёт по факультету
          */
         get: operations["getTeachers"];
         put?: never;
@@ -1521,6 +1521,7 @@ export interface components {
             courseId: string;
             /** Format: uuid */
             teacherId?: string;
+            teacherName?: string;
             room?: string;
             groupIds: string[];
         };
@@ -1537,6 +1538,7 @@ export interface components {
             courseId: string;
             /** Format: uuid */
             teacherId?: string;
+            teacherName?: string;
             room?: string;
             /** Format: uuid */
             sourcePairId?: string;
@@ -3559,6 +3561,8 @@ export interface operations {
     getTeachers: {
         parameters: {
             query?: {
+                facultyId?: string;
+                universityId?: string;
                 page?: number;
                 size?: number;
             };

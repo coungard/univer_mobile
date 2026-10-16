@@ -1,10 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useQueryClient } from '@tanstack/react-query';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
-import { PairInput, Weekday, WeekParity } from '../../api/types';
+import { getTeacher } from '../../api/endpoints/teachers';
+import { PairInput, TeacherDto, Weekday, WeekParity } from '../../api/types';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { SelectField } from '../../components/SelectField';
@@ -16,6 +18,7 @@ import { useOwnStudentQuery } from '../profile/hooks';
 import {
   useCreatePairMutation,
   useEffectiveBellScheduleQuery,
+  useFacultyTeachersQuery,
   useGenerateSemesterLecturesMutation,
   useGroupPairsQuery,
   useOwnWeekScheduleCycleQuery,
@@ -24,6 +27,8 @@ import {
 } from './hooks';
 import { NewCourseDialog } from './NewCourseDialog';
 import { PairForm, pairFormSchema } from './pairFormSchema';
+import { TeacherField } from './TeacherField';
+import { teacherDisplayName } from './teacherName';
 
 type Props = StudentStackScreenProps<'PairForm'>;
 
@@ -51,9 +56,10 @@ export const PARITY_OPTIONS = [
  * добавляет сам — последним пунктом списка («Добавить свой предмет», `PLAN.md`, M26; issue #57). Время начала/окончания не запрашивается и
  * не передаётся: номер пары выбирается из звонков, действующих для университета студента, и по ним же
  * время подставляет сервер (M27). Новая пара сразу превращается в занятия на семестр, и открывается
- * расписание с первым из них (M28); кафедра/преподаватель/группы — не поля формы: `teacherId` берётся
- * из выбранного предмета, `groupIds` всегда `[student.groupId]` (см. вопросы в `UI_UX.md` разделе 7 —
- * оба зафиксированы для этой реализации).
+ * расписание с первым из них (M28). Преподаватель необязателен (issue #68): один из преподавателей
+ * факультета из подсказок (`teacherId`) или имя текстом (`teacherName`, univer#104); у предмета со своим
+ * преподавателем он подставляется при выборе предмета, и его можно поменять. Кафедра/группы — не поля
+ * формы: `groupIds` всегда `[student.groupId]` (см. вопросы в `UI_UX.md` разделе 7).
  */
 export function PairFormScreen({ route, navigation }: Props) {
   const { pairId } = route.params ?? {};
@@ -66,6 +72,8 @@ export function PairFormScreen({ route, navigation }: Props) {
   // A pair saved earlier may point at a subject outside the faculty's list — it still needs a title.
   const pairCourse = useCourseQuery(existingPair.data?.courseId);
   const bellSchedule = useEffectiveBellScheduleQuery(student.data?.universityId ?? undefined);
+  const teachers = useFacultyTeachersQuery(student.data?.facultyId ?? undefined);
+  const queryClient = useQueryClient();
 
   const createPair = useCreatePairMutation(student.data?.groupId ?? undefined);
   const updatePair = useUpdatePairMutation(student.data?.groupId ?? undefined);
@@ -78,19 +86,31 @@ export function PairFormScreen({ route, navigation }: Props) {
   // Subjects picked through «Добавить свой предмет» — on the form before the list is refetched.
   const [addedCourses, setAddedCourses] = useState<{ id: string; title: string }[]>([]);
   const [courseNote, setCourseNote] = useState<string | null>(null);
+  // The teacher the last picked subject put in the field — a different subject replaces only that one.
+  const prefilledTeacherId = useRef<string | null>(null);
 
   const {
     control,
     handleSubmit,
     setError,
     setValue,
+    getValues,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<PairForm>({
     resolver: zodResolver(pairFormSchema),
     // «Каждую неделю» is what most pairs are, so a new one starts with it.
-    defaultValues: { dayOfWeek: '', weekParity: isEdit ? '' : 'BOTH', pairNumber: '', courseId: '', room: '' },
+    defaultValues: {
+      dayOfWeek: '',
+      weekParity: isEdit ? '' : 'BOTH',
+      pairNumber: '',
+      courseId: '',
+      room: '',
+      teacherName: '',
+      teacherId: '',
+    },
   });
+  const teacherId = useWatch({ control, name: 'teacherId' }) ?? '';
 
   useEffect(() => {
     if (existingPair.data) {
@@ -100,6 +120,8 @@ export function PairFormScreen({ route, navigation }: Props) {
         pairNumber: String(existingPair.data.pairNumber),
         courseId: existingPair.data.courseId,
         room: existingPair.data.room ?? '',
+        teacherName: existingPair.data.teacherName ?? '',
+        teacherId: existingPair.data.teacherId ?? '',
       });
     }
   }, [existingPair.data, reset]);
@@ -123,6 +145,35 @@ export function PairFormScreen({ route, navigation }: Props) {
     if (saved && !options.some((o) => o.value === saved)) options.push({ label: `${saved} пара`, value: saved });
     return options;
   }, [bellSchedule.data, existingPair.data]);
+
+  /**
+   * A subject with a teacher of its own puts that teacher in the field, unless the student has chosen
+   * or typed one already; a teacher put there by the previous subject gives way to the new one's.
+   */
+  const prefillTeacher = async (courseId: string) => {
+    const current = getValues('teacherName')?.trim();
+    if (current && getValues('teacherId') !== prefilledTeacherId.current) return;
+    const course = courses.data?.find((c) => c.id === courseId) ?? (pairCourse.data?.id === courseId ? pairCourse.data : undefined);
+    const id = course?.teacherId;
+    if (!id) {
+      if (prefilledTeacherId.current) {
+        setValue('teacherName', '');
+        setValue('teacherId', '');
+        prefilledTeacherId.current = null;
+      }
+      return;
+    }
+    try {
+      const teacher: TeacherDto =
+        teachers.data?.find((t) => t.id === id) ??
+        (await queryClient.fetchQuery({ queryKey: ['teachers', id], queryFn: () => getTeacher(id) }));
+      setValue('teacherName', teacherDisplayName(teacher));
+      setValue('teacherId', id);
+      prefilledTeacherId.current = id;
+    } catch {
+      // Not found or offline — the field stays empty for the student to fill.
+    }
+  };
 
   if (student.isLoading || cycle.isLoading || (isEdit && existingPair.isLoading)) {
     return (
@@ -161,9 +212,6 @@ export function PairFormScreen({ route, navigation }: Props) {
     setSubmitError(null);
     if (!student.data?.groupId) return;
 
-    const selectedCourse =
-      courses.data?.find((c) => c.id === values.courseId) ??
-      (pairCourse.data?.id === values.courseId ? pairCourse.data : undefined);
     // No `startTime`/`endTime`: the server takes them from the same bell schedule the form shows.
     const payload: PairInput = {
       weekScheduleCycleId: cycleId,
@@ -171,7 +219,8 @@ export function PairFormScreen({ route, navigation }: Props) {
       weekParity: values.weekParity as WeekParity,
       pairNumber: Number(values.pairNumber),
       courseId: values.courseId,
-      teacherId: selectedCourse?.teacherId,
+      teacherId: values.teacherId || undefined,
+      teacherName: values.teacherId ? undefined : values.teacherName?.trim() || undefined,
       room: values.room || undefined,
       groupIds: [student.data.groupId],
     };
@@ -223,7 +272,7 @@ export function PairFormScreen({ route, navigation }: Props) {
   });
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <ErrorBanner message={submitError} onDismiss={() => setSubmitError(null)} />
 
       <Text variant="headlineSmall" style={styles.title}>
@@ -301,6 +350,7 @@ export function PairFormScreen({ route, navigation }: Props) {
               onChange={(value) => {
                 setCourseNote(null);
                 field.onChange(value);
+                prefillTeacher(value);
               }}
               error={!!errors.courseId}
               disabled={courses.isLoading}
@@ -319,6 +369,25 @@ export function PairFormScreen({ route, navigation }: Props) {
         render={({ field }) => (
           <View style={styles.field}>
             <TextInput label="Аудитория (необязательно)" value={field.value ?? ''} onChangeText={field.onChange} />
+          </View>
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="teacherName"
+        render={({ field }) => (
+          <View style={styles.field}>
+            <TeacherField
+              name={field.value ?? ''}
+              teacherId={teacherId}
+              teachers={teachers.data ?? []}
+              onChange={(value) => {
+                field.onChange(value.name);
+                setValue('teacherId', value.teacherId);
+              }}
+              error={errors.teacherName?.message}
+            />
           </View>
         )}
       />

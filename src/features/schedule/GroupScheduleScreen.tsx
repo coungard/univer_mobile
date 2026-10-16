@@ -14,6 +14,7 @@ import { useSettingsStore } from '../settings/settingsStore';
 import { GroupCaption } from './GroupCaption';
 import { DAY_OPTIONS, PARITY_OPTIONS } from './PairFormScreen';
 import { Weekday } from './scheduleDays';
+import { roomAndTeacher } from './teacherName';
 import {
   useDeletePairMutation,
   useEffectiveBellScheduleQuery,
@@ -202,7 +203,7 @@ export function GroupScheduleScreen({ navigation }: Props) {
                     </Text>
                     <Text variant="bodyMedium">{courseTitleById.get(pair.courseId) ?? 'Предмет'}</Text>
                     <Text style={styles.muted}>
-                      {[timeFor(pair), pair.room ? `ауд. ${pair.room}` : null].filter(Boolean).join(' · ') || '—'}
+                      {[timeFor(pair), roomAndTeacher(pair.room, pair.teacherName)].filter(Boolean).join(' · ') || '—'}
                     </Text>
                   </View>
                   {isDraft ? (

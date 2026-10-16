@@ -20,6 +20,10 @@ export const pairFormSchema = z.object({
     .refine((value) => Number(value) >= 1, 'Минимум 1'),
   courseId: z.string().min(1, 'Выберите предмет'),
   room: z.string().optional(),
+  // Преподаватель (issue #68): выбранный из преподавателей факультета — `teacherId`, иначе имя
+  // текстом; оба необязательны.
+  teacherName: z.string().max(100, 'Не длиннее 100 символов').optional(),
+  teacherId: z.string().optional(),
 });
 
 export type PairForm = z.infer<typeof pairFormSchema>;

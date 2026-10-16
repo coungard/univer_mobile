@@ -13,6 +13,7 @@ import { useOwnUniversityRequestQuery } from '../onboarding/hooks';
 import { firstUnfilledSetupStep, openSetupAt, useSetupPromptStore } from '../onboarding/studentSetup';
 import { formatDayDate, formatTime, shortDayName } from '../schedule/dateUtils';
 import { useMyLecturesQuery } from '../schedule/hooks';
+import { roomAndTeacher } from '../schedule/teacherName';
 import {
   useFacultyQuery,
   useGroupAcademicPathQuery,
@@ -258,6 +259,7 @@ function DayCard({ lectures, loading, newcomerKind, now, onOpenLecture, onOpenSc
     body = <ActivityIndicator color={c.cream} style={styles.dayLoading} />;
   } else if (nearest) {
     const start = new Date(nearest.scheduledTime);
+    const meta = roomAndTeacher(nearest.room, nearest.teacherName);
     body = (
       <>
         <Text style={styles.cardEyebrow}>БЛИЖАЙШЕЕ ЗАНЯТИЕ · {lectureDayLabel(nearest, now)}</Text>
@@ -265,7 +267,7 @@ function DayCard({ lectures, loading, newcomerKind, now, onOpenLecture, onOpenSc
           {formatTime(start)} – {formatTime(lectureEnd(nearest))}
         </Text>
         <Text style={styles.daySubject}>{nearest.title}</Text>
-        {nearest.room ? <Text style={styles.cardMuted}>ауд. {nearest.room}</Text> : null}
+        {meta ? <Text style={styles.cardMuted}>{meta}</Text> : null}
         {next ? (
           <>
             <View style={styles.cardRule} />

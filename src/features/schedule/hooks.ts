@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getEffectiveBellSchedule } from '../../api/endpoints/bellScheduleEntries';
 import { generateSemesterLectures, getLecture, getMyLectures } from '../../api/endpoints/lectures';
 import { createPair, deletePair, getPair, getPairsByGroup, updatePair } from '../../api/endpoints/pairs';
+import { getTeachersByFaculty } from '../../api/endpoints/teachers';
 import { openOwnWeekScheduleCycle } from '../../api/endpoints/weekScheduleCycles';
 import { fetchAllPages } from '../../api/pagination';
 import { PairInput } from '../../api/types';
@@ -48,6 +49,15 @@ export function useGroupPairsQuery(groupId: string | undefined) {
     queryKey: ['pairs', 'group', groupId],
     queryFn: () => fetchAllPages((page) => getPairsByGroup(groupId as string, page)),
     enabled: groupId !== undefined,
+  });
+}
+
+/** The faculty's registered teachers — the suggestions of the pair form's «Преподаватель» (issue #68). */
+export function useFacultyTeachersQuery(facultyId: string | undefined) {
+  return useQuery({
+    queryKey: ['teachers', 'faculty', facultyId],
+    queryFn: () => fetchAllPages((page) => getTeachersByFaculty(facultyId as string, page)),
+    enabled: facultyId !== undefined,
   });
 }
 

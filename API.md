@@ -131,7 +131,9 @@
 ### PairDto
 `id`, `weekScheduleCycleId`★, `dayOfWeek`★ (`MONDAY`…`SUNDAY`), `weekParity: WeekParity`★,
 `pairNumber`★ (`≥ 1`), `startTime` (опционально — если не задано, подставляется из
-`BellScheduleEntry` по университету группы и `pairNumber`), `endTime`, `courseId`★, `teacherId`, `room`,
+`BellScheduleEntry` по университету группы и `pairNumber`), `endTime`, `courseId`★, `teacherId`,
+`teacherName` (до 100 символов, univer#104: преподаватель текстом, если его нет среди зарегистрированных;
+при заданном `teacherId` на входе игнорируется, в ответе — `fullname` этого `Teacher`), `room`,
 `groupIds: UUID[]`★ (непусто). Шаблон повторяющегося занятия в циклическом расписании — из него
 генерируются конкретные `Lecture` на даты.
 `startTime`/`endTime` — строки вида `"10:10:00"`. Мобильное приложение их не передаёт: номер пары
@@ -165,7 +167,8 @@
 `title`★ (до 255 символов). Факультета в запросе нет: он берётся из профиля студента.
 
 ### LectureDto
-`id`, `title`★, `content`, `scheduledTime`★, `durationMinutes`, `courseId`★, `teacherId`, `room`,
+`id`, `title`★, `content`, `scheduledTime`★, `durationMinutes`, `courseId`★, `teacherId`, `teacherName`
+(как у `PairDto`; при генерации из `Pair` копируется из неё), `room`,
 `sourcePairId` (заполняется автоматически при генерации из `Pair` — не заполнять вручную; пусто у
 занятий, созданных вручную, и у занятий с отмеченной посещаемостью, чья пара удалена), `groupIds`★
 (непусто).
@@ -712,13 +715,15 @@
 
 | Метод | Путь | Auth | Тело запроса | Тело ответа |
 |---|---|---|---|---|
-| GET | `/` | любая роль | — (`?page&size`) | `Page<TeacherDto>` |
+| GET | `/` | любая роль | — (`?facultyId&universityId&page&size`) | `Page<TeacherDto>` |
 | GET | `/{id}` | любая роль | — | `TeacherDto` |
 | POST | `/register` | **Public** (без токена) | `RegisterTeacherRequest` | `201` + `TeacherDto` |
 | POST | `/` | любая роль | `TeacherDto` | `201` + `TeacherDto` |
 | PUT | `/{id}` | `ADMIN` | `TeacherDto` | `TeacherDto` |
 | DELETE | `/{id}` | `ADMIN` | — | `204` |
 
+- **`GET /`** — необязательный отбор по факультету (`facultyId`) или университету (`universityId`);
+  при обоих — по факультету (univer#104). Приложение предлагает преподавателей факультета в форме пары.
 - **`POST /register`** — аналог регистрации студента, но для преподавателя: создаёт пользователя в
   Keycloak с ролью `TEACHER`, `id` сущности = Keycloak user ID. Ответы: `201`/`400`/`409`, как у студента.
 - **`POST /`** — создание `Teacher` без прохождения через Keycloak (нет `@PreAuthorize`, доступно любой

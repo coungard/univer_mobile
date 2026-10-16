@@ -6,18 +6,22 @@ import { StudentStackScreenProps } from '../../navigation/types';
 import { useTeacherQuery } from '../profile/hooks';
 import { formatDayDate, formatTime } from './dateUtils';
 import { useLectureQuery } from './hooks';
+import { teacherDisplayName } from './teacherName';
 
 type Props = StudentStackScreenProps<'LectureDetails'>;
 
 /**
  * Детали занятия (ROADMAP.md "Фаза 4"): `title`/`content`/`room` из `LectureDto`, имя
- * преподавателя (`teacherId` опционален), время начала/окончания и длительность, и переход в
- * карточку курса за один тап.
+ * преподавателя полностью (`teacherName` — вписанное в паре или имя зарегистрированного, issue #68;
+ * зарегистрированный без полного имени дозапрашивается), время начала/окончания и длительность, и
+ * переход в карточку курса за один тап.
  */
 export function LectureDetailsScreen({ route, navigation }: Props) {
   const { lectureId } = route.params;
   const lecture = useLectureQuery(lectureId);
-  const teacher = useTeacherQuery(lecture.data?.teacherId);
+  const teacher = useTeacherQuery(lecture.data?.teacherName ? undefined : lecture.data?.teacherId);
+  const teacherName =
+    lecture.data?.teacherName ?? (teacher.data ? teacherDisplayName(teacher.data) : teacher.isLoading ? '…' : '—');
 
   if (lecture.isLoading) {
     return (
@@ -66,12 +70,12 @@ export function LectureDetailsScreen({ route, navigation }: Props) {
         </View>
       ) : null}
 
-      {lecture.data.teacherId ? (
+      {lecture.data.teacherId || lecture.data.teacherName ? (
         <View style={styles.section}>
           <Text variant="labelLarge" style={styles.label}>
             Преподаватель
           </Text>
-          <Text variant="bodyLarge">{teacher.data?.fullname ?? (teacher.isLoading ? '…' : '—')}</Text>
+          <Text variant="bodyLarge">{teacherName}</Text>
         </View>
       ) : null}
 
