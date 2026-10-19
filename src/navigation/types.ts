@@ -66,8 +66,12 @@ export type StudentStackParamList = {
   SetupDone: { requestedUniversity?: string } | undefined;
   /** «Расписание группы» — заполнение `Pair` и генерация `Lecture` (`UI_UX.md` раздел 4). */
   GroupSchedule: undefined;
-  /** Add-`Pair` when `pairId` is omitted, edit that `Pair` otherwise. */
-  PairForm: { pairId?: string } | undefined;
+  /**
+   * Add-`Pair` when `pairId` is omitted, edit that `Pair` otherwise. Opened from a day of the schedule
+   * (issue #69): `day` — that date, `"2026-10-13"`, which gives the weekday; `weekParity` and
+   * `weekLabel` («12–18 октября») — the parity of its semester week, picked by default.
+   */
+  PairForm: { pairId?: string; day?: string; weekParity?: 'ODD' | 'EVEN'; weekLabel?: string } | undefined;
 };
 
 /** Screen props for a tab screen that also needs to navigate into the parent `StudentStack`. */

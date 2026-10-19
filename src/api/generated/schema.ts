@@ -900,6 +900,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/semesters/{id}/week": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Номер и чётность календарной недели семестра для даты (по умолчанию — сегодня) */
+        get: operations["getSemesterWeek"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/semesters/study-year/{studyYearId}": {
         parameters: {
             query?: never;
@@ -1639,33 +1656,33 @@ export interface components {
             groupId?: string;
         };
         PageWeekScheduleCycleDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["WeekScheduleCycleDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageableObject: {
-            paged?: boolean;
-            unpaged?: boolean;
             /** Format: int64 */
             offset?: number;
             sort?: components["schemas"]["SortObject"][];
             /** Format: int32 */
-            pageSize?: number;
-            /** Format: int32 */
             pageNumber?: number;
+            /** Format: int32 */
+            pageSize?: number;
+            unpaged?: boolean;
+            paged?: boolean;
         };
         SortObject: {
             direction?: string;
@@ -1675,39 +1692,39 @@ export interface components {
             ignoreCase?: boolean;
         };
         PageUniversityRequestDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UniversityRequestDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageUniversityDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UniversityDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         ContentDisposition: {
@@ -1735,72 +1752,12 @@ export interface components {
              * @deprecated
              */
             readDate?: string;
-            attachment?: boolean;
-            formData?: boolean;
             inline?: boolean;
+            formData?: boolean;
+            attachment?: boolean;
         };
         ErrorResponse: {
-            detailMessageArguments?: Record<string, never>[];
-            titleMessageCode?: string;
-            detailMessageCode?: string;
-            typeMessageCode?: string;
             headers?: {
-                cacheControl?: string;
-                etag?: string;
-                connection?: string[];
-                accept?: components["schemas"]["MediaType"][];
-                acceptPatch?: components["schemas"]["MediaType"][];
-                accessControlAllowOrigin?: string;
-                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
-                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
-                accessControlAllowHeaders?: string[];
-                accessControlExposeHeaders?: string[];
-                accessControlAllowCredentials?: boolean;
-                /** Format: int64 */
-                accessControlMaxAge?: number;
-                accessControlRequestHeaders?: string[];
-                acceptLanguageAsLocales?: {
-                    language?: string;
-                    displayName?: string;
-                    country?: string;
-                    variant?: string;
-                    script?: string;
-                    unicodeLocaleAttributes?: string[];
-                    unicodeLocaleKeys?: string[];
-                    displayLanguage?: string;
-                    displayScript?: string;
-                    displayCountry?: string;
-                    displayVariant?: string;
-                    extensionKeys?: string[];
-                    iso3Language?: string;
-                    iso3Country?: string;
-                }[];
-                contentDisposition?: components["schemas"]["ContentDisposition"];
-                /** Format: int64 */
-                ifUnmodifiedSince?: number;
-                basicAuth?: string;
-                acceptLanguage?: {
-                    range?: string;
-                    /** Format: double */
-                    weight?: number;
-                }[];
-                allow?: components["schemas"]["HttpMethod"][];
-                /** Format: int64 */
-                expires?: number;
-                ifMatch?: string[];
-                bearerAuth?: string;
-                acceptCharset?: string[];
-                ifNoneMatch?: string[];
-                upgrade?: string;
-                pragma?: string;
-                vary?: string[];
-                range?: components["schemas"]["HttpRange"][];
-                origin?: string;
-                contentType?: components["schemas"]["MediaType"];
-                /** Format: int64 */
-                ifModifiedSince?: number;
-                /** Format: int64 */
-                contentLength?: number;
                 empty?: boolean;
                 /** Format: uri */
                 location?: string;
@@ -1835,6 +1792,16 @@ export interface components {
                 lastModified?: number;
                 /** Format: int64 */
                 date?: number;
+                /** Format: int64 */
+                contentLength?: number;
+                connection?: string[];
+                /** Format: int64 */
+                ifModifiedSince?: number;
+                contentType?: components["schemas"]["MediaType"];
+                range?: components["schemas"]["HttpRange"][];
+                contentDisposition?: components["schemas"]["ContentDisposition"];
+                acceptCharset?: string[];
+                allow?: components["schemas"]["HttpMethod"][];
                 contentLanguage?: {
                     language?: string;
                     displayName?: string;
@@ -1851,21 +1818,71 @@ export interface components {
                     iso3Language?: string;
                     iso3Country?: string;
                 };
+                cacheControl?: string;
+                etag?: string;
+                accept?: components["schemas"]["MediaType"][];
+                accessControlAllowOrigin?: string;
+                accessControlAllowCredentials?: boolean;
+                accessControlAllowHeaders?: string[];
+                /** Format: int64 */
+                accessControlMaxAge?: number;
+                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
+                accessControlExposeHeaders?: string[];
+                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
+                accessControlRequestHeaders?: string[];
+                acceptLanguageAsLocales?: {
+                    language?: string;
+                    displayName?: string;
+                    country?: string;
+                    variant?: string;
+                    script?: string;
+                    unicodeLocaleAttributes?: string[];
+                    unicodeLocaleKeys?: string[];
+                    displayLanguage?: string;
+                    displayScript?: string;
+                    displayCountry?: string;
+                    displayVariant?: string;
+                    extensionKeys?: string[];
+                    iso3Language?: string;
+                    iso3Country?: string;
+                }[];
+                /** Format: int64 */
+                ifUnmodifiedSince?: number;
+                acceptPatch?: components["schemas"]["MediaType"][];
+                basicAuth?: string;
+                acceptLanguage?: {
+                    range?: string;
+                    /** Format: double */
+                    weight?: number;
+                }[];
+                ifMatch?: string[];
+                /** Format: int64 */
+                expires?: number;
+                ifNoneMatch?: string[];
+                bearerAuth?: string;
+                vary?: string[];
+                origin?: string;
+                pragma?: string;
+                upgrade?: string;
             } & {
                 [key: string]: string[];
             };
             body?: components["schemas"]["ProblemDetail"];
             statusCode?: components["schemas"]["HttpStatusCode"];
+            detailMessageArguments?: Record<string, never>[];
+            titleMessageCode?: string;
+            detailMessageCode?: string;
+            typeMessageCode?: string;
         };
         HttpMethod: Record<string, never>;
         HttpRange: Record<string, never>;
         HttpStatusCode: {
+            error?: boolean;
             is4xxClientError?: boolean;
             is5xxServerError?: boolean;
             is1xxInformational?: boolean;
-            is2xxSuccessful?: boolean;
             is3xxRedirection?: boolean;
-            error?: boolean;
+            is2xxSuccessful?: boolean;
         };
         MediaType: {
             type?: string;
@@ -1877,8 +1894,8 @@ export interface components {
             qualityValue?: number;
             charset?: string;
             concrete?: boolean;
-            wildcardSubtype?: boolean;
             wildcardType?: boolean;
+            wildcardSubtype?: boolean;
             subtypeSuffix?: string;
         };
         ProblemDetail: {
@@ -1895,76 +1912,91 @@ export interface components {
             };
         };
         PageTeacherDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["TeacherDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageStudyYearDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StudyYearDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageStudentDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StudentDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageSemesterDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["SemesterDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
+        };
+        SemesterWeekDto: {
+            /** Format: uuid */
+            semesterId?: string;
+            /** Format: date */
+            date?: string;
+            /** Format: date */
+            weekStart?: string;
+            /** Format: date */
+            weekEnd?: string;
+            inSemester?: boolean;
+            /** Format: int32 */
+            weekNumber?: number;
+            /** @enum {string} */
+            weekParity?: "ODD" | "EVEN" | "BOTH";
         };
         /** @description Субъект РФ */
         RegionDto: {
@@ -1982,165 +2014,165 @@ export interface components {
             name?: string;
         };
         PagePairDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PairDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageLectureDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LectureDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageGroupDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["GroupDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageFacultyDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["FacultyDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageEnrollmentDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["EnrollmentDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageDepartmentDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["DepartmentDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageCourseDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CourseDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageBellScheduleEntryDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["BellScheduleEntryDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageLectureAttendanceDto: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LectureAttendanceDto"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
             last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         AttendanceStatsDto: {
@@ -4442,6 +4474,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageStudentDto"];
+                };
+            };
+        };
+    };
+    getSemesterWeek: {
+        parameters: {
+            query?: {
+                date?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SemesterWeekDto"];
                 };
             };
         };

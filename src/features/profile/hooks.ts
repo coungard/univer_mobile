@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getDepartment } from '../../api/endpoints/departments';
 import { getFaculty } from '../../api/endpoints/faculties';
 import { getGroup } from '../../api/endpoints/groups';
-import { getSemester } from '../../api/endpoints/semesters';
+import { getSemester, getSemesterWeek } from '../../api/endpoints/semesters';
 import { getOwnStudent } from '../../api/endpoints/students';
 import { getStudyYear } from '../../api/endpoints/studyYears';
 import { getTeacher } from '../../api/endpoints/teachers';
@@ -54,6 +54,18 @@ export function useSemesterQuery(semesterId: string | undefined) {
   return useQuery({
     queryKey: ['semesters', semesterId],
     queryFn: () => getSemester(semesterId as string),
+    enabled: semesterId !== undefined,
+  });
+}
+
+/**
+ * The number and parity of the semester week holding `date` (`"2026-10-13"`) — from the server, by the
+ * rule it makes lectures with (univer#107), so the app never counts weeks itself (issue #69).
+ */
+export function useSemesterWeekQuery(semesterId: string | undefined, date: string) {
+  return useQuery({
+    queryKey: ['semesters', semesterId, 'week', date],
+    queryFn: () => getSemesterWeek(semesterId as string, date),
     enabled: semesterId !== undefined,
   });
 }

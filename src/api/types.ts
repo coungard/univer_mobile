@@ -86,6 +86,8 @@ export type RegisterTeacherRequest = components['schemas']['RegisterTeacherReque
  */
 export type GroupDto = WithRequiredId<components['schemas']['GroupDto']>;
 export type SemesterDto = WithRequiredId<components['schemas']['SemesterDto']>;
+/** `GET /semesters/{id}/week` — a calendar week's number and parity in the semester (univer#107). */
+export type SemesterWeekDto = components['schemas']['SemesterWeekDto'];
 export type StudyYearDto = WithRequiredId<components['schemas']['StudyYearDto']>;
 
 /**
