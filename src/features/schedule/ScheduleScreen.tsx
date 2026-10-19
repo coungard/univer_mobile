@@ -9,8 +9,8 @@ import { StudentTabScreenProps } from '../../navigation/types';
 import { Hint } from '../hints/Hint';
 import { useNewcomer } from '../hints/useNewcomer';
 import { firstUnfilledSetupStep, openSetupAt } from '../onboarding/studentSetup';
-import { useOwnStudentQuery } from '../profile/hooks';
-import { libraryFonts, libraryHintColors } from '../../theme/library';
+import { useOwnStudentQuery, useSemesterWeekQuery } from '../profile/hooks';
+import { libraryFonts, libraryHintColors, useLibraryColors } from '../../theme/library';
 import { DaySpines } from './DaySpines';
 import { GroupCaption } from './GroupCaption';
 import {
@@ -30,6 +30,7 @@ import { useGroupPairsQuery, useMyLecturesQuery, useOwnWeekScheduleCycleQuery } 
 import { useScheduleViewMode, useSettingsStore } from '../settings/settingsStore';
 import { firstEnabledFrom, shownWeekDays } from './scheduleDays';
 import { roomAndTeacher } from './teacherName';
+import { formatLocalDate, semesterWeekLabel, semesterWeekOf } from './weekParity';
 
 const TODAY = new Date();
 
@@ -58,6 +59,7 @@ export function ScheduleScreen({ navigation, route }: Props) {
   // keeps hook order stable.
   const cycle = useOwnWeekScheduleCycleQuery(student.data?.groupId ?? undefined);
   const pairs = useGroupPairsQuery(student.data?.groupId ?? undefined);
+  const colors = useLibraryColors();
 
   // This tab's `Tab.Navigator` renders with `headerShown: false`, so nothing else accounts for the
   // status bar — without this, the week-navigation buttons render partly underneath it, where taps
@@ -66,6 +68,9 @@ export function ScheduleScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
 
   const week = useMemo(() => getWeek(weekOffset, TODAY), [weekOffset]);
+  // The shown week's number and parity in the semester — counted by the server (univer#107, issue #69).
+  const semesterWeek = useSemesterWeekQuery(cycle.data?.semesterId, formatLocalDate(week.start));
+  const weekOfSemester = semesterWeekOf(semesterWeek.data);
 
   const lectureData = lectures.data;
 
@@ -128,6 +133,15 @@ export function ScheduleScreen({ navigation, route }: Props) {
     // Marked like a just-saved pair; no newcomer hint with it.
     navigation.setParams({ showLectureId: nearest.item.id, firstPair: undefined });
   };
+
+  // Only while the group may still fill its schedule, as in «Расписание группы».
+  const canAddPair = cycle.data?.status === 'DRAFT';
+  const addPair = (shown: Date) =>
+    navigation.navigate('PairForm', {
+      day: formatLocalDate(shown),
+      weekParity: weekOfSemester?.parity,
+      weekLabel: formatWeekRangeLabel(week),
+    });
 
   const openDay = (next: Date) => {
     setDay(next);
@@ -278,6 +292,12 @@ export function ScheduleScreen({ navigation, route }: Props) {
           </Button>
         </View>
 
+        {weekOfSemester ? (
+          <Text style={[styles.semesterWeek, { color: colors.terracotta }]}>
+            {semesterWeekLabel(weekOfSemester).toUpperCase()}
+          </Text>
+        ) : null}
+
         <GroupCaption groupId={student.data?.groupId} style={styles.caption} />
 
         {/* Постоянная, а не только «пока пусто», точка входа — расписание группы можно донабрать и
@@ -319,18 +339,32 @@ export function ScheduleScreen({ navigation, route }: Props) {
             );
             return (
               <View key={shown.getTime()} style={[styles.daySection, today && styles.dayToday]}>
-                {/* In a week the title opens that day on its own. */}
-                {view.mode === 'week' ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityHint="Показать только этот день"
-                    onPress={() => openDay(shown)}
-                  >
-                    {title}
-                  </Pressable>
-                ) : (
-                  title
-                )}
+                <View style={styles.dayHeader}>
+                  {/* In a week the title opens that day on its own. */}
+                  {view.mode === 'week' ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityHint="Показать только этот день"
+                      onPress={() => openDay(shown)}
+                      style={styles.dayTitleBox}
+                    >
+                      {title}
+                    </Pressable>
+                  ) : (
+                    <View style={styles.dayTitleBox}>{title}</View>
+                  )}
+                  {/* «Тихий плюс у дня» (issue #69, canvas https://claude.ai/artifact/CUMAi9TiLzZBmrU4hUi7v9). */}
+                  {canAddPair ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Добавить пару: ${dayName(shown)}, ${formatDayDate(shown)}`}
+                      onPress={() => addPair(shown)}
+                      style={styles.addPair}
+                    >
+                      <Text style={[styles.addPairPlus, { color: colors.inkFaint }]}>+</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
                 {dayLectures.length === 0 ? (
                   <Text style={styles.emptyDay}>Нет занятий</Text>
                 ) : (
@@ -422,8 +456,35 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     gap: 20,
   },
+  semesterWeek: {
+    paddingLeft: 14,
+    paddingRight: 16,
+    fontFamily: libraryFonts.bodyBold,
+    fontSize: 12,
+    letterSpacing: 0.7,
+  },
   daySection: {
     gap: 6,
+  },
+  dayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dayTitleBox: {
+    flex: 1,
+  },
+  // 44 points to tap, without making the title row taller.
+  addPair: {
+    width: 44,
+    height: 44,
+    marginVertical: -12,
+    marginRight: -12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addPairPlus: {
+    fontSize: 24,
+    lineHeight: 28,
   },
   dayToday: {
     opacity: 1,

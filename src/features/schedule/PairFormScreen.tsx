@@ -27,8 +27,10 @@ import {
 } from './hooks';
 import { NewCourseDialog } from './NewCourseDialog';
 import { PairForm, pairFormSchema } from './pairFormSchema';
+import { isoWeekday } from './scheduleDays';
 import { TeacherField } from './TeacherField';
 import { teacherDisplayName } from './teacherName';
+import { firstFreePairNumber, formatLocalDate, parseLocalDate } from './weekParity';
 
 type Props = StudentStackScreenProps<'PairForm'>;
 
@@ -62,7 +64,7 @@ export const PARITY_OPTIONS = [
  * формы: `groupIds` всегда `[student.groupId]` (см. вопросы в `UI_UX.md` разделе 7).
  */
 export function PairFormScreen({ route, navigation }: Props) {
-  const { pairId } = route.params ?? {};
+  const { pairId, day, weekParity: weekOfDay, weekLabel } = route.params ?? {};
   const isEdit = pairId !== undefined;
 
   const student = useOwnStudentQuery();
@@ -88,6 +90,8 @@ export function PairFormScreen({ route, navigation }: Props) {
   const [courseNote, setCourseNote] = useState<string | null>(null);
   // The teacher the last picked subject put in the field — a different subject replaces only that one.
   const prefilledTeacherId = useRef<string | null>(null);
+  // Set once the student picks a number: then the form stops putting the first free one there.
+  const pairNumberPicked = useRef(false);
 
   const {
     control,
@@ -99,10 +103,11 @@ export function PairFormScreen({ route, navigation }: Props) {
     formState: { errors, isSubmitting },
   } = useForm<PairForm>({
     resolver: zodResolver(pairFormSchema),
-    // «Каждую неделю» is what most pairs are, so a new one starts with it.
+    // «Каждую неделю» is what most pairs are, so a new one starts with it — unless it is added from
+    // a day of the schedule: then with that day and its week's parity (issue #69).
     defaultValues: {
-      dayOfWeek: '',
-      weekParity: isEdit ? '' : 'BOTH',
+      dayOfWeek: day ? DAY_OPTIONS[isoWeekday(parseLocalDate(day)) - 1].value : '',
+      weekParity: isEdit ? '' : (weekOfDay ?? 'BOTH'),
       pairNumber: '',
       courseId: '',
       room: '',
@@ -111,6 +116,23 @@ export function PairFormScreen({ route, navigation }: Props) {
     },
   });
   const teacherId = useWatch({ control, name: 'teacherId' }) ?? '';
+  const dayOfWeek = useWatch({ control, name: 'dayOfWeek' });
+  const weekParity = useWatch({ control, name: 'weekParity' });
+
+  // A new pair takes the day's first free number, again after each change of the day or the parity,
+  // until the student picks one; none free leaves the field empty (issue #69).
+  const openCycleId = cycle.data?.id;
+  useEffect(() => {
+    if (isEdit || pairNumberPicked.current || !dayOfWeek || !weekParity) return;
+    if (!bellSchedule.data || !groupPairs.data || !openCycleId) return;
+    const free = firstFreePairNumber(
+      bellSchedule.data.map((e) => e.pairNumber),
+      groupPairs.data.filter((p) => p.weekScheduleCycleId === openCycleId),
+      dayOfWeek,
+      weekParity as WeekParity,
+    );
+    setValue('pairNumber', free === null ? '' : String(free));
+  }, [isEdit, dayOfWeek, weekParity, bellSchedule.data, groupPairs.data, openCycleId, setValue]);
 
   useEffect(() => {
     if (existingPair.data) {
@@ -207,6 +229,9 @@ export function PairFormScreen({ route, navigation }: Props) {
   }
 
   const cycleId = cycle.data.id;
+  // Why that parity is picked: the week the pair is added from.
+  const weekNote =
+    weekOfDay && weekLabel ? `Эта неделя (${weekLabel}) — ${weekOfDay === 'ODD' ? 'нечётная' : 'чётная'}` : null;
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
@@ -252,9 +277,12 @@ export function PairFormScreen({ route, navigation }: Props) {
       const own = created
         .filter((lecture) => lecture.sourcePairId === pair.id)
         .sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime));
-      // The nearest lecture still ahead; a semester that is over only has past ones.
+      // Added from a day: its lecture on that day, so the schedule comes back to the same week (issue
+      // #69). Otherwise — or with another parity, which has none there — the nearest lecture still
+      // ahead; a semester that is over only has past ones.
       const now = new Date();
-      const shown = own.find((lecture) => new Date(lecture.scheduledTime) >= now) ?? own[own.length - 1];
+      const onDay = day ? own.find((lecture) => formatLocalDate(new Date(lecture.scheduledTime)) === day) : undefined;
+      const shown = onDay ?? own.find((lecture) => new Date(lecture.scheduledTime) >= now) ?? own[own.length - 1];
       navigation.popTo('Tabs', { screen: 'Schedule', params: { showLectureId: shown?.id, firstPair } });
     } catch (error) {
       if (error instanceof ApiError && error.status === 400 && error.fieldErrors) {
@@ -310,8 +338,8 @@ export function PairFormScreen({ route, navigation }: Props) {
               onChange={field.onChange}
               error={!!errors.weekParity}
             />
-            <HelperText type="error" visible={!!errors.weekParity}>
-              {errors.weekParity?.message}
+            <HelperText type={errors.weekParity ? 'error' : 'info'} visible={!!errors.weekParity || !!weekNote}>
+              {errors.weekParity?.message ?? weekNote}
             </HelperText>
           </View>
         )}
@@ -326,7 +354,10 @@ export function PairFormScreen({ route, navigation }: Props) {
               label="Номер пары"
               value={field.value || null}
               options={pairNumberOptions}
-              onChange={field.onChange}
+              onChange={(value) => {
+                pairNumberPicked.current = true;
+                field.onChange(value);
+              }}
               error={!!errors.pairNumber}
               disabled={bellSchedule.isLoading}
               emptyLabel={bellSchedule.isLoading ? 'Загрузка…' : 'Не удалось загрузить звонки'}
