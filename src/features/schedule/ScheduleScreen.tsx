@@ -6,6 +6,8 @@ import { LectureDto } from '../../api/types';
 import { EmptyState } from '../../components/EmptyState';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentTabScreenProps } from '../../navigation/types';
+import { AttendanceTime, useSelfMark } from '../attendance/AttendanceTime';
+import { canMark, markWord } from '../attendance/selfMark';
 import { Hint } from '../hints/Hint';
 import { useNewcomer } from '../hints/useNewcomer';
 import { firstUnfilledSetupStep, openSetupAt } from '../onboarding/studentSetup';
@@ -60,6 +62,8 @@ export function ScheduleScreen({ navigation, route }: Props) {
   const cycle = useOwnWeekScheduleCycleQuery(student.data?.groupId ?? undefined);
   const pairs = useGroupPairsQuery(student.data?.groupId ?? undefined);
   const colors = useLibraryColors();
+  // The time of a started lecture marks attendance (issue #71).
+  const selfMark = useSelfMark();
 
   // This tab's `Tab.Navigator` renders with `headerShown: false`, so nothing else accounts for the
   // status bar — without this, the week-navigation buttons render partly underneath it, where taps
@@ -271,6 +275,9 @@ export function ScheduleScreen({ navigation, route }: Props) {
     );
   }
 
+  const now = new Date();
+  const dayView = view.mode === 'day';
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <DaySpines
@@ -369,13 +376,31 @@ export function ScheduleScreen({ navigation, route }: Props) {
                   <Text style={styles.emptyDay}>Нет занятий</Text>
                 ) : (
                   dayLectures.map((lecture) => {
-                    const meta = roomAndTeacher(lecture.room, lecture.teacherName);
+                    const markable = canMark(lecture, now);
+                    const mark = selfMark.markOf(lecture.id);
+                    // The open day says what the plaque means, under the room.
+                    const meta = [
+                      roomAndTeacher(lecture.room, lecture.teacherName),
+                      dayView && markable ? (mark.mark === 'none' ? 'нажмите на время' : markWord(mark.mark)) : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ');
                     const row = (
                       <Pressable
-                        style={[styles.lectureRow, lecture.id === showLectureId && styles.lectureShown]}
+                        style={[
+                          styles.lectureRow,
+                          dayView && styles.lectureRowLarge,
+                          lecture.id === showLectureId && styles.lectureShown,
+                        ]}
                         onPress={() => navigation.navigate('LectureDetails', { lectureId: lecture.id })}
                       >
-                        <Text style={styles.lectureTime}>{formatTime(new Date(lecture.scheduledTime))}</Text>
+                        <AttendanceTime
+                          time={formatTime(new Date(lecture.scheduledTime))}
+                          mark={mark}
+                          markable={markable}
+                          size={dayView ? 'day' : 'week'}
+                          onPress={() => selfMark.toggle(lecture.id)}
+                        />
                         <View style={styles.lectureInfo}>
                           <Text variant="bodyMedium">{lecture.title}</Text>
                           {meta ? <Text style={styles.lectureRoom}>{meta}</Text> : null}
@@ -402,6 +427,7 @@ export function ScheduleScreen({ navigation, route }: Props) {
           })}
         </ScrollView>
       </View>
+      {selfMark.snackbar}
     </View>
   );
 }
@@ -503,18 +529,18 @@ const styles = StyleSheet.create({
   },
   lectureRow: {
     flexDirection: 'row',
-    gap: 12,
+    alignItems: 'center',
+    gap: 10,
     paddingVertical: 4,
+  },
+  lectureRowLarge: {
+    gap: 12,
   },
   lectureShown: {
     borderRadius: 8,
     paddingHorizontal: 8,
     marginHorizontal: -8,
     backgroundColor: libraryHintColors.shown,
-  },
-  lectureTime: {
-    width: 48,
-    opacity: 0.7,
   },
   lectureInfo: {
     flex: 1,

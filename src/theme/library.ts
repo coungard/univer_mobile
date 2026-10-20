@@ -102,6 +102,9 @@ const libraryLightPalette = {
   /** Cards with cream text on the profile (issue #65): the nearest lecture, and an unfinished profile. */
   dayCard: libraryColors.navy,
   setupCard: libraryColors.terracotta,
+  /** Fills of a marked lecture's time (issue #71, «Цвет времени»), behind `sage` «был» and `rust` «не был». */
+  attendedTint: '#DCE8DE',
+  missedTint: '#F0DDD4',
   spines: [libraryColors.terracotta, libraryColors.gold, libraryColors.sage, libraryColors.rust, libraryColors.navy],
 };
 
@@ -134,6 +137,8 @@ const libraryDarkPalette: LibraryPalette = {
   // Darker than the dark spines, so cream text keeps its contrast.
   dayCard: '#1F4F66',
   setupCard: '#8E3E30',
+  attendedTint: 'rgba(143, 192, 154, 0.16)',
+  missedTint: 'rgba(217, 154, 126, 0.16)',
   spines: ['#B4533F', '#D4A64E', '#4E8A5C', '#B56A4C', '#2F6F8C'],
 };
 
