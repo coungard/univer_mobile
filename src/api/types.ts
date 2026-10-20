@@ -154,6 +154,16 @@ export type LectureAttendanceDto = components['schemas']['LectureAttendanceDto']
  */
 export type AttendanceStatsDto = components['schemas']['AttendanceStatsDto'];
 
+/**
+ * `GET /attendance/me` and `PUT /attendance/me/lecture/{id}` (univer#117): the signed-in student's
+ * resulting mark for one lecture. `source` is `TEACHER` when the teacher marked it — that mark wins
+ * over the student's own and the student can't change it.
+ */
+export type MyAttendanceDto = components['schemas']['MyAttendanceDto'];
+
+/** `GET /attendance/me/course/{courseId}/summary` — started lectures of the course: attended, missed, unmarked. */
+export type AttendanceSummaryDto = components['schemas']['AttendanceSummaryDto'];
+
 /** `POST /lectures` body (ROADMAP.md "Фаза 6") — `id`/`sourcePairId` are server/generation-assigned, never sent for a manual lecture. */
 export type LectureInput = Omit<components['schemas']['LectureDto'], 'id' | 'sourcePairId'>;
 

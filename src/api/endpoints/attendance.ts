@@ -1,36 +1,33 @@
 import { apiClient } from '../client';
-import { AttendanceStatsDto, LectureAttendanceDto, Page } from '../types';
+import { AttendanceStatsDto, AttendanceSummaryDto, LectureAttendanceDto, MyAttendanceDto, Page } from '../types';
 
 /**
- * `GET /attendance/student/{studentId}/course/{courseId}/stats` — how much of this course's
- * already-marked lectures the student attended (ROADMAP.md "Фаза 5"). Any authenticated role per
- * API.md, but this app only ever calls it for the signed-in student's own id.
+ * `GET /attendance/me` — the signed-in student's resulting mark per lecture (univer#117): only
+ * lectures marked by the student or the teacher are listed, a lecture absent here is unmarked.
  */
-export async function getStudentCourseAttendanceStats(
-  studentId: string,
-  courseId: string,
-): Promise<AttendanceStatsDto> {
-  const { data } = await apiClient.get<AttendanceStatsDto>(
-    `/attendance/student/${studentId}/course/${courseId}/stats`,
-  );
+export async function getMyAttendance(page = 0, size = 200): Promise<Page<MyAttendanceDto>> {
+  const { data } = await apiClient.get<Page<MyAttendanceDto>>('/attendance/me', { params: { page, size } });
   return data;
 }
 
 /**
- * `GET /attendance/student/{studentId}` — the student's full attendance history *across all
- * courses* (no course filter exists on the backend — see API.md). `CourseDetailsScreen` filters this
- * client-side to the lectures of one course via `useMyLecturesQuery`'s cached list (`LectureDto.courseId`),
- * the same join pattern as `useGroupAcademicPathQuery` in `features/profile/hooks.ts`. Fetches one
- * reasonably large page, like `getMyLectures` — infinite-scroll pagination is ROADMAP.md "Фаза 8".
+ * `PUT /attendance/me/lecture/{lectureId}` — the student marks their own lecture «был»/«не был»,
+ * only once it has started (`422` before that). Returns the resulting mark, which is the teacher's
+ * if they have marked it meanwhile.
  */
-export async function getStudentAttendanceHistory(
-  studentId: string,
-  page = 0,
-  size = 200,
-): Promise<Page<LectureAttendanceDto>> {
-  const { data } = await apiClient.get<Page<LectureAttendanceDto>>(`/attendance/student/${studentId}`, {
-    params: { page, size },
-  });
+export async function markMyAttendance(lectureId: string, attended: boolean): Promise<MyAttendanceDto> {
+  const { data } = await apiClient.put<MyAttendanceDto>(`/attendance/me/lecture/${lectureId}`, { attended });
+  return data;
+}
+
+/** `DELETE /attendance/me/lecture/{lectureId}` — removes the student's own mark; a teacher's stays. */
+export async function unmarkMyAttendance(lectureId: string): Promise<void> {
+  await apiClient.delete(`/attendance/me/lecture/${lectureId}`);
+}
+
+/** `GET /attendance/me/course/{courseId}/summary` — the course's started lectures in the current semester. */
+export async function getMyCourseAttendanceSummary(courseId: string): Promise<AttendanceSummaryDto> {
+  const { data } = await apiClient.get<AttendanceSummaryDto>(`/attendance/me/course/${courseId}/summary`);
   return data;
 }
 
