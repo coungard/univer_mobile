@@ -55,6 +55,11 @@
     "react-test-renderer": "19.2.3",
     "typescript": "^6.0.3"
   },
+  "overrides": {
+    "openapi-typescript": {
+      "typescript": "$typescript"
+    }
+  },
   "engines": {
     "node": ">= 22.11.0"
   }
