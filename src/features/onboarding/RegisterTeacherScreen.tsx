@@ -303,7 +303,7 @@ export function RegisterTeacherScreen({ navigation }: Props) {
 
       <Button
         mode="contained"
-        onPress={onSubmit}
+        onPress={() => onSubmit()}
         loading={isSubmitting}
         disabled={isSubmitting}
         buttonColor={c.terracottaButton}

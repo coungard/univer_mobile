@@ -105,7 +105,7 @@ export function GenerateLectureScreen({ route, navigation }: Props) {
         )}
       />
 
-      <Button mode="contained" onPress={onSubmit} loading={isSubmitting} disabled={isSubmitting} style={styles.submit}>
+      <Button mode="contained" onPress={() => onSubmit()} loading={isSubmitting} disabled={isSubmitting} style={styles.submit}>
         Сгенерировать
       </Button>
     </ScrollView>
