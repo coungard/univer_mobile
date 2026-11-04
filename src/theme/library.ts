@@ -9,7 +9,7 @@
  */
 
 import { useMemo } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
 import { useTheme } from 'react-native-paper';
 
 export const libraryColors = {
@@ -151,8 +151,13 @@ export function useLibraryColors(): LibraryPalette {
  * A `StyleSheet` built from the Library colours once per theme, at module load, and a hook that
  * picks the one for the current theme: `const useStyles = libraryStyles((c) => ({ … }))`, then
  * `const styles = useStyles()` inside the component.
+ *
+ * The constraint (instead of the `StyleSheet.NamedStyles` that RN 0.88's generated types dropped)
+ * also gives `make`'s object literal a contextual type, so `flexDirection: 'row'` etc. stay literals.
  */
-export function libraryStyles<T extends StyleSheet.NamedStyles<T>>(make: (c: LibraryPalette) => T): () => T {
+export function libraryStyles<T extends Record<string, ViewStyle | TextStyle | ImageStyle>>(
+  make: (c: LibraryPalette) => T,
+): () => T {
   const light = StyleSheet.create(make(libraryLightPalette));
   const dark = StyleSheet.create(make(libraryDarkPalette));
   return function useLibraryStyles() {

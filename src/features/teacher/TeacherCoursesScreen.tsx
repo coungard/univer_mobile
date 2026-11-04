@@ -26,7 +26,7 @@ export function TeacherCoursesScreen({}: Props) {
         data={courses.data}
         keyExtractor={(c: CourseDto) => c.id}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={courses.isRefetching} onRefresh={() => courses.refetch()} />}
+        refreshControl={<RefreshControl refreshing={courses.isRefetching} onRefresh={() => { courses.refetch(); }} />}
         ListEmptyComponent={
           courses.isLoading ? (
             <Text style={styles.center}>Загрузка курсов…</Text>

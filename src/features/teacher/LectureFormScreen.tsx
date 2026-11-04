@@ -272,7 +272,7 @@ export function LectureFormScreen({ navigation }: Props) {
         )}
       />
 
-      <Button mode="contained" onPress={onSubmit} loading={isSubmitting} disabled={isSubmitting} style={styles.submit}>
+      <Button mode="contained" onPress={() => onSubmit()} loading={isSubmitting} disabled={isSubmitting} style={styles.submit}>
         Сохранить
       </Button>
     </ScrollView>

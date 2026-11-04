@@ -66,8 +66,8 @@ export function Hint({ id, stage, text, active = true, clearance = 0, style, chi
   const raised = useTheme().dark ? { backgroundColor: libraryDarkColors.raisedInk } : null;
   const shown = active && focused && hints.ready && !hints.isDismissed(id);
 
-  const targetRef = useRef<View>(null);
-  const hostRef = useRef<View>(null);
+  const targetRef = useRef<React.ComponentRef<typeof View>>(null);
+  const hostRef = useRef<React.ComponentRef<typeof View>>(null);
   const [target, setTarget] = useState<Rect | null>(null);
   const [host, setHost] = useState<Rect | null>(null);
 

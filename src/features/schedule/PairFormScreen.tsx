@@ -431,7 +431,7 @@ export function PairFormScreen({ route, navigation }: Props) {
         active={!isEdit && newcomer.kind === 'newcomer' && newcomer.missing === 'pair'}
         style={styles.submit}
       >
-        <Button mode="contained" onPress={onSubmit} loading={isSubmitting} disabled={isSubmitting}>
+        <Button mode="contained" onPress={() => onSubmit()} loading={isSubmitting} disabled={isSubmitting}>
           Сохранить
         </Button>
       </Hint>

@@ -170,7 +170,7 @@ export function SearchableSelectField({
                   style={styles.stateIndicator}
                   color={libraryStyle ? c.terracotta : undefined}
                 />
-              ) : null
+              ) : undefined
             }
             renderItem={({ item }) => (
               <List.Item

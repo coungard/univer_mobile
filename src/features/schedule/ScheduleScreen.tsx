@@ -333,7 +333,7 @@ export function ScheduleScreen({ navigation, route }: Props) {
 
         <ScrollView
           contentContainerStyle={styles.days}
-          refreshControl={<RefreshControl refreshing={lectures.isRefetching} onRefresh={() => lectures.refetch()} />}
+          refreshControl={<RefreshControl refreshing={lectures.isRefetching} onRefresh={() => { lectures.refetch(); }} />}
         >
           {shownDays.map((shown) => {
             const dayLectures = lecturesByDay.get(shown.getTime()) ?? [];

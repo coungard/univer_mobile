@@ -126,7 +126,7 @@ export function ChoiceStep({
               onPress={() => onSelect(item)}
             />
           )}
-          ListFooterComponent={isFetchingMore ? <ActivityIndicator color={c.terracotta} /> : null}
+          ListFooterComponent={isFetchingMore ? <ActivityIndicator color={c.terracotta} /> : undefined}
           ListEmptyComponent={<View style={stepStyles.centered}>{empty}</View>}
         />
       )}
