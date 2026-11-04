@@ -96,7 +96,10 @@ export function RegisterStudentScreen({ navigation }: Props) {
       // below if that somehow fails.
       try {
         await loginWithPassword(values.username, values.password);
-      } catch {
+      } catch (loginError) {
+        // Log why: a TLS failure (e.g. iOS rejecting the dev Keycloak cert, coungard/univer#127)
+        // throws before any HTTP response, so authService's own warning never fires.
+        console.warn('Auto-login after registration failed:', loginError);
         setDone(true);
       }
     } catch (error) {
