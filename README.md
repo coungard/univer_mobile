@@ -27,20 +27,18 @@ npm run sync-api
 ## Авторизация (Keycloak)
 
 Вход реализован как Authorization Code + PKCE через системный браузер (`react-native-app-auth`),
-по спецификации `MOBILE.md` бэкенд-репозитория. Настройки — в [`src/config/env.ts`](./src/config/env.ts)
-(по умолчанию рассчитаны на локальный `docker-compose` бэкенда: Keycloak на `localhost:8082`,
-API — на `localhost:8023`).
+по спецификации `MOBILE.md` бэкенд-репозитория. Настройки — в [`src/config/env.ts`](./src/config/env.ts).
+Сервер выбирается сборкой:
 
-⚠️ На момент написания в Keycloak-конфиге бэкенда (`init-keycloak/realm-config.json` в
-`coungard/univer`) ещё нет публичного клиента `univer-mobile`, описанного в `MOBILE.md` — только
-служебный `univer-client`. Пока бэкенд-команда не добавит этот клиент, реальный вход через
-локальный бэкенд будет падать с ошибкой Keycloak «client not found» (см.
-[issue #1](https://github.com/coungard/univer_mobile/issues/1)); экраны и код при этом уже готовы.
+| Сборка | Бэкенд | API | Keycloak |
+|---|---|---|---|
+| Debug (эмуляторы, Metro) | локальный `docker-compose` | `http://localhost:8023` (`10.0.2.2` на Android) | `https://localhost:8443` |
+| Release (телефон) | стенд на VDS (DEPLOY.md бэкенда) | `https://api.univerapp.ru` | `https://auth.univerapp.ru` |
 
 ### Тестовые аккаунты
 
 Для входа на локальном `docker-compose`-бэкенде (реалм `univer-realm`) заведены тестовые студент и
-преподаватель:
+преподаватель (на стенде пароли свои — из `.env.prod` на сервере):
 
 | Роль | Логин | Пароль |
 |---|---|---|
@@ -62,9 +60,8 @@ API — на `localhost:8023`).
   запущен эмулятор.
 - **iOS-симулятор** — использует сетевое пространство хоста напрямую, `localhost` работает как
   есть (уже настроено).
-- **Физическое устройство** — ни `localhost`, ни `10.0.2.2` не сработают: нужно заменить хост в
-  `env.ts` на LAN-IP машины с бэкендом (например, `192.168.x.x`), убедиться, что телефон и машина в
-  одной сети, и что файрвол не блокирует входящие подключения на `8023`/`8082`.
+- **Физическое устройство** — ставится Release-сборка, она работает со стендом, см.
+  [«Установка на iPhone»](#установка-на-iphone-стенд) ниже.
 - **Cleartext HTTP** — бэкенд и Keycloak сейчас на голом `http://`, не `https://`. На Android это
   разрешено автоматически в debug-сборке (React Native Gradle Plugin сам выставляет
   `usesCleartextTraffic=true` для `debug`/`debugOptimized`, `false` для `release`) — специально
@@ -137,6 +134,50 @@ yarn ios
 
 Это лишь один из способов запуска — приложение также можно собрать напрямую из Android Studio или
 Xcode.
+
+## Установка на iPhone (стенд)
+
+На телефон ставится **Release**-сборка: JavaScript вшит в приложение, Metro и Мак после установки не
+нужны, а бэкенд — стенд `api.univerapp.ru` / `auth.univerapp.ru` с настоящими сертификатами.
+
+Один раз:
+
+1. **Xcode → Settings → Accounts**: добавить свой Apple ID. Появится команда «Имя (Personal Team)».
+2. **iPhone → Настройки → Конфиденциальность и безопасность → Режим разработчика**: включить,
+   телефон перезагрузится. Пункт появляется после первого подключения iPhone к Маку с открытым Xcode.
+3. Подключить iPhone кабелем, на телефоне нажать «Доверять этому компьютеру».
+
+Сборка и установка:
+
+```sh
+git pull
+npm install
+cd ios && bundle exec pod install && cd ..
+open ios/univer_mobile.xcworkspace
+```
+
+В Xcode:
+
+1. Цель **univer_mobile → Signing & Capabilities**: включить **Automatically manage signing**, **Team** —
+   свою «(Personal Team)». Bundle Identifier — `ru.univerapp.mobile`, менять не нужно.
+2. **Product → Scheme → Edit Scheme… → Run → Build Configuration: Release**.
+3. Сверху выбрать подключённый iPhone вместо симулятора и нажать **Run** (⌘R).
+
+Или из терминала, если подпись уже настроена в Xcode:
+
+```sh
+npx react-native run-ios --mode Release --device
+```
+
+При первом запуске iOS скажет «Ненадёжный разработчик»: **Настройки → Основные → VPN и управление
+устройством → Apple Development: <ваш Apple ID> → Доверять**.
+
+С бесплатным аккаунтом (Personal Team) подпись живёт **7 дней**: потом приложение перестаёт открываться,
+и его нужно заново поставить с Мака теми же шагами (данные при этом сохраняются). На одном телефоне
+одновременно может быть не больше трёх приложений с такой подписью.
+
+После установки схему лучше вернуть в **Debug** (п. 2): `npm run ios` для симулятора работает с
+локальным бэкендом и Metro.
 
 ## Шаг 3: внесите изменения
 
