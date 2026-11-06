@@ -7,6 +7,7 @@ import { LectureDto } from '../../api/types';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentTabScreenProps } from '../../navigation/types';
 import { libraryFonts, libraryHintColors, libraryStyles, useLibraryColors } from '../../theme/library';
+import { FeedbackLink } from '../feedback/FeedbackScreens';
 import { Hint } from '../hints/Hint';
 import { useNewcomer } from '../hints/useNewcomer';
 import { useOwnUniversityRequestQuery } from '../onboarding/hooks';
@@ -223,6 +224,10 @@ export function StudentProfileScreen() {
           <Text style={styles.linkText}>{hasGroup ? 'Изменить университет или группу' : 'Изменить университет'}</Text>
         </Pressable>
       ) : null}
+
+      {/* Pushed to the bottom of a short profile; after the content of a long one (issue #82). */}
+      <View style={styles.feedbackSpacer} />
+      <FeedbackLink onPress={() => navigation.navigate('Feedback')} />
     </ScrollView>
   );
 }
@@ -395,9 +400,13 @@ const useStyles = libraryStyles((c) => ({
     backgroundColor: c.background,
   },
   container: {
+    flexGrow: 1,
     paddingHorizontal: 20,
-    paddingBottom: 32,
+    paddingBottom: 16,
     gap: 16,
+  },
+  feedbackSpacer: {
+    flexGrow: 1,
   },
   center: {
     flex: 1,

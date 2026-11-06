@@ -177,3 +177,8 @@ export type GenerateLectureRequest = components['schemas']['GenerateLectureReque
  */
 export type EnrollmentDto = components['schemas']['EnrollmentDto'];
 export type EnrollmentStatus = NonNullable<components['schemas']['EnrollmentDto']['status']>;
+
+/** `POST /feedback` body (issue #82): the author comes from the token, never from the client. */
+export type SubmitFeedbackRequest = components['schemas']['SubmitFeedbackRequest'];
+export type FeedbackType = SubmitFeedbackRequest['type'];
+export type FeedbackDto = components['schemas']['FeedbackDto'];

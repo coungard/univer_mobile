@@ -53,6 +53,7 @@
 | `404 Not Found` | Сущность не найдена (`ResourceNotFoundException`) | `{ "timestamp", "status": 404, "error": "Not Found", "message", "path": "/" }` |
 | `409 Conflict` | Значение уже занято: email или логин при регистрации, название группы в семестре, название факультета в университете, название предмета на факультете (`ConflictException`) | `{ "timestamp", "status": 409, "error": "Conflict", "message", "field", "path": "/" }` — `field` называет поле запроса с занятым значением: `"email"`, `"username"`, `"name"` или `"title"` (у предмета); `null`, если определить не удалось. Для названия группы, факультета или предмета в теле есть ещё `id` — ID уже существующей записи с таким названием; для email и логина поля `id` нет |
 | `422 Unprocessable Entity` | Бизнес-валидация не прошла (`ValidationException`) | то же тело, что и 404 (`"status": 422`), поле `"error"` тоже всегда `"Not Found"` — известная неточность в `GlobalExceptionHandler`, не полагайтесь на текст `error`, только на `status`/`message` |
+| `429 Too Many Requests` | Превышен лимит частоты действия (`TooManyRequestsException`; пока только отзывы — 1 в час) | `{ "timestamp", "status": 429, "error": "Too Many Requests", "message", "retryAfterSeconds", "path": "/" }` и заголовок `Retry-After` в секундах |
 
 Во всех случаях выше с телом (`400`/`404`/`409`/`422`) поле `path` в теле **не** содержит реальный путь запроса —
 всегда захардкожено `"/"` либо отсутствует (для `400`). Определять эндпоинт нужно по контексту запроса на
@@ -238,6 +239,16 @@
 
 ### AttendanceStatsDto (только ответ)
 `totalMarked` (`long`), `attendedCount` (`long`), `attendanceRate` (`double`, `0..1`).
+
+### SubmitFeedbackRequest (только запрос, `POST /feedback`)
+`type`★ (`FeedbackType`), `message`★ (от 1 до 2000 символов), `appVersion`★ (до 32 символов), `platform`★
+(`FeedbackPlatform`), `osVersion`★ (до 32 символов). Крайние пробелы строк отбрасываются до проверки длины.
+`FeedbackType` (enum): `BUG` (ошибка) | `IMPROVEMENT` (доработка) | `IDEA` (идея).
+`FeedbackPlatform` (enum, **строчными**): `ios` | `android`.
+
+### FeedbackDto (только ответ, `POST /feedback`)
+`id`, `type: FeedbackType`, `message`, `status: FeedbackStatus`, `createdAt`.
+`FeedbackStatus` (enum): `NEW` | `IN_PROGRESS` | `DONE` | `REJECTED`.
 
 ---
 
@@ -767,6 +778,23 @@
   ожидаемых/зачисленных (`totalMarked`, `attendedCount`, `attendanceRate`).
 - **`GET /student/{studentId}/course/{courseId}/stats`** — статистика по студенту в рамках курса: сколько
   лекций курса он посетил из уже отмеченных.
+
+## Feedback — `/api/v1/feedback`
+
+Отзывы из мобильного приложения: ошибка, доработка или идея (univer#130, в приложении — issue #82).
+Хранятся только на бэкенде. Приложение использует только `POST`; `GET`/`PATCH` — для администратора.
+
+| Метод | Путь | Auth | Тело запроса | Тело ответа |
+|---|---|---|---|---|
+| POST | `/` | `STUDENT`, `TEACHER`, `ADMIN` | `SubmitFeedbackRequest` | `FeedbackDto`, `201` |
+| GET | `/` | `ADMIN` | — (`?type&status&page&size`) | `Page<FeedbackAdminDto>` |
+| PATCH | `/{id}` | `ADMIN` | `{ "status": FeedbackStatus }` | `FeedbackAdminDto` |
+
+- **`POST /`** — автор (`userId`, роль, логин) берётся из токена. Ошибки:
+  - `400` — карта полей, в том числе для неизвестного `type` или `platform`;
+  - `429` — пользователь уже оставлял отзыв за последний час (лимит — **1 отзыв в час**).
+    `retryAfterSeconds` в теле (и заголовок `Retry-After`) — через сколько секунд можно отправить снова;
+    приложение показывает это как «Следующий — через N минут».
 
 ---
 
