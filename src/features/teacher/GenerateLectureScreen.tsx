@@ -1,7 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
+import { FormScrollView } from '../../components/FormScrollView';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
 import { z } from 'zod';
 import { ApiError } from '../../api/errors';
@@ -75,7 +76,7 @@ export function GenerateLectureScreen({ route, navigation }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <FormScrollView contentContainerStyle={styles.container}>
       <ErrorBanner message={submitError} onDismiss={() => setSubmitError(null)} />
 
       <Text variant="headlineSmall" style={styles.title}>
@@ -108,7 +109,7 @@ export function GenerateLectureScreen({ route, navigation }: Props) {
       <Button mode="contained" onPress={() => onSubmit()} loading={isSubmitting} disabled={isSubmitting} style={styles.submit}>
         Сгенерировать
       </Button>
-    </ScrollView>
+    </FormScrollView>
   );
 }
 

@@ -2,7 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
+import { FormScrollView } from '../../components/FormScrollView';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
 import { useAuth } from '../../auth/useAuth';
@@ -138,7 +139,7 @@ export function RegisterStudentScreen({ navigation }: Props) {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
+    <FormScrollView style={styles.screen} contentContainerStyle={styles.container}>
       <ErrorBanner message={submitError} onDismiss={() => setSubmitError(null)} />
 
       <StepProgress step={1} />
@@ -321,7 +322,7 @@ export function RegisterStudentScreen({ navigation }: Props) {
       >
         Уже есть аккаунт? Войти
       </Button>
-    </ScrollView>
+    </FormScrollView>
   );
 }
 
