@@ -1,9 +1,12 @@
 /**
  * Runtime configuration for the backend/Keycloak integration.
  *
- * These values match the local docker-compose setup of `coungard/univer` (see its
- * `docker-compose.yml` / `application.yml`). Override them per-environment later (e.g. via
- * `react-native-config`) instead of hardcoding a different backend here.
+ * Two backends, picked by the build:
+ * - **Release** — the stand on the VDS (`coungard/univer` DEPLOY.md): `https://api.univerapp.ru` and
+ *   `https://auth.univerapp.ru`, real Let's Encrypt certificates. This is what goes on a phone: the JS is
+ *   bundled into the app, so it needs neither Metro nor the developer's machine.
+ * - **Debug** — the local docker-compose setup of `coungard/univer` (its `docker-compose.yml`), for the
+ *   emulators.
  *
  * `clientId` (`univer-mobile`) and the redirect URIs below are the backend's public PKCE client
  * from its `MOBILE.md`, imported from `init-keycloak/realm-config.json` (coungard/univer#49).
@@ -20,9 +23,15 @@ import { Platform } from 'react-native';
  */
 const backendHost = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
 
+/** Release builds talk to the stand; Debug ones to the local backend (see the top of this file). */
+const useStand = !__DEV__;
+
 export const env = {
+  /** Which backend this build talks to — shown nowhere yet, handy in logs. */
+  backend: useStand ? 'stand' : 'local',
+
   /** Spring Boot REST API (`API.md`). */
-  apiBaseUrl: `http://${backendHost}:8023/api/v1`,
+  apiBaseUrl: useStand ? 'https://api.univerapp.ru/api/v1' : `http://${backendHost}:8023/api/v1`,
 
   /**
    * Keycloak. Served over HTTPS (self-signed cert locally) — plain HTTP set a `Secure` session
@@ -37,8 +46,11 @@ export const env = {
    * for both keeps the whole flow on one origin, matching Keycloak's own idea of its hostname.
    * Requires `adb reverse tcp:8443 tcp:8443` on the Android emulator (see ANDROID_TROUBLESHOOTING.md)
    * since `localhost` there normally means the emulator itself, not the host.
+   *
+   * The stand's Keycloak sits behind Caddy and builds its URLs from the request, so there the public
+   * address works from anywhere.
    */
-  authServerUrl: `https://localhost:8443`,
+  authServerUrl: useStand ? 'https://auth.univerapp.ru' : 'https://localhost:8443',
   realm: 'univer-realm',
   clientId: 'univer-mobile',
 
