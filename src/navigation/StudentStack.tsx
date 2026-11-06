@@ -10,6 +10,7 @@ import { StudentSetupRegionScreen } from '../features/onboarding/StudentSetupReg
 import { StudentSetupUniversityRequestScreen } from '../features/onboarding/StudentSetupUniversityRequestScreen';
 import { StudentSetupUniversityScreen } from '../features/onboarding/StudentSetupUniversityScreen';
 import { StudentSetupYearScreen } from '../features/onboarding/StudentSetupYearScreen';
+import { FEEDBACK_MESSAGE_TITLES, FeedbackMessageScreen, FeedbackSentScreen, FeedbackTypeScreen } from '../features/feedback/FeedbackScreens';
 import { GroupScheduleScreen } from '../features/schedule/GroupScheduleScreen';
 import { StudentRenameOwnScreen } from '../features/profile/StudentRenameOwnScreen';
 import { LectureDetailsScreen } from '../features/schedule/LectureDetailsScreen';
@@ -55,6 +56,13 @@ export function StudentStack() {
       <Stack.Screen name="RenameOwn" component={StudentRenameOwnScreen} options={{ title: 'Изменить название', ...libraryHeader }} />
       <Stack.Screen name="SetupDone" component={StudentSetupDoneScreen} options={setupOptions} />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Настройки' }} />
+      <Stack.Screen name="Feedback" component={FeedbackTypeScreen} options={{ title: '', ...libraryHeader }} />
+      <Stack.Screen
+        name="FeedbackMessage"
+        component={FeedbackMessageScreen}
+        options={({ route }) => ({ headerTitle: FEEDBACK_MESSAGE_TITLES[route.params.type], ...libraryHeader })}
+      />
+      <Stack.Screen name="FeedbackSent" component={FeedbackSentScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

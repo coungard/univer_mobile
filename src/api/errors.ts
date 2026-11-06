@@ -19,14 +19,24 @@ export class ApiError extends Error {
    * with that name, so the client can offer to pick it instead (see API.md "Формат ошибок").
    */
   readonly existingId?: string;
+  /** Present only for 429 responses — seconds until the action is allowed again (`retryAfterSeconds`). */
+  readonly retryAfterSeconds?: number;
 
-  constructor(status: number, message: string, fieldErrors?: FieldErrors, field?: string, existingId?: string) {
+  constructor(
+    status: number,
+    message: string,
+    fieldErrors?: FieldErrors,
+    field?: string,
+    existingId?: string,
+    retryAfterSeconds?: number,
+  ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.fieldErrors = fieldErrors;
     this.field = field;
     this.existingId = existingId;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -37,6 +47,8 @@ interface SpringErrorBody {
   field?: string | null;
   /** Only on 409 for a group/faculty name: the ID of the existing entity. Absent for email/username. */
   id?: string | null;
+  /** Only on 429: seconds until the limit lets the action through again (also in `Retry-After`). */
+  retryAfterSeconds?: number | null;
   // `error`/`path` deliberately not read for 404/422 — see class doc comment above.
 }
 
@@ -65,6 +77,19 @@ export function toApiError(status: number, data: unknown): ApiError {
         undefined,
         body.field ?? undefined,
         body.id ?? undefined,
+      );
+    }
+    case 429: {
+      // A rate limit (so far only feedback, 1 per hour — see API.md). The caller words the message
+      // itself from `retryAfterSeconds`; the server's own text is a fallback.
+      const body = (data ?? {}) as SpringErrorBody;
+      return new ApiError(
+        429,
+        body.message ?? 'Слишком часто. Попробуйте позже.',
+        undefined,
+        undefined,
+        undefined,
+        body.retryAfterSeconds ?? undefined,
       );
     }
     default:

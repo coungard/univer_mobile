@@ -1,6 +1,7 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { CompositeScreenProps, NavigatorScreenParams } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { FeedbackType } from '../api/types';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -19,6 +20,15 @@ export type AppStackParamList = {
   Home: undefined;
 };
 
+/**
+ * «Оставить отзыв» (issue #82), in both the student and the teacher stack: the kind, the text, «Спасибо!».
+ */
+export type FeedbackParamList = {
+  Feedback: undefined;
+  FeedbackMessage: { type: FeedbackType };
+  FeedbackSent: undefined;
+};
+
 /** Bottom tabs for the student experience (ROADMAP.md "Фаза 3"/"Фаза 4"). */
 export type StudentTabParamList = {
   Profile: undefined;
@@ -33,7 +43,7 @@ export type StudentTabParamList = {
  * Native stack wrapping `StudentTabParamList` so tapping into a lecture or a course (ROADMAP.md
  * "Фаза 4") pushes a details screen over the tab bar instead of replacing the tabs.
  */
-export type StudentStackParamList = {
+export type StudentStackParamList = FeedbackParamList & {
   Tabs: NavigatorScreenParams<StudentTabParamList> | undefined;
   LectureDetails: { lectureId: string };
   CourseDetails: { courseId: string };
@@ -93,7 +103,7 @@ export type TeacherTabParamList = {
 };
 
 /** Native stack wrapping `TeacherTabParamList`, same reasoning as `StudentStackParamList` above. */
-export type TeacherStackParamList = {
+export type TeacherStackParamList = FeedbackParamList & {
   Tabs: undefined;
   LectureDetails: { lectureId: string };
   /** Manual `POST /lectures` (no source `Pair`). */

@@ -678,6 +678,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Получить отзывы с пагинацией
+         * @description Сначала новые. Фильтры необязательны.
+         */
+        get: operations["getFeedback"];
+        put?: never;
+        /**
+         * Оставить отзыв
+         * @description Автор берётся из токена. Не чаще 1 раза в 1 ч от одного пользователя.
+         */
+        post: operations["submitFeedback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/faculties": {
         parameters: {
             query?: never;
@@ -833,6 +857,26 @@ export interface paths {
          * @description Частичное обновление: переданное поле меняется, непереданное — нет, явный null очищает поле. Смена поля сбрасывает всё, что ниже по цепочке университет → факультет → курс → группа; незаполненные поля выше по цепочке проставляются по выбранному значению.
          */
         patch: operations["updateMyProfile"];
+        trace?: never;
+    };
+    "/api/v1/feedback/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Сменить статус отзыва
+         * @description NEW → IN_PROGRESS → DONE | REJECTED; из NEW можно сразу в DONE или REJECTED. DONE и REJECTED окончательные. Тот же статус ничего не меняет.
+         */
+        patch: operations["updateStatus_2"];
         trace?: never;
     };
     "/api/v1/week-schedule-cycles/{id}": {
@@ -1848,6 +1892,27 @@ export interface components {
             /** Format: date */
             date: string;
         };
+        SubmitFeedbackRequest: {
+            /** @enum {string} */
+            type: "BUG" | "IMPROVEMENT" | "IDEA";
+            message: string;
+            appVersion: string;
+            /** @enum {string} */
+            platform: "ios" | "android";
+            osVersion: string;
+        };
+        /** @description Отзыв из приложения — ответ автору на POST /feedback */
+        FeedbackDto: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            type?: "BUG" | "IMPROVEMENT" | "IDEA";
+            message?: string;
+            /** @enum {string} */
+            status?: "NEW" | "IN_PROGRESS" | "DONE" | "REJECTED";
+            /** Format: date-time */
+            createdAt?: string;
+        };
         LectureAttendanceDto: {
             /** Format: uuid */
             studentId: string;
@@ -1873,11 +1938,50 @@ export interface components {
             /** Format: uuid */
             groupId?: string;
         };
+        UpdateFeedbackStatusRequest: {
+            /** @enum {string} */
+            status: "NEW" | "IN_PROGRESS" | "DONE" | "REJECTED";
+        };
+        /** @description Отзыв из приложения с автором и устройством — для администратора */
+        FeedbackAdminDto: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            type?: "BUG" | "IMPROVEMENT" | "IDEA";
+            message?: string;
+            /** @enum {string} */
+            status?: "NEW" | "IN_PROGRESS" | "DONE" | "REJECTED";
+            /**
+             * Format: uuid
+             * @description Автор — subject JWT (= id студента или преподавателя)
+             */
+            userId?: string;
+            /** @description Старшая роль автора на момент отправки: ADMIN, TEACHER или STUDENT */
+            role?: string;
+            /** @description Логин автора на момент отправки */
+            username?: string;
+            appVersion?: string;
+            /** @enum {string} */
+            platform?: "ios" | "android";
+            osVersion?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: uuid */
+            createdBy?: string;
+            /**
+             * Format: uuid
+             * @description Кто последним менял статус
+             */
+            updatedBy?: string;
+        };
         PageWeekScheduleCycleDto: {
             /** Format: int32 */
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -1885,22 +1989,21 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         PageableObject: {
             /** Format: int32 */
-            pageSize?: number;
-            /** Format: int32 */
             pageNumber?: number;
-            paged?: boolean;
-            unpaged?: boolean;
+            /** Format: int32 */
+            pageSize?: number;
             /** Format: int64 */
             offset?: number;
             sort?: components["schemas"]["SortObject"][];
+            paged?: boolean;
+            unpaged?: boolean;
         };
         SortObject: {
             direction?: string;
@@ -1914,6 +2017,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -1921,10 +2025,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         PageUniversityDto: {
@@ -1932,6 +2035,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -1939,10 +2043,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         ContentDisposition: {
@@ -1970,39 +2073,24 @@ export interface components {
              * @deprecated
              */
             readDate?: string;
-            inline?: boolean;
-            formData?: boolean;
             attachment?: boolean;
+            formData?: boolean;
+            inline?: boolean;
         };
         ErrorResponse: {
             body?: components["schemas"]["ProblemDetail"];
             statusCode?: components["schemas"]["HttpStatusCode"];
-            typeMessageCode?: string;
-            titleMessageCode?: string;
-            detailMessageCode?: string;
             detailMessageArguments?: Record<string, never>[];
+            typeMessageCode?: string;
+            detailMessageCode?: string;
+            titleMessageCode?: string;
             headers?: {
-                contentDisposition?: components["schemas"]["ContentDisposition"];
-                acceptCharset?: string[];
                 /** Format: uri */
                 location?: string;
-                contentLanguage?: {
-                    language?: string;
-                    displayName?: string;
-                    country?: string;
-                    variant?: string;
-                    script?: string;
-                    unicodeLocaleAttributes?: string[];
-                    unicodeLocaleKeys?: string[];
-                    displayLanguage?: string;
-                    displayScript?: string;
-                    displayCountry?: string;
-                    displayVariant?: string;
-                    extensionKeys?: string[];
-                    iso3Language?: string;
-                    iso3Country?: string;
-                };
-                allow?: components["schemas"]["HttpMethod"][];
+                connection?: string[];
+                contentDisposition?: components["schemas"]["ContentDisposition"];
+                acceptCharset?: string[];
+                empty?: boolean;
                 host?: {
                     hostString?: string;
                     address?: {
@@ -2027,60 +2115,6 @@ export interface components {
                     unresolved?: boolean;
                     hostName?: string;
                 };
-                cacheControl?: string;
-                etag?: string;
-                connection?: string[];
-                accept?: components["schemas"]["MediaType"][];
-                accessControlExposeHeaders?: string[];
-                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
-                accessControlAllowCredentials?: boolean;
-                accessControlAllowHeaders?: string[];
-                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
-                /** Format: int64 */
-                accessControlMaxAge?: number;
-                accessControlRequestHeaders?: string[];
-                accessControlAllowOrigin?: string;
-                acceptLanguageAsLocales?: {
-                    language?: string;
-                    displayName?: string;
-                    country?: string;
-                    variant?: string;
-                    script?: string;
-                    unicodeLocaleAttributes?: string[];
-                    unicodeLocaleKeys?: string[];
-                    displayLanguage?: string;
-                    displayScript?: string;
-                    displayCountry?: string;
-                    displayVariant?: string;
-                    extensionKeys?: string[];
-                    iso3Language?: string;
-                    iso3Country?: string;
-                }[];
-                /** Format: int64 */
-                ifUnmodifiedSince?: number;
-                acceptPatch?: components["schemas"]["MediaType"][];
-                acceptLanguage?: {
-                    range?: string;
-                    /** Format: double */
-                    weight?: number;
-                }[];
-                basicAuth?: string;
-                bearerAuth?: string;
-                upgrade?: string;
-                origin?: string;
-                /** Format: int64 */
-                expires?: number;
-                pragma?: string;
-                ifNoneMatch?: string[];
-                range?: components["schemas"]["HttpRange"][];
-                ifMatch?: string[];
-                vary?: string[];
-                contentType?: components["schemas"]["MediaType"];
-                /** Format: int64 */
-                ifModifiedSince?: number;
-                /** Format: int64 */
-                contentLength?: number;
-                empty?: boolean;
                 all?: {
                     [key: string]: string;
                 };
@@ -2088,6 +2122,75 @@ export interface components {
                 lastModified?: number;
                 /** Format: int64 */
                 date?: number;
+                /** Format: int64 */
+                contentLength?: number;
+                origin?: string;
+                range?: components["schemas"]["HttpRange"][];
+                contentType?: components["schemas"]["MediaType"];
+                contentLanguage?: {
+                    language?: string;
+                    displayName?: string;
+                    country?: string;
+                    variant?: string;
+                    script?: string;
+                    extensionKeys?: string[];
+                    unicodeLocaleAttributes?: string[];
+                    unicodeLocaleKeys?: string[];
+                    iso3Language?: string;
+                    iso3Country?: string;
+                    displayLanguage?: string;
+                    displayScript?: string;
+                    displayCountry?: string;
+                    displayVariant?: string;
+                };
+                allow?: components["schemas"]["HttpMethod"][];
+                cacheControl?: string;
+                etag?: string;
+                accept?: components["schemas"]["MediaType"][];
+                acceptLanguageAsLocales?: {
+                    language?: string;
+                    displayName?: string;
+                    country?: string;
+                    variant?: string;
+                    script?: string;
+                    extensionKeys?: string[];
+                    unicodeLocaleAttributes?: string[];
+                    unicodeLocaleKeys?: string[];
+                    iso3Language?: string;
+                    iso3Country?: string;
+                    displayLanguage?: string;
+                    displayScript?: string;
+                    displayCountry?: string;
+                    displayVariant?: string;
+                }[];
+                acceptPatch?: components["schemas"]["MediaType"][];
+                accessControlAllowCredentials?: boolean;
+                accessControlAllowHeaders?: string[];
+                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
+                accessControlAllowOrigin?: string;
+                accessControlExposeHeaders?: string[];
+                /** Format: int64 */
+                accessControlMaxAge?: number;
+                accessControlRequestHeaders?: string[];
+                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
+                bearerAuth?: string;
+                acceptLanguage?: {
+                    range?: string;
+                    /** Format: double */
+                    weight?: number;
+                }[];
+                basicAuth?: string;
+                /** Format: int64 */
+                expires?: number;
+                ifMatch?: string[];
+                ifNoneMatch?: string[];
+                /** Format: int64 */
+                ifUnmodifiedSince?: number;
+                pragma?: string;
+                upgrade?: string;
+                vary?: string[];
+                /** Format: int64 */
+                ifModifiedSince?: number;
             } & {
                 [key: string]: string[];
             };
@@ -2095,12 +2198,12 @@ export interface components {
         HttpMethod: Record<string, never>;
         HttpRange: Record<string, never>;
         HttpStatusCode: {
+            error?: boolean;
             is4xxClientError?: boolean;
             is5xxServerError?: boolean;
-            is3xxRedirection?: boolean;
-            is2xxSuccessful?: boolean;
             is1xxInformational?: boolean;
-            error?: boolean;
+            is2xxSuccessful?: boolean;
+            is3xxRedirection?: boolean;
         };
         MediaType: {
             type?: string;
@@ -2134,6 +2237,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -2141,10 +2245,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         PageStudyYearDto: {
@@ -2152,6 +2255,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -2159,10 +2263,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         PageStudentDto: {
@@ -2170,6 +2273,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -2177,10 +2281,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         PageSemesterDto: {
@@ -2188,6 +2291,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -2195,10 +2299,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         SemesterWeekDto: {
@@ -2236,6 +2339,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -2243,10 +2347,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         PageLectureDto: {
@@ -2254,6 +2357,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -2261,10 +2365,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         PageGroupDto: {
@@ -2272,6 +2375,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -2279,10 +2383,27 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
+            empty?: boolean;
+        };
+        PageFeedbackAdminDto: {
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            size?: number;
+            content?: components["schemas"]["FeedbackAdminDto"][];
+            /** Format: int32 */
+            number?: number;
+            sort?: components["schemas"]["SortObject"][];
+            /** Format: int32 */
+            numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         PageFacultyDto: {
@@ -2290,6 +2411,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -2297,10 +2419,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         PageEnrollmentDto: {
@@ -2308,6 +2429,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -2315,10 +2437,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         PageDepartmentDto: {
@@ -2326,6 +2447,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -2333,10 +2455,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         PageCourseDto: {
@@ -2344,6 +2465,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -2351,10 +2473,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         PageBellScheduleEntryDto: {
@@ -2362,6 +2483,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -2369,10 +2491,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         /** @description Событие журнала аудита: кто, когда и что сделал */
@@ -2391,7 +2512,7 @@ export interface components {
             /** @enum {string} */
             action?: "REGISTER" | "CREATE" | "UPDATE" | "DELETE" | "STATUS_CHANGE" | "MARK" | "COMPLETE" | "REJECT";
             /** @enum {string} */
-            entityType?: "BELL_SCHEDULE_ENTRY" | "COURSE" | "DEPARTMENT" | "FACULTY" | "GROUP" | "LECTURE" | "LECTURE_ATTENDANCE" | "PAIR" | "SEMESTER" | "STUDENT" | "STUDY_YEAR" | "TEACHER" | "UNIVERSITY" | "UNIVERSITY_REQUEST" | "WEEK_SCHEDULE_CYCLE";
+            entityType?: "BELL_SCHEDULE_ENTRY" | "COURSE" | "DEPARTMENT" | "FACULTY" | "FEEDBACK" | "GROUP" | "LECTURE" | "LECTURE_ATTENDANCE" | "PAIR" | "SEMESTER" | "STUDENT" | "STUDY_YEAR" | "TEACHER" | "UNIVERSITY" | "UNIVERSITY_REQUEST" | "WEEK_SCHEDULE_CYCLE";
             /** Format: uuid */
             entityId?: string;
             /** @description X-Request-Id запроса, в котором выполнено действие */
@@ -2406,6 +2527,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -2413,10 +2535,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         PageLectureAttendanceDto: {
@@ -2424,6 +2545,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -2431,10 +2553,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         AttendanceStatsDto: {
@@ -2450,6 +2571,7 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
+            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
@@ -2457,10 +2579,9 @@ export interface components {
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"][];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
+            last?: boolean;
             empty?: boolean;
         };
         /** @description Посещаемость студентом курса в текущем семестре по итоговым отметкам */
@@ -4391,6 +4512,75 @@ export interface operations {
             };
         };
     };
+    getFeedback: {
+        parameters: {
+            query?: {
+                /** @description Тип отзыва; без него — все типы */
+                type?: "BUG" | "IMPROVEMENT" | "IDEA";
+                /** @description Статус; без него — все статусы */
+                status?: "NEW" | "IN_PROGRESS" | "DONE" | "REJECTED";
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageFeedbackAdminDto"];
+                };
+            };
+        };
+    };
+    submitFeedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitFeedbackRequest"];
+            };
+        };
+        responses: {
+            /** @description Отзыв сохранён */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FeedbackDto"];
+                };
+            };
+            /** @description Невалидное тело: карта поле → сообщение */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FeedbackDto"];
+                };
+            };
+            /** @description Превышен лимит отзывов в час; см. заголовок Retry-After */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FeedbackDto"];
+                };
+            };
+        };
+    };
     createFaculty: {
         parameters: {
             query?: never;
@@ -4681,6 +4871,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["StudentDto"];
+                };
+            };
+        };
+    };
+    updateStatus_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFeedbackStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Статус изменён */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FeedbackAdminDto"];
+                };
+            };
+            /** @description Отзыв не найден */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FeedbackAdminDto"];
+                };
+            };
+            /** @description Недопустимый переход статуса */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FeedbackAdminDto"];
                 };
             };
         };
@@ -5238,7 +5472,7 @@ export interface operations {
     getEvents: {
         parameters: {
             query?: {
-                entityType?: "BELL_SCHEDULE_ENTRY" | "COURSE" | "DEPARTMENT" | "FACULTY" | "GROUP" | "LECTURE" | "LECTURE_ATTENDANCE" | "PAIR" | "SEMESTER" | "STUDENT" | "STUDY_YEAR" | "TEACHER" | "UNIVERSITY" | "UNIVERSITY_REQUEST" | "WEEK_SCHEDULE_CYCLE";
+                entityType?: "BELL_SCHEDULE_ENTRY" | "COURSE" | "DEPARTMENT" | "FACULTY" | "FEEDBACK" | "GROUP" | "LECTURE" | "LECTURE_ATTENDANCE" | "PAIR" | "SEMESTER" | "STUDENT" | "STUDY_YEAR" | "TEACHER" | "UNIVERSITY" | "UNIVERSITY_REQUEST" | "WEEK_SCHEDULE_CYCLE";
                 entityId?: string;
                 actorId?: string;
                 /** @description Начало периода включительно, ISO-8601, например 2026-10-01T00:00:00Z */

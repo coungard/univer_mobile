@@ -1,8 +1,11 @@
+import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { useAuth } from '../../auth/useAuth';
 import { QueryErrorState } from '../../components/QueryErrorState';
+import { TeacherTabScreenProps } from '../../navigation/types';
+import { FeedbackLink } from '../feedback/FeedbackScreens';
 import { useFacultyQuery, useOwnTeacherQuery } from './hooks';
 
 /**
@@ -10,6 +13,7 @@ import { useFacultyQuery, useOwnTeacherQuery } from './hooks';
  * «Лекции» (`TeacherCoursesScreen`/`TeacherLecturesScreen`).
  */
 export function TeacherProfileScreen() {
+  const navigation = useNavigation<TeacherTabScreenProps<'Profile'>['navigation']>();
   const { logout } = useAuth();
   const teacher = useOwnTeacherQuery();
   const faculty = useFacultyQuery(teacher.data?.facultyId);
@@ -44,14 +48,22 @@ export function TeacherProfileScreen() {
       <Button mode="outlined" onPress={() => logout()} style={styles.logout}>
         Выйти
       </Button>
+
+      <View style={styles.feedbackSpacer} />
+      <FeedbackLink onPress={() => navigation.navigate('Feedback')} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flexGrow: 1,
     padding: 24,
     gap: 4,
+  },
+  feedbackSpacer: {
+    flexGrow: 1,
+    minHeight: 24,
   },
   center: {
     flex: 1,
