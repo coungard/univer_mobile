@@ -2,7 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
+import { FormScrollView } from '../../components/FormScrollView';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
 import { getTeacher } from '../../api/endpoints/teachers';
@@ -300,7 +301,7 @@ export function PairFormScreen({ route, navigation }: Props) {
   });
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <FormScrollView contentContainerStyle={styles.container}>
       <ErrorBanner message={submitError} onDismiss={() => setSubmitError(null)} />
 
       <Text variant="headlineSmall" style={styles.title}>
@@ -445,7 +446,7 @@ export function PairFormScreen({ route, navigation }: Props) {
           setCourseNote(existed ? 'Такой предмет на факультете уже есть — выбран он.' : null);
         }}
       />
-    </ScrollView>
+    </FormScrollView>
   );
 }
 

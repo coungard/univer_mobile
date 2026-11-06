@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Text, View } from 'react-native';
+import { FormScrollView } from '../../components/FormScrollView';
 import { Button, IconButton, Modal, Portal } from 'react-native-paper';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorBanner } from '../../components/ErrorBanner';
@@ -136,7 +137,7 @@ function RequestForm({ initialName, initialRegion, isUpdate, hasUniversity, onSu
     <View style={stepStyles.screen}>
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <FormScrollView contentContainerStyle={styles.content}>
         <StepHeader
           step={3}
           title="Заявка на добавление университета"
@@ -180,7 +181,7 @@ function RequestForm({ initialName, initialRegion, isUpdate, hasUniversity, onSu
             ) : null}
           </View>
         </View>
-      </ScrollView>
+      </FormScrollView>
 
       <View style={stepStyles.footer}>
         <Button
