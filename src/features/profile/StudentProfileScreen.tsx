@@ -218,14 +218,6 @@ export function StudentProfileScreen() {
         <Field label="Email" value={student.data.email} last />
       </View>
 
-      {student.data.universityId ? (
-        // The wizard resumes at the first unfilled step, so this is the only way back to the steps
-        // above it — e.g. out of a university that turned out to have no faculties in the catalog.
-        <Pressable accessibilityRole="button" onPress={() => navigation.navigate('SetupRegion')} style={styles.link}>
-          <Text style={styles.linkText}>{hasGroup ? 'Изменить университет или группу' : 'Изменить университет'}</Text>
-        </Pressable>
-      ) : null}
-
       {/* Pushed to the bottom of a short profile; after the content of a long one (issue #82). */}
       <View style={styles.feedbackSpacer} />
       <View>
@@ -617,15 +609,5 @@ const useStyles = libraryStyles((c) => ({
   },
   rename: {
     margin: 0,
-  },
-  link: {
-    paddingVertical: 10,
-    paddingHorizontal: 2,
-    alignSelf: 'flex-start',
-  },
-  linkText: {
-    fontFamily: libraryFonts.bodyBold,
-    fontSize: 14.5,
-    color: c.terracotta,
   },
 }));
