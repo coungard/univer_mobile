@@ -5,6 +5,7 @@ import { Button, Text } from 'react-native-paper';
 import { useAuth } from '../../auth/useAuth';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { TeacherTabScreenProps } from '../../navigation/types';
+import { DeleteAccountLink } from '../account/DeleteAccountScreens';
 import { FeedbackLink } from '../feedback/FeedbackScreens';
 import { useFacultyQuery, useOwnTeacherQuery } from './hooks';
 
@@ -48,6 +49,7 @@ export function TeacherProfileScreen() {
       <Button mode="outlined" onPress={() => logout()} style={styles.logout}>
         Выйти
       </Button>
+      <DeleteAccountLink onPress={() => navigation.navigate('DeleteAccount')} />
 
       <View style={styles.feedbackSpacer} />
       <FeedbackLink onPress={() => navigation.navigate('Feedback')} />

@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
+import { DeleteAccountScreen } from '../features/account/DeleteAccountScreens';
 import { CourseDetailsScreen } from '../features/courses/CourseDetailsScreen';
 import { StudentSetupDoneScreen } from '../features/onboarding/StudentSetupDoneScreen';
 import { StudentSetupFacultyScreen } from '../features/onboarding/StudentSetupFacultyScreen';
@@ -63,6 +64,7 @@ export function StudentStack() {
         options={({ route }) => ({ headerTitle: FEEDBACK_MESSAGE_TITLES[route.params.type], ...libraryHeader })}
       />
       <Stack.Screen name="FeedbackSent" component={FeedbackSentScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} options={{ title: '', ...libraryHeader }} />
     </Stack.Navigator>
   );
 }

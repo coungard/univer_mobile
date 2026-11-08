@@ -92,8 +92,14 @@ export function toApiError(status: number, data: unknown): ApiError {
         body.retryAfterSeconds ?? undefined,
       );
     }
-    default:
-      return new ApiError(status, 'Не удалось выполнить запрос. Попробуйте ещё раз.');
+    default: {
+      // A 5xx the backend handled itself carries a message meant for the user (e.g. «Не удалось удалить
+      // аккаунт: сервер авторизации недоступен…», univer#133). Other statuses keep the generic text:
+      // Spring's own bodies for them aren't written for people.
+      const body = (data ?? {}) as SpringErrorBody;
+      const serverMessage = status >= 500 && typeof body.message === 'string' ? body.message.trim() : '';
+      return new ApiError(status, serverMessage || 'Не удалось выполнить запрос. Попробуйте ещё раз.');
+    }
   }
 }
 

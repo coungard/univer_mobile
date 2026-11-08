@@ -29,6 +29,11 @@ export type FeedbackParamList = {
   FeedbackSent: undefined;
 };
 
+/** «Удалить аккаунт» (issue #86), in both the student and the teacher stack: the confirmation. */
+export type AccountParamList = {
+  DeleteAccount: undefined;
+};
+
 /** Bottom tabs for the student experience (ROADMAP.md "Фаза 3"/"Фаза 4"). */
 export type StudentTabParamList = {
   Profile: undefined;
@@ -43,7 +48,7 @@ export type StudentTabParamList = {
  * Native stack wrapping `StudentTabParamList` so tapping into a lecture or a course (ROADMAP.md
  * "Фаза 4") pushes a details screen over the tab bar instead of replacing the tabs.
  */
-export type StudentStackParamList = FeedbackParamList & {
+export type StudentStackParamList = FeedbackParamList & AccountParamList & {
   Tabs: NavigatorScreenParams<StudentTabParamList> | undefined;
   LectureDetails: { lectureId: string };
   CourseDetails: { courseId: string };
@@ -103,7 +108,7 @@ export type TeacherTabParamList = {
 };
 
 /** Native stack wrapping `TeacherTabParamList`, same reasoning as `StudentStackParamList` above. */
-export type TeacherStackParamList = FeedbackParamList & {
+export type TeacherStackParamList = FeedbackParamList & AccountParamList & {
   Tabs: undefined;
   LectureDetails: { lectureId: string };
   /** Manual `POST /lectures` (no source `Pair`). */

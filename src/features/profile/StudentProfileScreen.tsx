@@ -7,6 +7,7 @@ import { LectureDto } from '../../api/types';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { StudentTabScreenProps } from '../../navigation/types';
 import { libraryFonts, libraryHintColors, libraryStyles, useLibraryColors } from '../../theme/library';
+import { DeleteAccountLink } from '../account/DeleteAccountScreens';
 import { FeedbackLink } from '../feedback/FeedbackScreens';
 import { Hint } from '../hints/Hint';
 import { useNewcomer } from '../hints/useNewcomer';
@@ -227,7 +228,10 @@ export function StudentProfileScreen() {
 
       {/* Pushed to the bottom of a short profile; after the content of a long one (issue #82). */}
       <View style={styles.feedbackSpacer} />
-      <FeedbackLink onPress={() => navigation.navigate('Feedback')} />
+      <View>
+        <FeedbackLink onPress={() => navigation.navigate('Feedback')} />
+        <DeleteAccountLink onPress={() => navigation.navigate('DeleteAccount')} />
+      </View>
     </ScrollView>
   );
 }
