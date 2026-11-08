@@ -1,6 +1,8 @@
+import { queryClient } from '../api/queryClient';
 import { endKeycloakSession, login as browserLogin, loginWithPassword, refreshTokens } from './authService';
 import { useAuthStore } from './authStore';
 import { clearTokens, loadTokens, saveTokens, StoredTokens } from './keychain';
+import { useSessionNoticeStore } from './sessionNotice';
 
 /**
  * Non-React session orchestration, used by both UI code (`useAuth`) and the axios interceptor
@@ -19,16 +21,19 @@ export async function restoreSession(): Promise<void> {
 }
 
 export async function performLogin(): Promise<void> {
-  const tokens = await browserLogin();
-  await saveTokens(tokens);
-  useAuthStore.getState().setSession(tokens);
+  await startSession(await browserLogin());
 }
 
 /** Straight to a profile after registration — see `authService.loginWithPassword`. */
 export async function performPasswordLogin(username: string, password: string): Promise<void> {
-  const tokens = await loginWithPassword(username, password);
+  await startSession(await loginWithPassword(username, password));
+}
+
+/** A fresh sign-in: the login screen's word about the previous session no longer applies. */
+async function startSession(tokens: StoredTokens): Promise<void> {
   await saveTokens(tokens);
   useAuthStore.getState().setSession(tokens);
+  useSessionNoticeStore.getState().dismiss();
 }
 
 /** Ends the Keycloak SSO session (best-effort) and always clears local state, even on failure. */
@@ -37,8 +42,30 @@ export async function performLogout(): Promise<void> {
   try {
     if (idToken) await endKeycloakSession(idToken);
   } finally {
+    await clearLocalSession();
+  }
+}
+
+/**
+ * After `DELETE /users/me` answered `204` (issue #86): the Keycloak user and its sessions are gone
+ * already, so there's no end-session call — only the local part of signing out, and a word on the
+ * login screen.
+ */
+export async function finishAccountDeletion(): Promise<void> {
+  await clearLocalSession();
+  useSessionNoticeStore.getState().show('Аккаунт удалён');
+}
+
+/**
+ * Forgets the session on the device: tokens in the Keychain/Keystore, the in-memory session (which
+ * swaps the app for the login screen) and every cached query of the old user.
+ */
+async function clearLocalSession(): Promise<void> {
+  try {
     await clearTokens();
+  } finally {
     useAuthStore.getState().clearSession();
+    queryClient.clear();
   }
 }
 
@@ -67,6 +94,5 @@ export async function ensureFreshAccessToken(): Promise<string> {
 
 /** Refresh failed unrecoverably (revoked/expired refresh token) — drop the session everywhere. */
 export async function forceLogout(): Promise<void> {
-  await clearTokens();
-  useAuthStore.getState().clearSession();
+  await clearLocalSession();
 }

@@ -1391,6 +1391,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Удалить свой аккаунт
+         * @description Сразу и безвозвратно: профиль студента или преподавателя, логин в Keycloak вместе с сессиями и refresh-токенами. У студента удаляются записи на курсы, посещаемость и заявки на вуз; у преподавателя пары, лекции и предметы остаются без преподавателя. Отзывы обезличиваются. Пользователь берётся из токена, тело не нужно. Повторный вызов — тоже 204.
+         */
+        delete: operations["deleteMyAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1981,8 +2001,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["WeekScheduleCycleDto"][];
@@ -2017,8 +2037,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UniversityRequestDto"][];
@@ -2035,8 +2055,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UniversityDto"][];
@@ -2073,9 +2093,9 @@ export interface components {
              * @deprecated
              */
             readDate?: string;
+            inline?: boolean;
             attachment?: boolean;
             formData?: boolean;
-            inline?: boolean;
         };
         ErrorResponse: {
             body?: components["schemas"]["ProblemDetail"];
@@ -2085,12 +2105,7 @@ export interface components {
             detailMessageCode?: string;
             titleMessageCode?: string;
             headers?: {
-                /** Format: uri */
-                location?: string;
                 connection?: string[];
-                contentDisposition?: components["schemas"]["ContentDisposition"];
-                acceptCharset?: string[];
-                empty?: boolean;
                 host?: {
                     hostString?: string;
                     address?: {
@@ -2115,6 +2130,11 @@ export interface components {
                     unresolved?: boolean;
                     hostName?: string;
                 };
+                contentDisposition?: components["schemas"]["ContentDisposition"];
+                acceptCharset?: string[];
+                /** Format: uri */
+                location?: string;
+                empty?: boolean;
                 all?: {
                     [key: string]: string;
                 };
@@ -2147,6 +2167,22 @@ export interface components {
                 cacheControl?: string;
                 etag?: string;
                 accept?: components["schemas"]["MediaType"][];
+                accessControlAllowOrigin?: string;
+                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
+                accessControlAllowHeaders?: string[];
+                accessControlExposeHeaders?: string[];
+                accessControlAllowCredentials?: boolean;
+                /** Format: int64 */
+                accessControlMaxAge?: number;
+                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
+                accessControlRequestHeaders?: string[];
+                acceptPatch?: components["schemas"]["MediaType"][];
+                acceptLanguage?: {
+                    range?: string;
+                    /** Format: double */
+                    weight?: number;
+                }[];
+                basicAuth?: string;
                 acceptLanguageAsLocales?: {
                     language?: string;
                     displayName?: string;
@@ -2163,23 +2199,7 @@ export interface components {
                     displayCountry?: string;
                     displayVariant?: string;
                 }[];
-                acceptPatch?: components["schemas"]["MediaType"][];
-                accessControlAllowCredentials?: boolean;
-                accessControlAllowHeaders?: string[];
-                accessControlAllowMethods?: components["schemas"]["HttpMethod"][];
-                accessControlAllowOrigin?: string;
-                accessControlExposeHeaders?: string[];
-                /** Format: int64 */
-                accessControlMaxAge?: number;
-                accessControlRequestHeaders?: string[];
-                accessControlRequestMethod?: components["schemas"]["HttpMethod"];
                 bearerAuth?: string;
-                acceptLanguage?: {
-                    range?: string;
-                    /** Format: double */
-                    weight?: number;
-                }[];
-                basicAuth?: string;
                 /** Format: int64 */
                 expires?: number;
                 ifMatch?: string[];
@@ -2237,8 +2257,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["TeacherDto"][];
@@ -2255,8 +2275,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StudyYearDto"][];
@@ -2273,8 +2293,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StudentDto"][];
@@ -2291,8 +2311,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["SemesterDto"][];
@@ -2339,8 +2359,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PairDto"][];
@@ -2357,8 +2377,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LectureDto"][];
@@ -2375,8 +2395,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["GroupDto"][];
@@ -2393,8 +2413,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["FeedbackAdminDto"][];
@@ -2411,8 +2431,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["FacultyDto"][];
@@ -2429,8 +2449,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["EnrollmentDto"][];
@@ -2447,8 +2467,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["DepartmentDto"][];
@@ -2465,8 +2485,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CourseDto"][];
@@ -2483,8 +2503,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["BellScheduleEntryDto"][];
@@ -2527,8 +2547,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["AuditEventDto"][];
@@ -2545,8 +2565,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LectureAttendanceDto"][];
@@ -2571,8 +2591,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            first?: boolean;
             pageable?: components["schemas"]["PageableObject"];
+            first?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["MyAttendanceDto"][];
@@ -5636,6 +5656,45 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["AttendanceStatsDto"];
                 };
+            };
+        };
+    };
+    deleteMyAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Аккаунт удалён */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Нет токена или он невалиден */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Роль не STUDENT и не TEACHER */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Keycloak недоступен; данные не изменены, можно повторить */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

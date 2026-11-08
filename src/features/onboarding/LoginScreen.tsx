@@ -1,10 +1,11 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React from 'react';
 import { StatusBar, View } from 'react-native';
-import { Button, Text, useTheme } from 'react-native-paper';
+import { Button, Snackbar, Text, useTheme } from 'react-native-paper';
 import { BookIcon } from '../../components/BookIcon';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { SpineBand } from '../../components/SpineBand';
+import { useSessionNoticeStore } from '../../auth/sessionNotice';
 import { useAuth } from '../../auth/useAuth';
 import { AuthStackParamList } from '../../navigation/types';
 import { libraryFonts, libraryStyles, useLibraryColors } from '../../theme/library';
@@ -16,6 +17,8 @@ export function LoginScreen({ navigation }: Props) {
   const styles = useStyles();
   const { dark } = useTheme();
   const { isLoggingIn, loginError, login } = useAuth();
+  const notice = useSessionNoticeStore((state) => state.notice);
+  const dismissNotice = useSessionNoticeStore((state) => state.dismiss);
 
   return (
     <View style={styles.container}>
@@ -60,6 +63,11 @@ export function LoginScreen({ navigation }: Props) {
           Зарегистрироваться
         </Button>
       </View>
+
+      {/* How the last session ended, e.g. «Аккаунт удалён» (issue #86). */}
+      <Snackbar visible={!!notice} onDismiss={dismissNotice} duration={4000}>
+        {notice ?? ''}
+      </Snackbar>
     </View>
   );
 }
