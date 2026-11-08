@@ -1,16 +1,20 @@
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, SegmentedButtons, Text } from 'react-native-paper';
 import { version } from '../../../package.json';
 import { useAuth } from '../../auth/useAuth';
+import { StudentStackParamList } from '../../navigation/types';
 import { libraryFonts } from '../../theme/library';
+import { useGroupAcademicPathQuery, useOwnStudentQuery, useUniversityQuery } from '../profile/hooks';
 import { ALL_WEEKDAYS, toggleWeekday, Weekday, WEEKDAY_SHORT_NAMES } from '../schedule/scheduleDays';
 import { ScheduleViewMode, ThemePreference, useSettingsStore } from './settingsStore';
 
 /**
- * «Настройки» (issue #60): everything about the app rather than the student, opened from the
- * profile — the schedule's view on opening and its days, the theme, signing out and the
- * app's version. Student only; the teacher gets settings of their own later.
+ * «Настройки» (issue #60), opened from the profile: the university and group (issue #90), the
+ * schedule's view on opening and its days, the theme, signing out and the app's version. Student
+ * only; the teacher gets settings of their own later.
  */
 export function SettingsScreen() {
   const { logout } = useAuth();
@@ -23,6 +27,8 @@ export function SettingsScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <StudySection />
+
       <View style={styles.section}>
         <Text style={styles.heading}>Расписание</Text>
         <Text variant="bodyMedium" style={styles.label}>
@@ -95,7 +101,42 @@ export function SettingsScreen() {
   );
 }
 
+/**
+ * «Учёба» (issue #90): the student's university and group, and the way to change them — the setup
+ * wizard from its first step. The wizard otherwise resumes at the first unfilled step, so this is
+ * the only way back to the steps above it, e.g. out of a university that turned out to have no
+ * faculties in the catalog. Hidden until a university is picked: till then the profile's «До
+ * расписания» card leads into the wizard itself.
+ */
+function StudySection() {
+  const navigation = useNavigation<NativeStackNavigationProp<StudentStackParamList>>();
+  const student = useOwnStudentQuery();
+  const university = useUniversityQuery(student.data?.universityId ?? undefined);
+  const academicPath = useGroupAcademicPathQuery(student.data?.groupId);
+
+  if (!student.data?.universityId) return null;
+  const hasGroup = student.data.groupId != null;
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.heading}>Учёба</Text>
+      <Text variant="bodyMedium">{university.data?.name ?? '…'}</Text>
+      {hasGroup ? (
+        <Text variant="bodyMedium" style={styles.label}>
+          Группа {academicPath.group?.name ?? '…'}
+        </Text>
+      ) : null}
+      <Button mode="outlined" onPress={() => navigation.navigate('SetupRegion')} style={styles.studyButton}>
+        {hasGroup ? 'Изменить университет или группу' : 'Изменить университет'}
+      </Button>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  studyButton: {
+    marginTop: 4,
+  },
   container: {
     padding: 24,
     gap: 28,
