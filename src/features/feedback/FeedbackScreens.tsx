@@ -5,6 +5,7 @@ import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button, HelperText, Icon, TextInput, useTheme } from 'react-native-paper';
 import { version } from '../../../package.json';
 import { FeedbackType } from '../../api/types';
+import { FormScrollView } from '../../components/FormScrollView';
 import { FeedbackParamList } from '../../navigation/types';
 import { libraryFonts, libraryStyles, LibraryPalette, useLibraryColors, useLibraryFieldTheme } from '../../theme/library';
 import {
@@ -159,12 +160,7 @@ export function FeedbackMessageScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-      automaticallyAdjustKeyboardInsets
-    >
+    <FormScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.question}>{kind.question}</Text>
       <Text style={styles.hint}>{kind.hint}</Text>
 
@@ -218,7 +214,7 @@ export function FeedbackMessageScreen() {
       >
         Отправить
       </Button>
-    </ScrollView>
+    </FormScrollView>
   );
 }
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { FormScrollView } from '../../components/FormScrollView';
 import { Button } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
 import { ErrorBanner } from '../../components/ErrorBanner';
@@ -96,7 +97,7 @@ export function StudentSetupNewGroupScreen({ navigation, route }: StudentStackSc
     <View style={stepStyles.screen}>
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <FormScrollView contentContainerStyle={styles.content}>
         <StepHeader
           step={6}
           title="Новая группа"
@@ -142,7 +143,7 @@ export function StudentSetupNewGroupScreen({ navigation, route }: StudentStackSc
           placeholder="Разработка программных и информационных систем"
           maxLength={FULL_NAME_MAX_LENGTH}
         />
-      </ScrollView>
+      </FormScrollView>
 
       <View style={stepStyles.footer}>
         <Button

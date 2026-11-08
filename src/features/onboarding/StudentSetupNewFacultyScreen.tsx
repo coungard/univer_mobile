@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { FormScrollView } from '../../components/FormScrollView';
 import { Button } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
 import { ErrorBanner } from '../../components/ErrorBanner';
@@ -103,7 +104,7 @@ export function StudentSetupNewFacultyScreen({ navigation, route }: StudentStack
     <View style={stepStyles.screen}>
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <FormScrollView contentContainerStyle={styles.content}>
         <StepHeader
           step={4}
           title="Новый факультет"
@@ -145,7 +146,7 @@ export function StudentSetupNewFacultyScreen({ navigation, route }: StudentStack
             Выбрать его
           </Button>
         ) : null}
-      </ScrollView>
+      </FormScrollView>
 
       <View style={stepStyles.footer}>
         <Button

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
+import { FormScrollView } from '../../components/FormScrollView';
 import { Button } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
 import { ErrorBanner } from '../../components/ErrorBanner';
@@ -101,7 +102,7 @@ function RenameForm({ kind, initial, onDone }: RenameFormProps) {
     <View style={stepStyles.screen}>
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <FormScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>{kind === 'faculty' ? 'Название факультета' : 'Название группы'}</Text>
         <Text style={styles.subtitle}>
           {kind === 'faculty'
@@ -128,7 +129,7 @@ function RenameForm({ kind, initial, onDone }: RenameFormProps) {
             maxLength={GROUP_FULL_NAME_MAX_LENGTH}
           />
         ) : null}
-      </ScrollView>
+      </FormScrollView>
 
       <View style={stepStyles.footer}>
         <Button
