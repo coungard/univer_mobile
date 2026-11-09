@@ -24,6 +24,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/me/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Загрузить или заменить своё фото профиля
+         * @description multipart/form-data, поле file: JPEG, PNG или WebP до 5 МБ и 8000×8000 пикселей. Формат определяется по содержимому; HEIC не принимается — клиент перекодирует его в JPEG. Сервер учитывает EXIF-поворот, обрезает фото по центру до квадрата и сохраняет JPEG 512×512 и 128×128 без метаданных (геолокация удаляется). Ссылки постоянные и публичные (без токена); каждая загрузка даёт новые ссылки, прежнее фото удаляется. Ссылки также приходят в профиле студента и преподавателя (avatarUrl, avatarThumbnailUrl).
+         */
+        put: operations["uploadMyAvatar"];
+        post?: never;
+        /**
+         * Удалить своё фото профиля
+         * @description Файлы удаляются, в профиле avatarUrl и avatarThumbnailUrl становятся null. Если фото нет — тоже 204.
+         */
+        delete: operations["deleteMyAvatar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/universities/{id}": {
         parameters: {
             query?: never;
@@ -835,6 +859,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/teachers/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Заполнить свой профиль преподавателя: пол
+         * @description Частичное обновление своего профиля (id — из токена, чужой профиль так не изменить): переданное поле меняется, непереданное — нет. Пока только gender: MALE | FEMALE; он обязателен — null не очищает его, а даёт 422.
+         */
+        patch: operations["updateMyProfile"];
+        trace?: never;
+    };
     "/api/v1/students/me": {
         parameters: {
             query?: never;
@@ -853,10 +897,10 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Заполнить свой профиль: университет, факультет, курс, группа
-         * @description Частичное обновление: переданное поле меняется, непереданное — нет, явный null очищает поле. Смена поля сбрасывает всё, что ниже по цепочке университет → факультет → курс → группа; незаполненные поля выше по цепочке проставляются по выбранному значению.
+         * Заполнить свой профиль: университет, факультет, курс, группа, пол
+         * @description Частичное обновление: переданное поле меняется, непереданное — нет, явный null очищает поле. Смена поля сбрасывает всё, что ниже по цепочке университет → факультет → курс → группа; незаполненные поля выше по цепочке проставляются по выбранному значению. Пол (gender: MALE | FEMALE) от цепочки не зависит и обязателен: null не очищает его, а даёт 422.
          */
-        patch: operations["updateMyProfile"];
+        patch: operations["updateMyProfile_1"];
         trace?: never;
     };
     "/api/v1/feedback/{id}": {
@@ -1435,6 +1479,12 @@ export interface components {
             /** Format: uuid */
             updatedBy?: string;
         };
+        AvatarDto: {
+            /** Format: uuid */
+            fileId?: string;
+            avatarUrl?: string;
+            avatarThumbnailUrl?: string;
+        };
         /** @description Ввод адреса: либо ID существующего, либо данные для создания */
         AddressDto: {
             /**
@@ -1586,6 +1636,8 @@ export interface components {
             phone?: string;
             /** Format: date */
             birthday?: string;
+            /** @enum {string} */
+            gender?: "MALE" | "FEMALE";
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
@@ -1598,6 +1650,8 @@ export interface components {
             facultyId: string;
             position: string;
             registered?: boolean;
+            avatarUrl?: string;
+            avatarThumbnailUrl?: string;
         };
         StudyYearDto: {
             /** Format: uuid */
@@ -1635,6 +1689,8 @@ export interface components {
             enrollmentDate?: string;
             /** Format: date */
             birthday?: string;
+            /** @enum {string} */
+            gender?: "MALE" | "FEMALE";
             /** Format: uuid */
             universityId?: string;
             /** Format: uuid */
@@ -1643,6 +1699,8 @@ export interface components {
             yearNumber?: number;
             /** Format: uuid */
             groupId?: string;
+            avatarUrl?: string;
+            avatarThumbnailUrl?: string;
         };
         SubmitUniversityRequest: {
             name: string;
@@ -1888,6 +1946,8 @@ export interface components {
             /** Format: date */
             birthday: string;
             position: string;
+            /** @enum {string} */
+            gender: "MALE" | "FEMALE";
         };
         RegisterStudentRequest: {
             username: string;
@@ -1902,6 +1962,8 @@ export interface components {
             birthday: string;
             /** Format: uuid */
             universityId?: string;
+            /** @enum {string} */
+            gender: "MALE" | "FEMALE";
         };
         CreateStudentCourseRequest: {
             title: string;
@@ -1948,6 +2010,10 @@ export interface components {
             /** Format: uuid */
             updatedBy?: string;
         };
+        UpdateTeacherProfileRequest: {
+            /** @enum {string} */
+            gender?: "MALE" | "FEMALE";
+        };
         UpdateStudentProfileRequest: {
             /** Format: uuid */
             universityId?: string;
@@ -1957,6 +2023,8 @@ export interface components {
             yearNumber?: number;
             /** Format: uuid */
             groupId?: string;
+            /** @enum {string} */
+            gender?: "MALE" | "FEMALE";
         };
         UpdateFeedbackStatusRequest: {
             /** @enum {string} */
@@ -2001,8 +2069,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["WeekScheduleCycleDto"][];
@@ -2037,8 +2105,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UniversityRequestDto"][];
@@ -2055,8 +2123,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["UniversityDto"][];
@@ -2093,19 +2161,19 @@ export interface components {
              * @deprecated
              */
             readDate?: string;
-            inline?: boolean;
             attachment?: boolean;
             formData?: boolean;
+            inline?: boolean;
         };
         ErrorResponse: {
             body?: components["schemas"]["ProblemDetail"];
-            statusCode?: components["schemas"]["HttpStatusCode"];
-            detailMessageArguments?: Record<string, never>[];
-            typeMessageCode?: string;
-            detailMessageCode?: string;
-            titleMessageCode?: string;
             headers?: {
+                contentDisposition?: components["schemas"]["ContentDisposition"];
+                acceptCharset?: string[];
+                /** Format: uri */
+                location?: string;
                 connection?: string[];
+                empty?: boolean;
                 host?: {
                     hostString?: string;
                     address?: {
@@ -2130,11 +2198,6 @@ export interface components {
                     unresolved?: boolean;
                     hostName?: string;
                 };
-                contentDisposition?: components["schemas"]["ContentDisposition"];
-                acceptCharset?: string[];
-                /** Format: uri */
-                location?: string;
-                empty?: boolean;
                 all?: {
                     [key: string]: string;
                 };
@@ -2144,9 +2207,11 @@ export interface components {
                 date?: number;
                 /** Format: int64 */
                 contentLength?: number;
+                contentType?: components["schemas"]["MediaType"];
+                /** Format: int64 */
+                ifModifiedSince?: number;
                 origin?: string;
                 range?: components["schemas"]["HttpRange"][];
-                contentType?: components["schemas"]["MediaType"];
                 contentLanguage?: {
                     language?: string;
                     displayName?: string;
@@ -2209,11 +2274,14 @@ export interface components {
                 pragma?: string;
                 upgrade?: string;
                 vary?: string[];
-                /** Format: int64 */
-                ifModifiedSince?: number;
             } & {
                 [key: string]: string[];
             };
+            statusCode?: components["schemas"]["HttpStatusCode"];
+            detailMessageArguments?: Record<string, never>[];
+            typeMessageCode?: string;
+            detailMessageCode?: string;
+            titleMessageCode?: string;
         };
         HttpMethod: Record<string, never>;
         HttpRange: Record<string, never>;
@@ -2257,8 +2325,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["TeacherDto"][];
@@ -2275,8 +2343,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StudyYearDto"][];
@@ -2293,8 +2361,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["StudentDto"][];
@@ -2311,8 +2379,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["SemesterDto"][];
@@ -2359,8 +2427,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PairDto"][];
@@ -2377,8 +2445,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LectureDto"][];
@@ -2395,8 +2463,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["GroupDto"][];
@@ -2413,8 +2481,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["FeedbackAdminDto"][];
@@ -2431,8 +2499,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["FacultyDto"][];
@@ -2449,8 +2517,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["EnrollmentDto"][];
@@ -2467,8 +2535,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["DepartmentDto"][];
@@ -2485,8 +2553,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CourseDto"][];
@@ -2503,8 +2571,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["BellScheduleEntryDto"][];
@@ -2547,8 +2615,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["AuditEventDto"][];
@@ -2565,8 +2633,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LectureAttendanceDto"][];
@@ -2591,8 +2659,8 @@ export interface components {
             totalPages?: number;
             /** Format: int64 */
             totalElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             first?: boolean;
+            pageable?: components["schemas"]["PageableObject"];
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["MyAttendanceDto"][];
@@ -2653,6 +2721,135 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["WeekScheduleCycleDto"];
                 };
+            };
+        };
+    };
+    uploadMyAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Фото сохранено */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AvatarDto"];
+                };
+            };
+            /** @description Нет токена или он невалиден */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AvatarDto"];
+                };
+            };
+            /** @description Роль не STUDENT и не TEACHER */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AvatarDto"];
+                };
+            };
+            /** @description У пользователя нет профиля студента или преподавателя */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AvatarDto"];
+                };
+            };
+            /** @description Файл больше 5 МБ или изображение больше 8000×8000 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AvatarDto"];
+                };
+            };
+            /** @description Не изображение JPEG, PNG или WebP (в том числе HEIC) */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AvatarDto"];
+                };
+            };
+            /** @description Файл не передан или пустой */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AvatarDto"];
+                };
+            };
+            /** @description Сервер занят обработкой других фото, повторить позже */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AvatarDto"];
+                };
+            };
+        };
+    };
+    deleteMyAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Фото удалено или его не было */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Нет токена или он невалиден */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Роль не STUDENT и не TEACHER */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description У пользователя нет профиля студента или преподавателя */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -4833,6 +5030,66 @@ export interface operations {
             };
         };
     };
+    updateMyProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTeacherProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Профиль обновлён */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherDto"];
+                };
+            };
+            /** @description Неизвестное значение поля (например, gender) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherDto"];
+                };
+            };
+            /** @description Роль не TEACHER */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherDto"];
+                };
+            };
+            /** @description Профиля преподавателя нет */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherDto"];
+                };
+            };
+            /** @description gender: null — пол обязателен, очистить нельзя */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherDto"];
+                };
+            };
+        };
+    };
     getMyProfile: {
         parameters: {
             query?: never;
@@ -4853,7 +5110,7 @@ export interface operations {
             };
         };
     };
-    updateMyProfile: {
+    updateMyProfile_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -4875,6 +5132,15 @@ export interface operations {
                     "*/*": components["schemas"]["StudentDto"];
                 };
             };
+            /** @description Неизвестное значение поля (например, gender) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StudentDto"];
+                };
+            };
             /** @description Университет, факультет или группа не найдены */
             404: {
                 headers: {
@@ -4884,7 +5150,7 @@ export interface operations {
                     "*/*": components["schemas"]["StudentDto"];
                 };
             };
-            /** @description Поля не согласованы между собой */
+            /** @description Поля не согласованы между собой или gender: null */
             422: {
                 headers: {
                     [name: string]: unknown;

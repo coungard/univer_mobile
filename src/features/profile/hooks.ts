@@ -1,12 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getDepartment } from '../../api/endpoints/departments';
 import { getFaculty } from '../../api/endpoints/faculties';
 import { getGroup } from '../../api/endpoints/groups';
 import { getSemester, getSemesterWeek } from '../../api/endpoints/semesters';
-import { getOwnStudent } from '../../api/endpoints/students';
+import { getOwnStudent, updateOwnStudent } from '../../api/endpoints/students';
 import { getStudyYear } from '../../api/endpoints/studyYears';
-import { getTeacher } from '../../api/endpoints/teachers';
+import { getTeacher, updateOwnTeacher } from '../../api/endpoints/teachers';
 import { getUniversity } from '../../api/endpoints/universities';
+import { Gender } from '../../api/types';
 import { useAuthStore } from '../../auth/authStore';
 
 /**
@@ -130,4 +131,27 @@ export function useGroupAcademicPathQuery(groupId: string | null | undefined) {
     isError: group.isError || semester.isError || studyYear.isError || faculty.isError,
     error: group.error ?? semester.error ?? studyYear.error ?? faculty.error,
   };
+}
+
+/**
+ * The student's gender through `PATCH /students/me` (issue #92). Unlike the university chain it
+ * changes nothing else, so only the cached own profile is replaced.
+ */
+export function useUpdateOwnStudentGenderMutation() {
+  const queryClient = useQueryClient();
+  const id = useOwnUserId();
+  return useMutation({
+    mutationFn: (gender: Gender) => updateOwnStudent({ gender }),
+    onSuccess: (student) => queryClient.setQueryData(['students', id], student),
+  });
+}
+
+/** The teacher's gender through `PATCH /teachers/me` (issue #92, univer#139). */
+export function useUpdateOwnTeacherGenderMutation() {
+  const queryClient = useQueryClient();
+  const id = useOwnUserId();
+  return useMutation({
+    mutationFn: (gender: Gender) => updateOwnTeacher({ gender }),
+    onSuccess: (teacher) => queryClient.setQueryData(['teachers', id], teacher),
+  });
 }

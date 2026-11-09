@@ -11,6 +11,7 @@ import { ErrorBanner } from '../../components/ErrorBanner';
 import { AuthStackParamList } from '../../navigation/types';
 import { libraryFonts, libraryStyles, useLibraryColors, useLibraryFieldTheme } from '../../theme/library';
 import { formatDateInput } from './formatDateInput';
+import { GenderChoice } from './GenderChoice';
 import { useRegisterTeacherMutation } from './hooks';
 import { TeacherRegistrationForm, teacherRegistrationSchema } from './schemas';
 import { TeacherIdCard } from './TeacherIdCard';
@@ -283,6 +284,16 @@ export function RegisterTeacherScreen({ navigation }: Props) {
               style={styles.fieldInput}
               error={!!errors.birthday}
             />
+          </FieldBox>
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="gender"
+        render={({ field }) => (
+          <FieldBox label="Пол" error={!!errors.gender} helperText={errors.gender?.message}>
+            <GenderChoice value={field.value} onChange={field.onChange} error={!!errors.gender} />
           </FieldBox>
         )}
       />

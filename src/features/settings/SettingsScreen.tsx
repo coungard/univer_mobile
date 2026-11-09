@@ -7,14 +7,20 @@ import { version } from '../../../package.json';
 import { useAuth } from '../../auth/useAuth';
 import { StudentStackParamList } from '../../navigation/types';
 import { libraryFonts } from '../../theme/library';
-import { useGroupAcademicPathQuery, useOwnStudentQuery, useUniversityQuery } from '../profile/hooks';
+import { GenderSetting } from '../profile/GenderSetting';
+import {
+  useGroupAcademicPathQuery,
+  useOwnStudentQuery,
+  useUniversityQuery,
+  useUpdateOwnStudentGenderMutation,
+} from '../profile/hooks';
 import { ALL_WEEKDAYS, toggleWeekday, Weekday, WEEKDAY_SHORT_NAMES } from '../schedule/scheduleDays';
 import { ScheduleViewMode, ThemePreference, useSettingsStore } from './settingsStore';
 
 /**
- * «Настройки» (issue #60), opened from the profile: the university and group (issue #90), the
- * schedule's view on opening and its days, the theme, signing out and the app's version. Student
- * only; the teacher gets settings of their own later.
+ * «Настройки» (issue #60), opened from the profile: the gender (issue #92), the university and
+ * group (issue #90), the schedule's view on opening and its days, the theme, signing out and the
+ * app's version. Student only; the teacher gets settings of their own later.
  */
 export function SettingsScreen() {
   const { logout } = useAuth();
@@ -27,6 +33,7 @@ export function SettingsScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <AboutSection />
       <StudySection />
 
       <View style={styles.section}>
@@ -98,6 +105,24 @@ export function SettingsScreen() {
         Univer · версия {version}
       </Text>
     </ScrollView>
+  );
+}
+
+/** «О себе» (issue #92): the student's gender, for those who registered before it was asked. */
+function AboutSection() {
+  const student = useOwnStudentQuery();
+  const saveGender = useUpdateOwnStudentGenderMutation();
+
+  if (!student.data) return null;
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.heading}>О себе</Text>
+      <Text variant="bodyMedium" style={styles.label}>
+        Пол
+      </Text>
+      <GenderSetting value={student.data.gender} save={saveGender} />
+    </View>
   );
 }
 
