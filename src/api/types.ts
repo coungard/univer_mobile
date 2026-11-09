@@ -47,7 +47,12 @@ export type StudentDto = Omit<
   /** Номер курса, `≥ 1`. */
   yearNumber?: number | null;
   groupId?: string | null;
+  /** `null` for those who registered before univer#139. */
+  gender?: Gender | null;
 };
+
+/** Required at registration since univer#139; can be set later, but never cleared (`null` → `422`). */
+export type Gender = 'MALE' | 'FEMALE';
 
 /**
  * `PATCH /students/me` body. Hand-written because the semantics the generated schema can't express
@@ -59,6 +64,8 @@ export interface UpdateStudentProfileRequest {
   facultyId?: string | null;
   yearNumber?: number | null;
   groupId?: string | null;
+  /** Outside the chain: changes nothing else. No `null` — the server answers it with `422`. */
+  gender?: Gender;
 }
 
 /** `POST`/`PUT /students/me/group` body — the student creates (or renames) their own group. */
@@ -74,7 +81,13 @@ export type SubmitUniversityRequest = components['schemas']['SubmitUniversityReq
 
 export type RegisterStudentRequest = components['schemas']['RegisterStudentRequest'];
 
-export type TeacherDto = WithRequiredId<components['schemas']['TeacherDto']>;
+export type TeacherDto = Omit<WithRequiredId<components['schemas']['TeacherDto']>, 'gender'> & {
+  /** `null` for those who registered before univer#139, like `StudentDto.gender`. */
+  gender?: Gender | null;
+};
+
+/** `PATCH /teachers/me` body (univer#139): so far only the teacher's gender. */
+export type UpdateTeacherProfileRequest = components['schemas']['UpdateTeacherProfileRequest'];
 
 export type RegisterTeacherRequest = components['schemas']['RegisterTeacherRequest'];
 

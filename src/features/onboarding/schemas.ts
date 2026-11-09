@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { genderSchema } from '../profile/gender';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -19,6 +20,7 @@ export const studentRegistrationSchema = z.object({
     .string()
     .regex(DATE_RE, 'Формат: ГГГГ-ММ-ДД')
     .refine((value) => value <= today(), 'Дата не может быть в будущем'),
+  gender: genderSchema,
 });
 
 export type StudentRegistrationForm = z.infer<typeof studentRegistrationSchema>;
@@ -35,6 +37,7 @@ export const teacherRegistrationSchema = z.object({
     .string()
     .regex(DATE_RE, 'Формат: ГГГГ-ММ-ДД')
     .refine((value) => value <= today(), 'Дата не может быть в будущем'),
+  gender: genderSchema,
   position: z.string().min(1, 'Обязательное поле'),
 });
 

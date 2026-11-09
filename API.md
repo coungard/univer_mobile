@@ -214,7 +214,8 @@
 будущем, необязательна — форма регистрации её больше не запрашивает, см.
 `coungard/univer_mobile#46`), `birthday`★ (не в будущем), `universityId` (необязателен — аккаунт
 можно создать до выбора университета или вовсе без него; если передан, должен существовать, иначе
-`404`). Пароль и остальные данные
+`404`), `gender`★ (`MALE` | `FEMALE`, univer#139: без него `400 {"gender": "Пол обязателен"}`).
+Пароль и остальные данные
 регистрации уходят в Keycloak — `id` итогового `StudentDto` в ответе равен Keycloak user ID (см. флоу
 регистрации в `CLAUDE.md`).
 
@@ -222,12 +223,14 @@
 `id`, `username`★, `firstname`★, `lastname`★, `fullname`, `email`★, `phone`, `birthday`, `createdAt`,
 `updatedAt` (только в ответе), `facultyId`★ (только для `PUT`/`POST /teachers` — на регистрации не
 приходит, см. ниже, может быть `null` в ответе, пока кафедра не назначена), `position`★, `registered`
-(`Boolean`, только в ответе — зарегистрирован ли преподаватель в Keycloak).
+(`Boolean`, только в ответе — зарегистрирован ли преподаватель в Keycloak), `gender` (`MALE` | `FEMALE`;
+`null` у зарегистрированных до univer#139).
 
 ### RegisterTeacherRequest (только запрос, `POST /teachers/register`)
 `username`★, `firstname`★, `lastname`★, `fullname`, `password`★, `email`★, `departmentId` (необязателен
 — форма регистрации больше не выбирает кафедру, см. `coungard/univer_mobile#47`; кафедра
-назначается позже через `PUT /teachers/{id}`), `birthday`★ (не в будущем), `position`★.
+назначается позже через `PUT /teachers/{id}`), `birthday`★ (не в будущем), `position`★, `gender`★
+(`MALE` | `FEMALE`, как у студента).
 
 ### EnrollmentDto
 `studentId`★, `courseId`★, `enrolledAt` (заполняется сервером при `POST`), `status: EnrollmentStatus`.
@@ -625,6 +628,8 @@
   - Несуществующий `universityId`/`facultyId`/`groupId` — `404`; `yearNumber` вне диапазона 1–6 —
     `400`.
   - После выбора группы `GET /lectures/me` сразу отдаёт её расписание.
+  - **`gender`** (`MALE` | `FEMALE`, univer#139) от цепочки не зависит и ничего не сбрасывает. Очистить
+    его нельзя: явный `null` — `422`. У зарегистрированных до univer#139 пол в `StudentDto` — `null`.
   - Если в профиле появился университет, необработанная заявка студента на добавление университета
     закрывается автоматически (см. `PUT /me/university-request`).
 - **`PUT /me/university-request`** — студент не нашёл свой университет в `GET /universities` и
@@ -729,6 +734,7 @@
 | GET | `/` | любая роль | — (`?facultyId&universityId&page&size`) | `Page<TeacherDto>` |
 | GET | `/{id}` | любая роль | — | `TeacherDto` |
 | POST | `/register` | **Public** (без токена) | `RegisterTeacherRequest` | `201` + `TeacherDto` |
+| PATCH | `/me` | `TEACHER` | `UpdateTeacherProfileRequest` | `TeacherDto` |
 | POST | `/` | любая роль | `TeacherDto` | `201` + `TeacherDto` |
 | PUT | `/{id}` | `ADMIN` | `TeacherDto` | `TeacherDto` |
 | DELETE | `/{id}` | `ADMIN` | — | `204` |
@@ -737,6 +743,8 @@
   при обоих — по факультету (univer#104). Приложение предлагает преподавателей факультета в форме пары.
 - **`POST /register`** — аналог регистрации студента, но для преподавателя: создаёт пользователя в
   Keycloak с ролью `TEACHER`, `id` сущности = Keycloak user ID. Ответы: `201`/`400`/`409`, как у студента.
+- **`PATCH /me`** — преподаватель меняет свой профиль (id из токена, univer#139). Пока только
+  `gender`: непереданное поле не меняется, неизвестное значение — `400`, `null` — `422`. Студентом — `403`.
 - **`POST /`** — создание `Teacher` без прохождения через Keycloak (нет `@PreAuthorize`, доступно любой
   аутентифицированной роли) — использовать для регистрации, скорее всего, не стоит: `id` в этом случае
   генерируется локально и не будет совпадать ни с каким Keycloak user ID.

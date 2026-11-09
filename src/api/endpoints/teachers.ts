@@ -1,5 +1,5 @@
 import { apiClient } from '../client';
-import { Page, RegisterTeacherRequest, TeacherDto } from '../types';
+import { Page, RegisterTeacherRequest, TeacherDto, UpdateTeacherProfileRequest } from '../types';
 
 /**
  * `POST /teachers/register` — the only public (no JWT) teacher-creation endpoint that goes
@@ -14,6 +14,15 @@ export async function registerTeacher(request: RegisterTeacherRequest): Promise<
 /** `GET /teachers/{id}` — any authenticated role; used for a teacher to fetch their own profile. */
 export async function getTeacher(id: string): Promise<TeacherDto> {
   const { data } = await apiClient.get<TeacherDto>(`/teachers/${id}`);
+  return data;
+}
+
+/**
+ * `PATCH /teachers/me` — the teacher's own profile, id from the token (univer#139). A field left out
+ * is untouched; so far there is only `gender`.
+ */
+export async function updateOwnTeacher(request: UpdateTeacherProfileRequest): Promise<TeacherDto> {
+  const { data } = await apiClient.patch<TeacherDto>('/teachers/me', request);
   return data;
 }
 

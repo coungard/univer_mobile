@@ -7,7 +7,8 @@ import { QueryErrorState } from '../../components/QueryErrorState';
 import { TeacherTabScreenProps } from '../../navigation/types';
 import { DeleteAccountLink } from '../account/DeleteAccountScreens';
 import { FeedbackLink } from '../feedback/FeedbackScreens';
-import { useFacultyQuery, useOwnTeacherQuery } from './hooks';
+import { GenderSetting } from './GenderSetting';
+import { useFacultyQuery, useOwnTeacherQuery, useUpdateOwnTeacherGenderMutation } from './hooks';
 
 /**
  * Профиль преподавателя — таб «Профиль» в `TeacherTabs` (ROADMAP.md "Фаза 6"), рядом с «Курсы» и
@@ -18,6 +19,7 @@ export function TeacherProfileScreen() {
   const { logout } = useAuth();
   const teacher = useOwnTeacherQuery();
   const faculty = useFacultyQuery(teacher.data?.facultyId);
+  const saveGender = useUpdateOwnTeacherGenderMutation();
 
   if (teacher.isLoading) {
     return (
@@ -45,6 +47,12 @@ export function TeacherProfileScreen() {
       <Text variant="bodyMedium" style={styles.faculty}>
         {faculty.data?.name ?? ''}
       </Text>
+
+      {/* For teachers who registered before it was asked, and to fix a wrong pick (issue #92). */}
+      <Text variant="bodyMedium" style={styles.genderLabel}>
+        Пол
+      </Text>
+      <GenderSetting value={teacher.data.gender} save={saveGender} />
 
       <Button mode="outlined" onPress={() => logout()} style={styles.logout}>
         Выйти
@@ -80,6 +88,10 @@ const styles = StyleSheet.create({
   faculty: {
     opacity: 0.7,
     marginBottom: 16,
+  },
+  genderLabel: {
+    opacity: 0.7,
+    marginBottom: 4,
   },
   logout: {
     marginTop: 24,
