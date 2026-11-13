@@ -51,22 +51,27 @@ npm run sync-api
 ## Локальный бэкенд и эмулятор
 
 Чтобы собранное приложение достучалось до бэкенда, поднятого локально (`docker-compose` в
-`coungard/univer`, порты `8023`/`8082`):
+`coungard/univer`: REST API на `http://localhost:8023`, Keycloak на `https://localhost:8443` с
+self-signed сертификатом):
 
 - **Android-эмулятор (AVD)** — работает в собственной виртуальной сети: `localhost` там означает сам
-  эмулятор, а не хост-машину. [`src/config/env.ts`](./src/config/env.ts) уже учитывает это и
-  подставляет специальный алиас эмулятора `10.0.2.2` вместо `localhost`, когда `Platform.OS ===
-  'android'` — никаких доп. действий не требуется, если бэкенд поднят на той же машине, где
-  запущен эмулятор.
+  эмулятор, а не хост-машину. Для REST API [`src/config/env.ts`](./src/config/env.ts) уже
+  подставляет алиас эмулятора `10.0.2.2` вместо `localhost`, когда `Platform.OS === 'android'`.
+  Keycloak же намеренно остаётся на `https://localhost:8443` (иначе вход падает с «Cookie not
+  found»), поэтому порт нужно пробросить на эмулятор: `adb reverse tcp:8443 tcp:8443` (проброс
+  слетает при перезапуске эмулятора) — см. ANDROID_TROUBLESHOOTING.md, пункт 9.
 - **iOS-симулятор** — использует сетевое пространство хоста напрямую, `localhost` работает как
   есть (уже настроено).
 - **Физическое устройство** — ставится Release-сборка, она работает со стендом, см.
   [«Установка на iPhone»](#установка-на-iphone-стенд) ниже.
-- **Cleartext HTTP** — бэкенд и Keycloak сейчас на голом `http://`, не `https://`. На Android это
-  разрешено автоматически в debug-сборке (React Native Gradle Plugin сам выставляет
-  `usesCleartextTraffic=true` для `debug`/`debugOptimized`, `false` для `release`) — специально
-  ничего настраивать не нужно, но **это не будет работать в release-сборке** без отдельной
-  network security config. На iOS уже включён `NSAllowsLocalNetworking` в `Info.plist`.
+- **HTTP и HTTPS в debug-сборке** — локальный REST API ходит по голому `http://`, Keycloak — по
+  `https://` с self-signed сертификатом. На Android оба случая закрывает debug-only
+  [`network_security_config.xml`](./android/app/src/debug/res/xml/network_security_config.xml):
+  он разрешает cleartext HTTP (для API и Metro) и доверяет dev-сертификату Keycloak
+  (`android/app/src/debug/res/raw/dev_backend_cert.pem`); в release-сборку он не попадает — там
+  только стенд по HTTPS с настоящими сертификатами. Если локальный сертификат Keycloak
+  перевыпустили, файл `.pem` нужно обновить (ANDROID_TROUBLESHOOTING.md, пункт 9). На iOS
+  локальный HTTP разрешён ключом `NSAllowsLocalNetworking` в `Info.plist`.
 
 # Начало работы
 

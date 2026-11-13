@@ -295,7 +295,7 @@ java.net.UnknownServiceException: CLEARTEXT communication to 10.0.2.2 not permit
 
 **Причина:** React Native Gradle Plugin сам выставляет
 `usesCleartextTraffic="true"` в манифесте для debug-сборок (см.
-README «Cleartext HTTP» выше) — но как только в проекте появляется
+README «HTTP и HTTPS в debug-сборке») — но как только в проекте появляется
 **собственный** `networkSecurityConfig`, для доменов, явно
 перечисленных в нём через `<domain-config>`, атрибут манифеста
 перестаёт быть решающим: `cleartextTrafficPermitted` по умолчанию
