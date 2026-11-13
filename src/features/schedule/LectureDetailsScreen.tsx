@@ -9,6 +9,7 @@ import { useTeacherQuery } from '../profile/hooks';
 import { formatDayDate, formatTime } from './dateUtils';
 import { useLectureQuery } from './hooks';
 import { teacherDisplayName } from './teacherName';
+import { TeacherWithPhoto } from './TeacherWithPhoto';
 
 type Props = StudentStackScreenProps<'LectureDetails'>;
 
@@ -22,7 +23,9 @@ export function LectureDetailsScreen({ route, navigation }: Props) {
   const { lectureId } = route.params;
   const lecture = useLectureQuery(lectureId);
   const selfMark = useSelfMark();
-  const teacher = useTeacherQuery(lecture.data?.teacherName ? undefined : lecture.data?.teacherId);
+  // Loaded for a registered teacher even when the pair has the name typed in: the photo is only
+  // there (issue #94). The typed name still wins, as the pair's own.
+  const teacher = useTeacherQuery(lecture.data?.teacherId ?? undefined);
   const teacherName =
     lecture.data?.teacherName ?? (teacher.data ? teacherDisplayName(teacher.data) : teacher.isLoading ? '…' : '—');
 
@@ -83,8 +86,8 @@ export function LectureDetailsScreen({ route, navigation }: Props) {
                 {mark.byTeacher
                   ? `${markWord(mark.mark)} — отметил преподаватель`
                   : mark.mark === 'none'
-                    ? 'Без отметки — нажмите на время'
-                    : markWord(mark.mark)}
+                  ? 'Без отметки — нажмите на время'
+                  : markWord(mark.mark)}
               </Text>
             </View>
           </View>
@@ -104,7 +107,11 @@ export function LectureDetailsScreen({ route, navigation }: Props) {
             <Text variant="labelLarge" style={styles.label}>
               Преподаватель
             </Text>
-            <Text variant="bodyLarge">{teacherName}</Text>
+            <TeacherWithPhoto
+              name={teacherName}
+              teacher={teacher.data}
+              loading={!!lecture.data.teacherId && teacher.isLoading}
+            />
           </View>
         ) : null}
 
