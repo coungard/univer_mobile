@@ -79,8 +79,14 @@ export function toApiError(status: number, data: unknown): ApiError {
         body.id ?? undefined,
       );
     }
+    case 413:
+      // So far only a profile photo (univer#137): over 5 MB or 8000×8000.
+      return new ApiError(413, 'Файл слишком большой.');
+    case 415:
+      return new ApiError(415, 'Такой формат файла не поддерживается.');
     case 429: {
-      // A rate limit (so far only feedback, 1 per hour — see API.md). The caller words the message
+      // A rate limit (feedback, 1 per hour — see API.md; a profile photo while the server is busy with
+      // others, issue #94). The caller words the message
       // itself from `retryAfterSeconds`; the server's own text is a fallback.
       const body = (data ?? {}) as SpringErrorBody;
       return new ApiError(

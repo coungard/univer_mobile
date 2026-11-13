@@ -1,6 +1,6 @@
 module.exports = {
   preset: '@react-native/jest-preset',
-  setupFiles: ['react-native-gesture-handler/jestSetup'],
+  setupFiles: ['react-native-gesture-handler/jestSetup', '<rootDir>/jest.setup.js'],
   // These ship untranspiled ESM in node_modules; the RN preset only transforms
   // react-native/@react-native itself by default, so third-party RN libs must be added here too.
   transformIgnorePatterns: [

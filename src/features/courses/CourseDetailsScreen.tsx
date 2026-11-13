@@ -10,6 +10,7 @@ import { AttendanceTime, useSelfMark } from '../attendance/AttendanceTime';
 import { useMyCourseAttendanceSummaryQuery } from '../attendance/hooks';
 import { canMark } from '../attendance/selfMark';
 import { useDepartmentQuery, useTeacherQuery } from '../profile/hooks';
+import { TeacherWithPhoto } from '../schedule/TeacherWithPhoto';
 import { formatDayDate, formatTime, shortDayName } from '../schedule/dateUtils';
 import { useMyLecturesQuery } from '../schedule/hooks';
 import { useCourseQuery } from './hooks';
@@ -83,7 +84,11 @@ export function CourseDetailsScreen({ route, navigation }: Props) {
             <Text variant="labelLarge" style={styles.label}>
               Преподаватель
             </Text>
-            <Text variant="bodyLarge">{teacher.data?.fullname ?? (teacher.isLoading ? '…' : '—')}</Text>
+            <TeacherWithPhoto
+              name={teacher.data?.fullname ?? (teacher.isLoading ? '…' : '—')}
+              teacher={teacher.data}
+              loading={teacher.isLoading}
+            />
           </View>
         ) : null}
 

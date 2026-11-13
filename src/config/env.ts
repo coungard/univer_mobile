@@ -21,7 +21,7 @@ import { Platform } from 'react-native';
  * Neither of these applies to a physical device — see README "Локальный бэкенд и эмулятор" for
  * that case (needs the host's LAN IP and a reachable network).
  */
-const backendHost = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+export const backendHost = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
 
 /** Release builds talk to the stand; Debug ones to the local backend (see the top of this file). */
 const useStand = !__DEV__;
