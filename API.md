@@ -183,7 +183,8 @@
 после регистрации, не собирается на самой регистрации), `birthday` (не в будущем), `universityId`
 (`null`, пока студент не выбрал университет), `facultyId`, `yearNumber` (номер курса, `≥ 1`) — оба
 только в ответе, `null`, пока не выбраны; меняются через `PATCH /students/me`, а `PUT /students/{id}`
-их игнорирует, — `groupId`.
+их игнорирует, — `groupId`, `avatarUrl`, `avatarThumbnailUrl` (только в ответе: фото профиля 512×512 и превью
+128×128, `null`, если фото нет; меняются через `PUT`/`DELETE /users/me/avatar`).
 
 ### UpdateStudentProfileRequest (только запрос, `PATCH /students/me`)
 `universityId`, `facultyId`, `yearNumber` (от 1 до 6), `groupId` — все необязательны. Поле, которого нет
@@ -224,7 +225,8 @@
 `updatedAt` (только в ответе), `facultyId`★ (только для `PUT`/`POST /teachers` — на регистрации не
 приходит, см. ниже, может быть `null` в ответе, пока кафедра не назначена), `position`★, `registered`
 (`Boolean`, только в ответе — зарегистрирован ли преподаватель в Keycloak), `gender` (`MALE` | `FEMALE`;
-`null` у зарегистрированных до univer#139).
+`null` у зарегистрированных до univer#139), `avatarUrl`, `avatarThumbnailUrl` (только в ответе, как у
+`StudentDto`).
 
 ### RegisterTeacherRequest (только запрос, `POST /teachers/register`)
 `username`★, `firstname`★, `lastname`★, `fullname`, `password`★, `email`★, `departmentId` (необязателен
@@ -248,6 +250,12 @@
 (`FeedbackPlatform`), `osVersion`★ (до 32 символов). Крайние пробелы строк отбрасываются до проверки длины.
 `FeedbackType` (enum): `BUG` (ошибка) | `IMPROVEMENT` (доработка) | `IDEA` (идея).
 `FeedbackPlatform` (enum, **строчными**): `ios` | `android`.
+
+### AvatarDto (только ответ, `PUT /users/me/avatar`)
+`fileId` (UUID файла, новый при каждой загрузке), `avatarUrl` (JPEG 512×512), `avatarThumbnailUrl` (JPEG
+128×128). Ссылки публичные (без токена) и постоянные: содержимое по ссылке не меняется, новое фото — новые
+ссылки. Локальный бэкенд строит их как `http://localhost:8023/media/...` — на Android-эмуляторе приложение
+подменяет хост на `10.0.2.2` (`src/api/mediaUrl.ts`).
 
 ### FeedbackDto (только ответ, `POST /feedback`)
 `id`, `type: FeedbackType`, `message`, `status: FeedbackStatus`, `createdAt`.
@@ -812,6 +820,8 @@
 | Метод | Путь | Auth | Тело запроса | Тело ответа |
 |---|---|---|---|---|
 | DELETE | `/me` | `STUDENT`, `TEACHER` | — | `204` |
+| PUT | `/me/avatar` | `STUDENT`, `TEACHER` | `multipart/form-data`, поле `file` | `AvatarDto` |
+| DELETE | `/me/avatar` | `STUDENT`, `TEACHER` | — | `204` |
 
 - **`DELETE /me`** — пользователь берётся из токена. Удаляет сразу и безвозвратно: профиль студента или
   преподавателя, пользователя в Keycloak вместе с сессиями и refresh-токенами. У студента удаляются
@@ -821,7 +831,21 @@
   - `500` с понятным `message` и `requestId` — Keycloak не ответил, ничего не удалено, можно повторить.
     Приложение показывает `message` как есть.
 - После `204` приложение стирает токены, кэш запросов и выходит на экран входа; end session в Keycloak не
-  вызывается — пользователя там уже нет.
+  вызывается — пользователя там уже нет. Фото профиля удаляется вместе с аккаунтом.
+- **`PUT /me/avatar`** — загрузить или заменить своё фото профиля (univer#137, в приложении — issue #94).
+  Поле `file`: JPEG, PNG или WebP до 5 МБ и 8000×8000; формат определяется по содержимому, **HEIC не
+  принимается**. Сервер учитывает EXIF-поворот, обрезает по центру до квадрата и сохраняет два JPEG без
+  метаданных; прежнее фото удаляется. Приложение само кропает квадрат и шлёт JPEG ~1024 px качества 0,85
+  (`react-native-image-crop-picker` перекодирует и HEIC с iPhone), файл больше 5 МБ не отправляет. Ошибки и
+  что видит пользователь (`src/features/profile/avatar.ts`):
+  - `400`, `415` — «Не удалось прочитать фото. Выберите JPEG, PNG или WebP»;
+  - `413` — «Фото больше 5 МБ»;
+  - `422` — файл не передан или пустой (показывается `message` сервера);
+  - `429` с `retryAfterSeconds` и `Retry-After` — «Сервер занят обработкой других фото, попробуйте через
+    N секунд»;
+  - нет сети — «Нет сети, фото не загружено».
+- **`DELETE /me/avatar`** — удалить своё фото; в профиле `avatarUrl`/`avatarThumbnailUrl` становятся `null`.
+  Если фото нет — тоже `204`.
 
 ---
 

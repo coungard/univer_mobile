@@ -40,7 +40,7 @@ export type RegionDto = WithRequiredId<components['schemas']['RegionDto']>;
  */
 export type StudentDto = Omit<
   WithRequiredId<components['schemas']['StudentDto']>,
-  keyof UpdateStudentProfileRequest
+  keyof UpdateStudentProfileRequest | keyof AvatarFields
 > & {
   universityId?: string | null;
   facultyId?: string | null;
@@ -49,7 +49,7 @@ export type StudentDto = Omit<
   groupId?: string | null;
   /** `null` for those who registered before univer#139. */
   gender?: Gender | null;
-};
+} & AvatarFields;
 
 /** Required at registration since univer#139; can be set later, but never cleared (`null` → `422`). */
 export type Gender = 'MALE' | 'FEMALE';
@@ -81,10 +81,22 @@ export type SubmitUniversityRequest = components['schemas']['SubmitUniversityReq
 
 export type RegisterStudentRequest = components['schemas']['RegisterStudentRequest'];
 
-export type TeacherDto = Omit<WithRequiredId<components['schemas']['TeacherDto']>, 'gender'> & {
+export type TeacherDto = Omit<WithRequiredId<components['schemas']['TeacherDto']>, 'gender' | keyof AvatarFields> & {
   /** `null` for those who registered before univer#139, like `StudentDto.gender`. */
   gender?: Gender | null;
-};
+} & AvatarFields;
+
+/**
+ * The profile photo in `StudentDto`/`TeacherDto` (univer#137): JPEG 512×512 and 128×128 by public,
+ * permanent links, `null` with no photo — which the generated `?: string` can't say.
+ */
+export interface AvatarFields {
+  avatarUrl?: string | null;
+  avatarThumbnailUrl?: string | null;
+}
+
+/** `PUT /users/me/avatar` response: the new links, and `fileId` — a new one on every upload. */
+export type AvatarDto = components['schemas']['AvatarDto'];
 
 /** `PATCH /teachers/me` body (univer#139): so far only the teacher's gender. */
 export type UpdateTeacherProfileRequest = components['schemas']['UpdateTeacherProfileRequest'];

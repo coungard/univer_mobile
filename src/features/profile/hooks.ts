@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { deleteMyAvatar, uploadMyAvatar } from '../../api/endpoints/avatar';
 import { getDepartment } from '../../api/endpoints/departments';
 import { getFaculty } from '../../api/endpoints/faculties';
 import { getGroup } from '../../api/endpoints/groups';
@@ -7,7 +8,7 @@ import { getOwnStudent, updateOwnStudent } from '../../api/endpoints/students';
 import { getStudyYear } from '../../api/endpoints/studyYears';
 import { getTeacher, updateOwnTeacher } from '../../api/endpoints/teachers';
 import { getUniversity } from '../../api/endpoints/universities';
-import { Gender } from '../../api/types';
+import { AvatarFields, Gender } from '../../api/types';
 import { useAuthStore } from '../../auth/authStore';
 
 /**
@@ -154,4 +155,56 @@ export function useUpdateOwnTeacherGenderMutation() {
     mutationFn: (gender: Gender) => updateOwnTeacher({ gender }),
     onSuccess: (teacher) => queryClient.setQueryData(['teachers', id], teacher),
   });
+}
+
+/**
+ * Where the signed-in user's own profile is cached: `['students', id]` or `['teachers', id]`. The
+ * teacher's key is the one `useTeacherQuery` reads for a lecture or a course, so a new photo shows
+ * there too without another request.
+ */
+function useOwnProfileKey(): readonly [string, string | null] {
+  const id = useOwnUserId();
+  const role = useAuthStore((state) => state.role);
+  return [role === 'TEACHER' ? 'teachers' : 'students', id] as const;
+}
+
+/**
+ * `PUT /users/me/avatar` (issue #94). The response's links go straight into the cached profile — a
+ * new upload means new links, so the old picture can't linger in the image cache — and the profile is
+ * refetched in the background to be sure.
+ */
+export function useUploadAvatarMutation() {
+  const queryClient = useQueryClient();
+  const key = useOwnProfileKey();
+  return useMutation({
+    mutationFn: uploadMyAvatar,
+    onSuccess: (avatar) => {
+      setOwnAvatar(queryClient, key, {
+        avatarUrl: avatar.avatarUrl ?? null,
+        avatarThumbnailUrl: avatar.avatarThumbnailUrl ?? null,
+      });
+      queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+/** `DELETE /users/me/avatar`: the profile goes back to the initials at once. */
+export function useDeleteAvatarMutation() {
+  const queryClient = useQueryClient();
+  const key = useOwnProfileKey();
+  return useMutation({
+    mutationFn: deleteMyAvatar,
+    onSuccess: () => {
+      setOwnAvatar(queryClient, key, { avatarUrl: null, avatarThumbnailUrl: null });
+      queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+function setOwnAvatar(
+  queryClient: ReturnType<typeof useQueryClient>,
+  key: readonly [string, string | null],
+  avatar: AvatarFields,
+) {
+  queryClient.setQueryData<AvatarFields>(key, (profile) => (profile ? { ...profile, ...avatar } : profile));
 }

@@ -16,6 +16,8 @@ import { firstUnfilledSetupStep, openSetupAt, useSetupPromptStore } from '../onb
 import { formatDayDate, formatTime, shortDayName } from '../schedule/dateUtils';
 import { useMyLecturesQuery } from '../schedule/hooks';
 import { roomAndTeacher } from '../schedule/teacherName';
+import { avatarUriOf, initialsOf } from './avatar';
+import { EditableAvatar, useAvatarEditor } from './AvatarEditor';
 import {
   useFacultyQuery,
   useGroupAcademicPathQuery,
@@ -59,6 +61,7 @@ export function StudentProfileScreen() {
   const newcomer = useNewcomer();
   const promptedFor = useSetupPromptStore((state) => state.promptedFor);
   const markPrompted = useSetupPromptStore((state) => state.markPrompted);
+  const avatar = useAvatarEditor(!!avatarUriOf(student.data?.avatarUrl));
 
   useEffect(() => {
     if (!setupStep || !userId || promptedFor === userId) return;
@@ -100,131 +103,141 @@ export function StudentProfileScreen() {
         .filter(Boolean)
         .join(' · ')
     : [`@${student.data.username}`, universityName].filter(Boolean).join(' · ');
-  const initials = `${student.data.firstname.trim().charAt(0)}${student.data.lastname.trim().charAt(0)}`.toUpperCase();
+  const initials = initialsOf(student.data);
 
   const openSetup = () => setupStep && openSetupAt(setupStep, (route) => navigation.navigate(route));
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: insets.top + 20 }]}>
-      <View style={styles.header}>
-        <View style={styles.headerText}>
-          <Text style={styles.greeting}>{greeting(now)}</Text>
-          <Text style={styles.name} numberOfLines={1}>
-            {student.data.firstname || student.data.username}
-          </Text>
+    <View style={styles.screen}>
+      <ScrollView style={styles.screen} contentContainerStyle={[styles.container, { paddingTop: insets.top + 20 }]}>
+        <View style={styles.header}>
+          <View style={styles.headerText}>
+            <Text style={styles.greeting}>{greeting(now)}</Text>
+            <Text style={styles.name} numberOfLines={1}>
+              {student.data.firstname || student.data.username}
+            </Text>
+          </View>
+          {/* The hints, the theme and signing out live there (issue #60): this tab is about the student. */}
+          <IconButton
+            icon="cog-outline"
+            accessibilityLabel="Настройки"
+            iconColor={c.ink}
+            size={22}
+            mode="outlined"
+            containerColor={c.surface}
+            style={styles.settings}
+            onPress={() => navigation.navigate('Settings')}
+          />
         </View>
-        {/* The hints, the theme and signing out live there (issue #60): this tab is about the student. */}
-        <IconButton
-          icon="cog-outline"
-          accessibilityLabel="Настройки"
-          iconColor={c.ink}
-          size={22}
-          mode="outlined"
-          containerColor={c.surface}
-          style={styles.settings}
-          onPress={() => navigation.navigate('Settings')}
-        />
-      </View>
 
-      {setupStep ? (
-        <SetupCard
-          steps={setupSteps(student.data, universityName)}
-          requestText={
-            request
-              ? request.status === 'PENDING'
-                ? `Заявка на «${request.name}» отправлена — мы добавим его в список.`
-                : `Заявка на «${request.name}» отклонена.`
-              : undefined
-          }
-          requestComment={request?.status === 'REJECTED' ? request.comment : undefined}
-          hint={
-            <Hint
-              id="setup-start"
-              stage={newcomer.kind === 'newcomer' ? newcomer.stage : 0}
-              text="До расписания три шага: факультет, группа и первая пара. Начнём?"
-              active={newcomer.kind === 'newcomer'}
-            >
-              <Button
-                mode="contained"
-                buttonColor={c.cream}
-                textColor={c.setupCard}
-                style={styles.cardButton}
-                contentStyle={styles.cardButtonContent}
-                labelStyle={styles.cardButtonLabel}
-                onPress={openSetup}
+        {setupStep ? (
+          <SetupCard
+            steps={setupSteps(student.data, universityName)}
+            requestText={
+              request
+                ? request.status === 'PENDING'
+                  ? `Заявка на «${request.name}» отправлена — мы добавим его в список.`
+                  : `Заявка на «${request.name}» отклонена.`
+                : undefined
+            }
+            requestComment={request?.status === 'REJECTED' ? request.comment : undefined}
+            hint={
+              <Hint
+                id="setup-start"
+                stage={newcomer.kind === 'newcomer' ? newcomer.stage : 0}
+                text="До расписания три шага: факультет, группа и первая пара. Начнём?"
+                active={newcomer.kind === 'newcomer'}
               >
-                Продолжить настройку
-              </Button>
-            </Hint>
-          }
-        />
-      ) : (
-        <DayCard
-          lectures={lectures.data}
-          loading={lectures.isLoading || newcomer.kind === 'unknown'}
-          newcomerKind={newcomer.kind}
-          now={now}
-          onOpenLecture={(lecture) =>
-            navigation.navigate('Schedule', { showLectureId: lecture.id, firstPair: undefined })
-          }
-          onOpenSchedule={() => navigation.navigate('Schedule', undefined)}
-          onFirstPair={() => navigation.navigate('GroupSchedule')}
-        />
-      )}
-
-      <View style={styles.ticket}>
-        <View style={styles.ticketSpine}>
-          {c.spines.map((color) => (
-            <View key={color} style={[styles.ticketSpineSegment, { backgroundColor: color }]} />
-          ))}
-        </View>
-        <View style={styles.ticketBody}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-          <View style={styles.ticketText}>
-            <Text style={styles.ticketName} numberOfLines={1}>
-              {student.data.fullname || `${student.data.firstname} ${student.data.lastname}`.trim()}
-            </Text>
-            <Text style={styles.ticketLine} numberOfLines={1}>
-              {ticketLine}
-            </Text>
-          </View>
-          <Text style={styles.ticketMark}>БИЛЕТ</Text>
-        </View>
-      </View>
-
-      <View>
-        {student.data.facultyId || hasGroup ? (
-          <Field
-            label="Факультет"
-            value={facultyName ?? (facultyLoading ? '…' : '—')}
-            onRename={canRenameFaculty ? () => navigation.navigate('RenameOwn', { kind: 'faculty' }) : undefined}
-            renameLabel="Изменить название факультета"
+                <Button
+                  mode="contained"
+                  buttonColor={c.cream}
+                  textColor={c.setupCard}
+                  style={styles.cardButton}
+                  contentStyle={styles.cardButtonContent}
+                  labelStyle={styles.cardButtonLabel}
+                  onPress={openSetup}
+                >
+                  Продолжить настройку
+                </Button>
+              </Hint>
+            }
           />
-        ) : null}
-        {hasGroup ? (
-          <Field
-            label={student.data.yearNumber != null ? `Группа · ${student.data.yearNumber} курс` : 'Группа'}
-            value={group?.name ?? (academicPath.isLoading ? '…' : '—')}
-            detail={groupFullName !== group?.name ? groupFullName : undefined}
-            onRename={canRenameGroup ? () => navigation.navigate('RenameOwn', { kind: 'group' }) : undefined}
-            renameLabel="Изменить название группы"
+        ) : (
+          <DayCard
+            lectures={lectures.data}
+            loading={lectures.isLoading || newcomer.kind === 'unknown'}
+            newcomerKind={newcomer.kind}
+            now={now}
+            onOpenLecture={(lecture) =>
+              navigation.navigate('Schedule', { showLectureId: lecture.id, firstPair: undefined })
+            }
+            onOpenSchedule={() => navigation.navigate('Schedule', undefined)}
+            onFirstPair={() => navigation.navigate('GroupSchedule')}
           />
-        ) : null}
-        {student.data.enrollmentDate ? (
-          <Field label="Дата зачисления" value={formatIsoDate(student.data.enrollmentDate)} />
-        ) : null}
-        <Field label="Email" value={student.data.email} last />
-      </View>
+        )}
 
-      {/* Pushed to the bottom of a short profile; after the content of a long one (issue #82). */}
-      <View style={styles.feedbackSpacer} />
-      <View>
-        <FeedbackLink onPress={() => navigation.navigate('Feedback')} />
-        <DeleteAccountLink onPress={() => navigation.navigate('DeleteAccount')} />
-      </View>
-    </ScrollView>
+        <View style={styles.ticket}>
+          <View style={styles.ticketSpine}>
+            {c.spines.map((color) => (
+              <View key={color} style={[styles.ticketSpineSegment, { backgroundColor: color }]} />
+            ))}
+          </View>
+          <View style={styles.ticketBody}>
+            {/* The thumbnail is 128 px — plenty for a 44 px circle (issue #94). */}
+            <EditableAvatar
+              url={student.data.avatarThumbnailUrl}
+              initials={initials}
+              size={44}
+              backgroundColor={c.spines[0]}
+              textColor={c.cream}
+              editor={avatar}
+            />
+            <View style={styles.ticketText}>
+              <Text style={styles.ticketName} numberOfLines={1}>
+                {student.data.fullname || `${student.data.firstname} ${student.data.lastname}`.trim()}
+              </Text>
+              <Text style={styles.ticketLine} numberOfLines={1}>
+                {ticketLine}
+              </Text>
+            </View>
+            <Text style={styles.ticketMark}>БИЛЕТ</Text>
+          </View>
+        </View>
+
+        <View>
+          {student.data.facultyId || hasGroup ? (
+            <Field
+              label="Факультет"
+              value={facultyName ?? (facultyLoading ? '…' : '—')}
+              onRename={canRenameFaculty ? () => navigation.navigate('RenameOwn', { kind: 'faculty' }) : undefined}
+              renameLabel="Изменить название факультета"
+            />
+          ) : null}
+          {hasGroup ? (
+            <Field
+              label={student.data.yearNumber != null ? `Группа · ${student.data.yearNumber} курс` : 'Группа'}
+              value={group?.name ?? (academicPath.isLoading ? '…' : '—')}
+              detail={groupFullName !== group?.name ? groupFullName : undefined}
+              onRename={canRenameGroup ? () => navigation.navigate('RenameOwn', { kind: 'group' }) : undefined}
+              renameLabel="Изменить название группы"
+            />
+          ) : null}
+          {student.data.enrollmentDate ? (
+            <Field label="Дата зачисления" value={formatIsoDate(student.data.enrollmentDate)} />
+          ) : null}
+          <Field label="Email" value={student.data.email} last />
+        </View>
+
+        {/* Pushed to the bottom of a short profile; after the content of a long one (issue #82). */}
+        <View style={styles.feedbackSpacer} />
+        <View>
+          <FeedbackLink onPress={() => navigation.navigate('Feedback')} />
+          <DeleteAccountLink onPress={() => navigation.navigate('DeleteAccount')} />
+        </View>
+      </ScrollView>
+      {avatar.dialog}
+      {avatar.snackbar}
+    </View>
   );
 }
 
@@ -543,19 +556,6 @@ const useStyles = libraryStyles((c) => ({
     gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: c.spines[0],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontFamily: libraryFonts.headingBold,
-    fontSize: 16,
-    color: c.cream,
   },
   ticketText: {
     flex: 1,

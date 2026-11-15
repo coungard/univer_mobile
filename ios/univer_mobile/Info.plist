@@ -60,6 +60,12 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<!-- Profile photo (issue #94, react-native-image-crop-picker): taking one and picking one from the
+	     library. No microphone — video isn't recorded. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Univer использует камеру, чтобы вы могли сделать фото профиля.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Univer открывает галерею, чтобы вы могли выбрать фото профиля.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
 	<key>RCTNewArchEnabled</key>
