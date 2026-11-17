@@ -147,9 +147,7 @@ export function SearchableSelectField({
           <FlatList
             data={options}
             keyExtractor={(option) => option.value}
-            ItemSeparatorComponent={() => (
-              <Divider style={libraryStyle && styles.dividerLibrary} />
-            )}
+            ItemSeparatorComponent={libraryStyle ? LibraryItemSeparator : ItemSeparator}
             onEndReachedThreshold={0.5}
             onEndReached={() => {
               if (hasMore && !loadingMore) onEndReached?.();
@@ -186,6 +184,17 @@ export function SearchableSelectField({
       </Portal>
     </>
   );
+}
+
+// Separators live at module level (not inline in `render`) so FlatList gets a stable component
+// type and doesn't remount every divider on each re-render (react/no-unstable-nested-components).
+function ItemSeparator() {
+  return <Divider />;
+}
+
+function LibraryItemSeparator() {
+  const styles = useStyles();
+  return <Divider style={styles.dividerLibrary} />;
 }
 
 const useStyles = libraryStyles((c) => ({
