@@ -1,0 +1,74 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.17.0
+2 info using node@v24.19.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\dev\um\.npmrc
+5 silly config load:file:C:\Users\ARTUR\.npmrc
+6 silly config load:file:C:\Users\ARTUR\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm install react-native-image-crop-picker@^0.52.0
+8 verbose argv "install" "react-native-image-crop-picker@^0.52.0" "--save" "--cache" ".npm-cache" "--no-audit" "--no-fund" "--loglevel" "error"
+9 verbose logfile logs-max:10 dir:C:\dev\um\.npm-cache\_logs\2026-11-11T14_10_18_818Z-
+10 verbose logfile C:\dev\um\.npm-cache\_logs\2026-11-11T14_10_18_818Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+13 silly idealTree buildDeps
+14 silly fetch manifest react-native-image-crop-picker@^0.52.0
+15 silly packumentCache full:https://registry.npmjs.org/react-native-image-crop-picker cache-miss
+16 verbose shrinkwrap failed to load node_modules/.package-lock.json out of date, updated: node_modules
+17 http fetch GET 200 https://registry.npmjs.org/react-native-image-crop-picker 980ms (cache revalidated)
+18 silly packumentCache full:https://registry.npmjs.org/react-native-image-crop-picker set size:334400 disposed:false
+19 silly fetch manifest react@19.3.0
+20 silly packumentCache full:https://registry.npmjs.org/react cache-miss
+21 http fetch GET 200 https://registry.npmjs.org/react 141ms (cache revalidated)
+22 silly packumentCache full:https://registry.npmjs.org/react set size:7126891 disposed:false
+23 silly fetch manifest react-native@^0.88.1
+24 silly packumentCache full:https://registry.npmjs.org/react-native cache-miss
+25 http fetch GET 200 https://registry.npmjs.org/react-native 168ms (cache revalidated)
+26 silly packumentCache full:https://registry.npmjs.org/react-native set size:16145856 disposed:false
+27 silly fetch manifest @types/react@^19.2.0
+28 silly packumentCache full:https://registry.npmjs.org/@types%2freact cache-miss
+29 http fetch GET 200 https://registry.npmjs.org/@types%2freact 156ms (cache revalidated)
+30 silly packumentCache full:https://registry.npmjs.org/@types%2freact set size:2642195 disposed:false
+31 silly placeDep ROOT react-native-image-crop-picker@0.52.0 OK for: univer_mobile@0.0.1 want: ^0.52.0
+32 silly reify moves {}
+33 verbose stack Error: EPERM: operation not permitted, mkdir 'C:\dev\um\node_modules\react-native-image-crop-picker'
+33 verbose stack     at async mkdir (node:internal/fs/promises:916:10)
+33 verbose stack     at async C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\reify.js:590:20
+33 verbose stack     at async Promise.allSettled (index 0)
+33 verbose stack     at async #reifyPackages (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\reify.js:322:11)
+33 verbose stack     at async Arborist.reify (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\reify.js:128:5)
+33 verbose stack     at async Install.exec (C:\Program Files\nodejs\node_modules\npm\lib\commands\install.js:158:5)
+33 verbose stack     at async Npm.exec (C:\Program Files\nodejs\node_modules\npm\lib\npm.js:193:9)
+33 verbose stack     at async module.exports (C:\Program Files\nodejs\node_modules\npm\lib\cli\entry.js:67:5)
+34 error code EPERM
+35 error syscall mkdir
+36 error path C:\dev\um\node_modules\react-native-image-crop-picker
+37 error errno -4048
+38 error Error: EPERM: operation not permitted, mkdir 'C:\dev\um\node_modules\react-native-image-crop-picker'
+38 error     at async mkdir (node:internal/fs/promises:916:10)
+38 error     at async C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\reify.js:590:20
+38 error     at async Promise.allSettled (index 0)
+38 error     at async #reifyPackages (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\reify.js:322:11)
+38 error     at async Arborist.reify (C:\Program Files\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\arborist\reify.js:128:5)
+38 error     at async Install.exec (C:\Program Files\nodejs\node_modules\npm\lib\commands\install.js:158:5)
+38 error     at async Npm.exec (C:\Program Files\nodejs\node_modules\npm\lib\npm.js:193:9)
+38 error     at async module.exports (C:\Program Files\nodejs\node_modules\npm\lib\cli\entry.js:67:5) {
+38 error   errno: -4048,
+38 error   code: 'EPERM',
+38 error   syscall: 'mkdir',
+38 error   path: 'C:\\dev\\um\\node_modules\\react-native-image-crop-picker'
+38 error }
+39 error
+39 error The operation was rejected by your operating system.
+39 error It's possible that the file was already in use (by a text editor or antivirus), or that you lack permissions to access it.
+39 error
+39 error If you believe this might be a permissions issue, please double-check the permissions of the file and its containing directories, or try running the command again as root/Administrator.
+40 silly unfinished npm timer reify 1794406219507
+41 silly unfinished npm timer reify:createSparse 1794406221499
+42 verbose cwd C:\dev\um
+43 verbose os Windows_NT 10.0.19045
+44 verbose node v24.19.0
+45 verbose npm  v11.17.0
+46 verbose exit -4048
+47 verbose code -4048
+48 error A complete log of this run can be found in: C:\dev\um\.npm-cache\_logs\2026-11-11T14_10_18_818Z-debug-0.log
