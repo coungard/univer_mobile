@@ -74,11 +74,29 @@ jobs:
       - name: Install SDK packages
         run: |
           yes | sdkmanager --licenses > /dev/null || true
-          for pkg in "platforms;android-37.0" "platforms;android-37" \
-                     "build-tools;37.0.0" "ndk;27.1.12297006" "cmake;3.22.1"; do
-            sdkmanager --install "$pkg" || echo "::warning::пакет $pkg не установлен"
+          # NDK весит ~600 МБ, и sdkmanager периодически обрывает его
+          # распаковку: "Warning: An error occurred while preparing SDK
+          # package NDK ... Error reading Zip content". Поэтому до трёх
+          # попыток, каждый раз с удалением недокачанного каталога.
+          for pkg in "platforms;android-37.0" "build-tools;37.0.0" \
+                     "ndk;27.1.12297006" "cmake;3.22.1"; do
+            pkg_path="$ANDROID_SDK_ROOT/${pkg//;//}"
+            for attempt in 1 2 3; do
+              if sdkmanager --install "$pkg"; then
+                break
+              fi
+              echo "::warning::попытка $attempt для $pkg не удалась"
+              rm -rf "$pkg_path"
+              if [ "$attempt" = "3" ]; then
+                echo "::error::пакет $pkg так и не установился"
+                exit 1
+              fi
+            done
           done
-          # В SDK Android 17 (API 37) лежит каталогом platforms/android-37.0,
+          # Без source.properties AGP не увидит NDK (ошибка CXX1101),
+          # поэтому проверяем установку сразу, а не на шаге сборки.
+          test -f "$ANDROID_SDK_ROOT/ndk/27.1.12297006/source.properties"
+          # В SDK Android 17 (API 37) платформа лежит каталогом platforms/android-37.0,
           # а Gradle ищет платформу по хэшу android-37. Симлинк страхует
           # от расхождения имени пакета и хэша платформы.
           if [ ! -e "$ANDROID_SDK_ROOT/platforms/android-37" ] \
