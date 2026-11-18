@@ -1,0 +1,82 @@
+name: iOS Build
+
+# Отдельная сборка под iOS: проверяет, что нативная часть проекта
+# собирается на macOS-раннере. Подпись не нужна — собираем под симулятор.
+# Линт и тесты остаются в Mobile CI (.github/workflows/ci.yml).
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Сборка под iOS-симулятор
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Show toolchain versions
+        run: |
+          xcodebuild -version
+          xcode-select -p
+          node --version
+          ruby --version
+          xcrun simctl list runtimes
+
+      - name: Install CocoaPods dependencies
+        run: |
+          if ! command -v pod > /dev/null 2>&1; then
+            sudo gem install cocoapods
+          fi
+          cd ios
+          pod install
+
+      - name: Build for iOS Simulator (no code signing)
+        run: |
+          set -o pipefail
+          cd ios
+          xcodebuild \
+            -workspace univer_mobile.xcworkspace \
+            -scheme univer_mobile \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build 2>&1 | tee build.log
+
+      - name: Check build artifact
+        run: |
+          APP=ios/build/Build/Products/Debug-iphonesimulator/univer_mobile.app
+          test -d "$APP"
+          du -sh "$APP"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist"
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-log
+          path: ios/build.log
+          if-no-files-found: ignore
+          retention-days: 7
