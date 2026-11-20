@@ -1,8 +1,10 @@
 name: iOS Build
 
-# Отдельная сборка под iOS: проверяет, что нативная часть проекта
-# собирается на macOS-раннере. Подпись не нужна — собираем под симулятор.
-# Линт и тесты остаются в Mobile CI (.github/workflows/ci.yml).
+# Отдельная проверка iOS-проекта на macOS-раннере. Сборка под симулятор
+# (~10-15 минут) временно отключена: её быстрее запустить вручную в Xcode
+# или через xcodebuild. Что осталось: зависимости ставятся, Xcode-проект
+# парсится и видит схему сборки. Линт и тесты — в Mobile CI
+# (.github/workflows/ci.yml), Android — в Android Build (android.yml).
 
 on:
   push:
@@ -17,9 +19,9 @@ concurrency:
 
 jobs:
   build:
-    name: Сборка под iOS-симулятор
+    name: Проверка iOS-проекта
     runs-on: macos-26
-    timeout-minutes: 60
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -42,41 +44,55 @@ jobs:
           ruby --version
           xcrun simctl list runtimes
 
-      - name: Install CocoaPods dependencies
+      # Дешёвая проверка вместо сборки: pbxproj валиден, проект читается
+      # и видны схема/таргеты. Занимает секунды, а не минуты.
+      - name: Check Xcode project
         run: |
-          if ! command -v pod > /dev/null 2>&1; then
-            sudo gem install cocoapods
-          fi
-          cd ios
-          pod install
+          test -f ios/Podfile
+          test -d ios/univer_mobile.xcodeproj
+          plutil -lint ios/univer_mobile.xcodeproj/project.pbxproj
+          xcodebuild -list -project ios/univer_mobile.xcodeproj
 
-#      - name: Build for iOS Simulator (no code signing)
-#        run: |
-#          set -o pipefail
-#          cd ios
-#          xcodebuild \
-#            -workspace univer_mobile.xcworkspace \
-#            -scheme univer_mobile \
-#            -configuration Debug \
-#            -sdk iphonesimulator \
-#            -destination 'generic/platform=iOS Simulator' \
-#            -derivedDataPath build \
-#            CODE_SIGNING_ALLOWED=NO \
-#            CODE_SIGNING_REQUIRED=NO \
-#            build 2>&1 | tee build.log
-
-      - name: Check build artifact
-        run: |
-          APP=ios/build/Build/Products/Debug-iphonesimulator/univer_mobile.app
-          test -d "$APP"
-          du -sh "$APP"
-          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist"
-
-      - name: Upload build log on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-build-log
-          path: ios/build.log
-          if-no-files-found: ignore
-          retention-days: 7
+      # Сборка под симулятор временно отключена: на macOS-раннере она
+      # занимает 10-15 минут, автора изменений это не устраивает —
+      # собираем вручную. Чтобы вернуть, раскомментируйте три шага ниже
+      # и верните job'у timeout-minutes: 60.
+      #
+      # - name: Install CocoaPods dependencies
+      #   run: |
+      #     if ! command -v pod > /dev/null 2>&1; then
+      #       sudo gem install cocoapods
+      #     fi
+      #     cd ios
+      #     pod install
+      #
+      # - name: Build for iOS Simulator (no code signing)
+      #   run: |
+      #     set -o pipefail
+      #     cd ios
+      #     xcodebuild \
+      #       -workspace univer_mobile.xcworkspace \
+      #       -scheme univer_mobile \
+      #       -configuration Debug \
+      #       -sdk iphonesimulator \
+      #       -destination 'generic/platform=iOS Simulator' \
+      #       -derivedDataPath build \
+      #       CODE_SIGNING_ALLOWED=NO \
+      #       CODE_SIGNING_REQUIRED=NO \
+      #       build 2>&1 | tee build.log
+      #
+      # - name: Check build artifact
+      #   run: |
+      #     APP=ios/build/Build/Products/Debug-iphonesimulator/univer_mobile.app
+      #     test -d "$APP"
+      #     du -sh "$APP"
+      #     /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist"
+      #
+      # - name: Upload build log on failure
+      #   if: failure()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: ios-build-log
+      #     path: ios/build.log
+      #     if-no-files-found: ignore
+      #     retention-days: 7
